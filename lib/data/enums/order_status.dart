@@ -19,6 +19,8 @@ enum OrderStatus {
 
   bool get isActive => !isTerminal;
 
+  static String toWire(OrderStatus value) => value.wireValue;
+
   static OrderStatus fromWire(String value) {
     for (final s in OrderStatus.values) {
       if (s.wireValue == value) return s;

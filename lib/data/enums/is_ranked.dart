@@ -9,6 +9,8 @@ enum IsRanked {
 
   final String wireValue;
 
+  static String toWire(IsRanked value) => value.wireValue;
+
   static IsRanked fromWire(String value) {
     for (final r in IsRanked.values) {
       if (r.wireValue == value) return r;

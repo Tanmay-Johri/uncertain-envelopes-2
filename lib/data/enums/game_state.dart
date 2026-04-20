@@ -13,6 +13,8 @@ enum GameState {
 
   final String wireValue;
 
+  static String toWire(GameState value) => value.wireValue;
+
   static GameState fromWire(String value) {
     for (final state in GameState.values) {
       if (state.wireValue == value) return state;

@@ -8,6 +8,8 @@ enum GameSecurity {
 
   final String wireValue;
 
+  static String toWire(GameSecurity value) => value.wireValue;
+
   static GameSecurity fromWire(String value) {
     for (final s in GameSecurity.values) {
       if (s.wireValue == value) return s;

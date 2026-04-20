@@ -19,6 +19,8 @@ enum OrderType {
   bool get isMarket =>
       this == OrderType.marketBuy || this == OrderType.marketSell;
 
+  static String toWire(OrderType value) => value.wireValue;
+
   static OrderType fromWire(String value) {
     for (final t in OrderType.values) {
       if (t.wireValue == value) return t;

@@ -15,6 +15,8 @@ enum CommandStatus {
   bool get isTerminal =>
       this == CommandStatus.processed || this == CommandStatus.rejected;
 
+  static String toWire(CommandStatus value) => value.wireValue;
+
   static CommandStatus fromWire(String value) {
     for (final s in CommandStatus.values) {
       if (s.wireValue == value) return s;

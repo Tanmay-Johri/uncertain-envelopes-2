@@ -7,6 +7,8 @@ enum LobbyStatus {
 
   final String wireValue;
 
+  static String toWire(LobbyStatus value) => value.wireValue;
+
   static LobbyStatus fromWire(String value) {
     for (final s in LobbyStatus.values) {
       if (s.wireValue == value) return s;

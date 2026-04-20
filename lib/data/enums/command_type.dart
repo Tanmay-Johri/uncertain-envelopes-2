@@ -22,6 +22,8 @@ enum CommandType {
   /// because the game does not exist when the command is submitted.
   bool get requiresGameId => this != CommandType.createGame;
 
+  static String toWire(CommandType value) => value.wireValue;
+
   static CommandType fromWire(String value) {
     for (final c in CommandType.values) {
       if (c.wireValue == value) return c;
