@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 /// deserialization so this layer stays trivial.
 abstract class SupabaseGameGateway {
   Future<Map<String, dynamic>?> fetchGameRow(String gameId);
+  Future<List<Map<String, dynamic>>> fetchGamePlayerRows(String gameId);
   Future<List<Map<String, dynamic>>> fetchPublicGameRows();
   Future<List<Map<String, dynamic>>> fetchJoinedGameRows(String playerId);
   Future<Map<String, dynamic>?> lookupGameRowByCode(String code);
@@ -23,6 +24,16 @@ class RealSupabaseGameGateway implements SupabaseGameGateway {
         .eq('game_id', gameId)
         .maybeSingle();
     return row;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchGamePlayerRows(String gameId) async {
+    final rows = await _client
+        .from('games_players')
+        .select()
+        .eq('map_game_id', gameId)
+        .order('joined_at', ascending: true);
+    return List<Map<String, dynamic>>.from(rows);
   }
 
   @override

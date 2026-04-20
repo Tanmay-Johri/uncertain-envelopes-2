@@ -262,6 +262,14 @@ class _FakeGameGateway implements SupabaseGameGateway {
     return gameRows[gameId];
   }
 
+  final Map<String, List<Map<String, dynamic>>> playersByGame = {};
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchGamePlayerRows(String gameId) async {
+    calls.add('fetchGamePlayerRows($gameId)');
+    return playersByGame[gameId] ?? const [];
+  }
+
   @override
   Future<List<Map<String, dynamic>>> fetchPublicGameRows() async {
     calls.add('fetchPublicGameRows');

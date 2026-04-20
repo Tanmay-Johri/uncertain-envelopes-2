@@ -5,6 +5,7 @@ import '../enums/game_security.dart';
 import '../enums/game_state.dart';
 import '../enums/is_ranked.dart';
 import '../models/game.dart';
+import '../models/game_player.dart';
 import 'command_repository.dart';
 import 'game_repository.dart';
 
@@ -24,6 +25,9 @@ class InMemoryGameRepository implements GameRepository {
   /// collide with either id containing a colon.
   final Set<String> _memberships = {};
 
+  /// Full GamePlayer rows per game, keyed by `games_players_row_id`.
+  final Map<String, Map<String, GamePlayer>> _gamePlayers = {};
+
   void seedGame(Game game) {
     _games[game.gameId] = game;
   }
@@ -32,9 +36,17 @@ class InMemoryGameRepository implements GameRepository {
     _memberships.add('$gameId::$playerId');
   }
 
+  void seedGamePlayer(GamePlayer player) {
+    _gamePlayers
+        .putIfAbsent(player.mapGameId, () => <String, GamePlayer>{})
+        [player.gamesPlayersRowId] = player;
+    _memberships.add('${player.mapGameId}::${player.mapPlayerId}');
+  }
+
   void clear() {
     _games.clear();
     _memberships.clear();
+    _gamePlayers.clear();
   }
 
   @override
@@ -62,6 +74,13 @@ class InMemoryGameRepository implements GameRepository {
 
   @override
   Future<Game?> fetchGame(String gameId) async => _games[gameId];
+
+  @override
+  Future<List<GamePlayer>> fetchGamePlayers(String gameId) async {
+    final players = _gamePlayers[gameId]?.values.toList() ?? <GamePlayer>[];
+    players.sort((a, b) => a.joinedAt.compareTo(b.joinedAt));
+    return players;
+  }
 
   @override
   Future<List<Game>> fetchPublicGames() async {

@@ -3,6 +3,7 @@ import '../enums/end_condition.dart';
 import '../enums/game_security.dart';
 import '../enums/is_ranked.dart';
 import '../models/game.dart';
+import '../models/game_player.dart';
 import 'command_repository.dart';
 import 'game_repository.dart';
 
@@ -47,6 +48,12 @@ class SupabaseGameRepository implements GameRepository {
   Future<Game?> fetchGame(String gameId) async {
     final row = await _gateway.fetchGameRow(gameId);
     return row == null ? null : Game.fromJson(row);
+  }
+
+  @override
+  Future<List<GamePlayer>> fetchGamePlayers(String gameId) async {
+    final rows = await _gateway.fetchGamePlayerRows(gameId);
+    return rows.map(GamePlayer.fromJson).toList();
   }
 
   @override

@@ -2,6 +2,7 @@ import '../enums/end_condition.dart';
 import '../enums/game_security.dart';
 import '../enums/is_ranked.dart';
 import '../models/game.dart';
+import '../models/game_player.dart';
 
 /// Read-side + command-submission surface for games. Command submissions
 /// for game-level actions are delegated to [CommandRepository]; this
@@ -24,6 +25,11 @@ abstract class GameRepository {
 
   /// Fetches the full game row by id, or null when it does not exist.
   Future<Game?> fetchGame(String gameId);
+
+  /// Every `games_players` row for [gameId]. Empty list if the game has
+  /// no members (e.g. immediately after creation, before the admin row
+  /// is inserted).
+  Future<List<GamePlayer>> fetchGamePlayers(String gameId);
 
   /// Public-and-joinable games. Excludes discarded / finalised / ended
   /// games because the home screen only surfaces ones a player can enter.
