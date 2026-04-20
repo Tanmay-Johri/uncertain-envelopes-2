@@ -88,9 +88,24 @@ class InMemoryAuthRepository implements AuthRepository {
   }
 
   @override
-  Stream<Player?> watchCurrentPlayer() async* {
-    yield _current;
-    yield* _controller.stream;
+  Stream<Player?> watchCurrentPlayer() {
+    // Build a per-subscription stream that replays the current value on
+    // subscribe and then forwards every state change. An `async*` body
+    // used to be here but deferred its `yield* _controller.stream`
+    // subscription by one microtask, which could miss an event fired
+    // immediately after a new subscriber attached.
+    late StreamController<Player?> out;
+    StreamSubscription<Player?>? inner;
+    out = StreamController<Player?>(
+      onListen: () {
+        out.add(_current);
+        inner = _controller.stream.listen(out.add);
+      },
+      onCancel: () async {
+        await inner?.cancel();
+      },
+    );
+    return out.stream;
   }
 
   void _setCurrent(Player? p) {
