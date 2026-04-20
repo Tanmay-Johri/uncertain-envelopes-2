@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uncertain_envelopes_2/core/router/app_router.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
+import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -91,11 +94,25 @@ void main() {
   });
 
   group('GoRouter top-level routes', () {
-    testWidgets('/auth renders AUTH placeholder outside shell',
-        (tester) async {
+    testWidgets('/auth renders AuthScreen outside shell', (tester) async {
       await _pumpAppWith(tester, initialLocation: AppRoutes.auth);
-      expect(find.text('AUTH'), findsWidgets);
+      expect(find.byType(AuthScreen), findsOneWidget);
+      expect(find.byType(LoginForm), findsOneWidget);
       expect(find.byType(AppShell), findsNothing);
+    });
+
+    testWidgets('/auth?tab=signup deep-links to the sign-up tab',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/auth?tab=signup');
+      expect(find.byType(AuthScreen), findsOneWidget);
+      expect(find.byType(SignUpForm), findsOneWidget);
+    });
+
+    testWidgets('/auth?tab=nonsense falls back to the login tab',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/auth?tab=nonsense');
+      expect(find.byType(AuthScreen), findsOneWidget);
+      expect(find.byType(LoginForm), findsOneWidget);
     });
 
     testWidgets('/profile renders PROFILE placeholder outside shell',

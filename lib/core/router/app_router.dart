@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
+import '../../ui/screens/auth/auth_screen.dart';
 import '../../ui/widgets/app_shell.dart';
+import '../../ui/widgets/auth_tab_switcher.dart';
 
 /// Route paths for the whole app. Centralising them avoids typo-style
 /// navigation bugs. Parametric routes expose helpers instead of raw
@@ -38,8 +40,21 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
     routes: [
       GoRoute(
         path: AppRoutes.auth,
-        builder: (_, __) =>
-            const PlaceholderScreen(routeName: 'AUTH'),
+        builder: (_, state) {
+          // Allow /auth?tab=signup to deep-link to the sign-up tab.
+          // We tie the initial tab to a ValueKey so a fresh
+          // AuthScreen State is built whenever the query param
+          // changes — otherwise didUpdateWidget would be needed to
+          // re-apply initialTab.
+          final tabParam = state.uri.queryParameters['tab'];
+          final initialTab = tabParam == 'signup'
+              ? AuthTab.signUp
+              : AuthTab.logIn;
+          return AuthScreen(
+            key: ValueKey('auth-${initialTab.name}'),
+            initialTab: initialTab,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.profile,

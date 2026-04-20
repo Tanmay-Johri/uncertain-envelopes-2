@@ -9,6 +9,11 @@ abstract final class AppConstants {
   static const upstashRedisToken =
       'gQAAAAAAAWnGAAIncDI2NWZmYzkzOWJmMTY0NDc0YTUxNmNhZjE3NjY3NTJjNHAyOTI2MTQ';
 
+  // Account constraints
+  static const minUsernameLength = 3;
+  static const maxUsernameLength = 32;
+  static const minPasswordLength = 8;
+
   // Game constraints
   static const maxGameNameLength = 32;
   static const maxGameDescriptionLength = 256;
