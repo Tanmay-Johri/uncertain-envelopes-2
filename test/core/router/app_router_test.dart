@@ -1,0 +1,189 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:uncertain_envelopes_2/core/router/app_router.dart';
+import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
+
+Future<GoRouter> _pumpAppWith(
+  WidgetTester tester, {
+  String initialLocation = AppRoutes.home,
+}) async {
+  final router = buildAppRouter(initialLocation: initialLocation);
+  await tester.pumpWidget(
+    MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
+  );
+  await tester.pumpAndSettle();
+  return router;
+}
+
+void main() {
+  group('AppRoutes constants', () {
+    test('static path constants are set', () {
+      expect(AppRoutes.auth, '/auth');
+      expect(AppRoutes.home, '/home');
+      expect(AppRoutes.create, '/create');
+      expect(AppRoutes.orders, '/orders');
+      expect(AppRoutes.profile, '/profile');
+      expect(AppRoutes.history, '/history');
+    });
+
+    test('game route helpers build the correct path', () {
+      expect(AppRoutes.gameLobby('abc'), '/game/abc/lobby');
+      expect(AppRoutes.gameTrading('42'), '/game/42/trading');
+      expect(AppRoutes.gameResults('zzz'), '/game/zzz/results');
+    });
+
+    test('helpers handle UUID-like ids', () {
+      final id = '550e8400-e29b-41d4-a716-446655440000';
+      expect(AppRoutes.gameLobby(id), '/game/$id/lobby');
+    });
+  });
+
+  group('shellIndexToDestination', () {
+    test('maps indices to destinations', () {
+      expect(shellIndexToDestination(0), AppNavDestination.home);
+      expect(shellIndexToDestination(1), AppNavDestination.create);
+      expect(shellIndexToDestination(2), AppNavDestination.orders);
+    });
+
+    test('throws for invalid index', () {
+      expect(() => shellIndexToDestination(-1), throwsArgumentError);
+      expect(() => shellIndexToDestination(3), throwsArgumentError);
+    });
+  });
+
+  group('GoRouter shell routes', () {
+    testWidgets('default initial location shows HOME under shell',
+        (tester) async {
+      await _pumpAppWith(tester);
+      expect(find.byType(AppShell), findsOneWidget);
+      // "HOME" appears both as the placeholder hero and as a nav label.
+      expect(find.text('HOME'), findsWidgets);
+    });
+
+    testWidgets('tapping CREATE switches the shell branch',
+        (tester) async {
+      await _pumpAppWith(tester);
+      await tester.tap(find.text('CREATE'));
+      await tester.pumpAndSettle();
+      // The CREATE placeholder renders its routeName text.
+      expect(find.text('CREATE'), findsWidgets);
+      expect(find.byType(AppShell), findsOneWidget);
+    });
+
+    testWidgets('tapping ORDERS switches the shell branch',
+        (tester) async {
+      await _pumpAppWith(tester);
+      await tester.tap(find.text('ORDERS'));
+      await tester.pumpAndSettle();
+      expect(find.text('ORDERS'), findsWidgets);
+    });
+
+    testWidgets('switching branches preserves shell chrome (header + nav)',
+        (tester) async {
+      await _pumpAppWith(tester);
+      await tester.tap(find.text('CREATE'));
+      await tester.pumpAndSettle();
+      expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
+      expect(find.byType(BottomNavigationBar), findsOneWidget);
+    });
+  });
+
+  group('GoRouter top-level routes', () {
+    testWidgets('/auth renders AUTH placeholder outside shell',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: AppRoutes.auth);
+      expect(find.text('AUTH'), findsWidgets);
+      expect(find.byType(AppShell), findsNothing);
+    });
+
+    testWidgets('/profile renders PROFILE placeholder outside shell',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: AppRoutes.profile);
+      expect(find.text('PROFILE'), findsWidgets);
+      expect(find.byType(AppShell), findsNothing);
+    });
+
+    testWidgets('/history renders HISTORY placeholder outside shell',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: AppRoutes.history);
+      expect(find.text('HISTORY'), findsWidgets);
+      expect(find.byType(AppShell), findsNothing);
+    });
+  });
+
+  group('GoRouter deep link parsing', () {
+    testWidgets('/game/abc/lobby parses id correctly', (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/abc/lobby');
+      expect(find.text('GAME LOBBY'), findsOneWidget);
+      expect(find.text('id=abc'), findsOneWidget);
+    });
+
+    testWidgets('/game/:id/trading parses id correctly', (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/xyz-99/trading');
+      expect(find.text('GAME TRADING'), findsOneWidget);
+      expect(find.text('id=xyz-99'), findsOneWidget);
+    });
+
+    testWidgets('/game/:id/results parses id correctly', (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/GAME1/results');
+      expect(find.text('GAME RESULTS'), findsOneWidget);
+      expect(find.text('id=GAME1'), findsOneWidget);
+    });
+
+    testWidgets('long uuid id is accepted in deep link', (tester) async {
+      const uuid = '550e8400-e29b-41d4-a716-446655440000';
+      await _pumpAppWith(tester, initialLocation: '/game/$uuid/lobby');
+      expect(find.text('id=$uuid'), findsOneWidget);
+    });
+  });
+
+  group('GoRouter unknown routes', () {
+    testWidgets('unknown path renders NOT FOUND error screen',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/nope/does-not-exist');
+      expect(find.text('NOT FOUND'), findsOneWidget);
+      expect(find.textContaining('/nope/does-not-exist'), findsOneWidget);
+    });
+
+    testWidgets('empty path falls back to error builder without crash',
+        (tester) async {
+      final router = buildAppRouter(initialLocation: '/blah');
+      await tester.pumpWidget(
+        MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('GoRouter programmatic navigation', () {
+    testWidgets('account icon in shell navigates to /profile',
+        (tester) async {
+      await _pumpAppWith(tester);
+      await tester.tap(find.byIcon(Icons.account_circle_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('PROFILE'), findsWidgets);
+      expect(find.byType(AppShell), findsNothing);
+    });
+
+    testWidgets('router.go(AppRoutes.create) switches to CREATE branch',
+        (tester) async {
+      final router = await _pumpAppWith(tester);
+      router.go(AppRoutes.create);
+      await tester.pumpAndSettle();
+      expect(find.text('CREATE'), findsWidgets);
+      expect(find.byType(AppShell), findsOneWidget);
+    });
+
+    testWidgets('router.go(AppRoutes.gameLobby(id)) goes to lobby',
+        (tester) async {
+      final router = await _pumpAppWith(tester);
+      router.go(AppRoutes.gameLobby('abc'));
+      await tester.pumpAndSettle();
+      expect(find.text('GAME LOBBY'), findsOneWidget);
+      expect(find.text('id=abc'), findsOneWidget);
+    });
+  });
+}

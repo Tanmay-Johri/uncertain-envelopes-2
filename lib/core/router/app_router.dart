@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../ui/screens/_placeholder_screen.dart';
+import '../../ui/widgets/app_shell.dart';
+
+/// Route paths for the whole app. Centralising them avoids typo-style
+/// navigation bugs. Parametric routes expose helpers instead of raw
+/// patterns.
+abstract final class AppRoutes {
+  static const auth = '/auth';
+  static const home = '/home';
+  static const create = '/create';
+  static const orders = '/orders';
+  static const profile = '/profile';
+  static const history = '/history';
+
+  static String gameLobby(String id) => '/game/$id/lobby';
+  static String gameTrading(String id) => '/game/$id/trading';
+  static String gameResults(String id) => '/game/$id/results';
+}
+
+/// Index of each bottom-nav destination inside the
+/// [StatefulShellRoute]. Keep this aligned with [AppNavDestination].
+abstract final class _ShellIndex {
+  static const home = 0;
+  static const create = 1;
+  static const orders = 2;
+}
+
+/// Builds the top-level GoRouter instance.
+///
+/// [initialLocation] is exposed so tests can deep-link to any route
+/// without having to wire up a Flutter engine navigator.
+GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
+  return GoRouter(
+    initialLocation: initialLocation,
+    routes: [
+      GoRoute(
+        path: AppRoutes.auth,
+        builder: (_, __) =>
+            const PlaceholderScreen(routeName: 'AUTH'),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (_, __) =>
+            const PlaceholderScreen(routeName: 'PROFILE'),
+      ),
+      GoRoute(
+        path: AppRoutes.history,
+        builder: (_, __) =>
+            const PlaceholderScreen(routeName: 'HISTORY'),
+      ),
+      GoRoute(
+        path: '/game/:id/lobby',
+        builder: (_, state) => PlaceholderScreen(
+          routeName: 'GAME LOBBY',
+          subtitle: 'id=${state.pathParameters['id']}',
+        ),
+      ),
+      GoRoute(
+        path: '/game/:id/trading',
+        builder: (_, state) => PlaceholderScreen(
+          routeName: 'GAME TRADING',
+          subtitle: 'id=${state.pathParameters['id']}',
+        ),
+      ),
+      GoRoute(
+        path: '/game/:id/results',
+        builder: (_, state) => PlaceholderScreen(
+          routeName: 'GAME RESULTS',
+          subtitle: 'id=${state.pathParameters['id']}',
+        ),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return AppShell(
+            currentIndex: navigationShell.currentIndex,
+            onDestinationSelected: (index) =>
+                navigationShell.goBranch(index, initialLocation: true),
+            onAccountTap: () => context.go(AppRoutes.profile),
+            child: navigationShell,
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (_, __) =>
+                    const PlaceholderScreen(routeName: 'HOME'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.create,
+                builder: (_, __) =>
+                    const PlaceholderScreen(routeName: 'CREATE'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.orders,
+                builder: (_, __) =>
+                    const PlaceholderScreen(routeName: 'ORDERS'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+    errorBuilder: (_, state) => PlaceholderScreen(
+      routeName: 'NOT FOUND',
+      subtitle: state.uri.toString(),
+    ),
+  );
+}
+
+/// Map a shell branch index to its destination enum for logging/tests.
+AppNavDestination shellIndexToDestination(int index) {
+  switch (index) {
+    case _ShellIndex.home:
+      return AppNavDestination.home;
+    case _ShellIndex.create:
+      return AppNavDestination.create;
+    case _ShellIndex.orders:
+      return AppNavDestination.orders;
+    default:
+      throw ArgumentError('Invalid shell index: $index');
+  }
+}

@@ -4,5 +4,5 @@ import 'core/theme/app_theme.dart';
 
 void main() {
   registerGoogleFonts();
-  runApp(const UncertainEnvelopesApp());
+  runApp(UncertainEnvelopesApp());
 }
