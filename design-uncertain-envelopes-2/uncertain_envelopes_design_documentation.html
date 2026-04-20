@@ -1,0 +1,46 @@
+# Uncertain Envelopes Design Documentation
+
+## Project Overview
+Uncertain Envelopes is a high-stakes game app where players trade envelopes with hidden monetary values to make a profit. The design aesthetic is "Minimal Tech-Terminal," focusing on high-density information, real-time data, and a professional, utility-first feel.
+
+## Visual Identity
+- **Theme**: Dark Mode (Utility/Terminal style)
+- **Primary Color**: Neon Green (#40f320) - Used for primary actions, success states, and key data points.
+- **Background Color**: Neutral Dark Grey (#1f1f1f) - Provides a consistent, low-fatigue base for long sessions.
+- **Secondary Colors**:
+  - Red/Coral: For destructive actions (Cancel, End Game) and negative performance.
+  - Surface Grey: For card backgrounds and nested sections to create hierarchy.
+  - Light Grey: For secondary text and descriptions.
+
+## Typography
+- **Primary Font**: Epilogue (or similar Monospace/Sans-serif hybrid)
+- **Style**: Monospaced elements for data (prices, quantities, codes) to emphasize the financial/technical nature of the game.
+- **Hierarchy**:
+  - Headings: Bold, uppercase for section titles.
+  - Body: Regular for general info.
+  - Data: Monospaced for clarity in the order book and P&L sections.
+
+## Key UI Components
+### 1. Navigation
+- **Top Bar**: Minimal, containing contextual icons (Profile, Friend Requests) and the screen title.
+- **Bottom Bar**: 3-icon navigation for core app areas (Home, Create, Orders), featuring a distinctive central action button.
+
+### 2. The Order Book (Trading Window)
+- Split column layout for Bids (Buy) and Asks (Sell).
+- High-contrast labeling for price and quantity.
+- Visual hierarchy based on price sorting as per financial market standards.
+
+### 3. Game Cards
+- Rectangular surface blocks with standardized metadata:
+  - Title & Description
+  - Contextual Status Tags (Joined, Ready, Active)
+  - Expandable detail sections using chevron icons.
+
+### 4. Interactive Elements
+- **Buttons**: Large, high-contrast blocks. Neon green for "Go" actions; Red for "Stop" actions.
+- **Inputs**: Underlined or boxed fields with monospaced text for data entry (Joining Codes, Prices).
+
+## Interaction Design
+- **Real-time Feedback**: Live line graphs and countdown timers for active game sessions.
+- **Confirmation Flows**: Intentional friction for critical actions (Ending games, Canceling orders) via confirmation dialogs.
+- **Status States**: Color-coded tags (Yellow for Joined, Blue for Ready, Green for Active) provide instant at-a-glance status updates in the lobby and home screens.

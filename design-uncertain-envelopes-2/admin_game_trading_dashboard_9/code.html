@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Game Final Results Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#40f320",
+                        secondary: "#ff3b30",
+                        "status-ready": "#3b82f6",
+                        "status-waiting": "#eab308",
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#132210",
+                        "surface-grey": "#2a2a2a",
+                        "custom-grey": "#1f1f1f",
+                    },
+                    fontFamily: {
+                        display: ["Epilogue", "sans-serif"],
+                        mono: ["Fira Code", "monospace"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-custom-grey font-mono text-slate-100 min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-primary selection:text-black">
+<header class="flex items-center justify-between p-4 bg-custom-grey/95 sticky top-0 z-50 border-b border-white/5 backdrop-blur-md">
+<h1 class="text-sm font-bold uppercase tracking-widest text-primary font-display">UNCERTAIN ENVELOPES</h1>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex flex-col gap-6 p-4 pb-32 relative z-10 max-w-lg mx-auto w-full">
+<section class="flex flex-col items-center justify-center py-8 gap-2">
+<h2 class="text-sm font-bold uppercase tracking-widest text-slate-400 font-display">Envelope Price</h2>
+<div class="text-6xl font-bold font-mono text-primary tracking-tighter drop-shadow-[0_0_15px_rgba(64,243,32,0.25)]">
+                $145.00
+            </div>
+</section>
+<div class="h-px bg-white/5 w-full"></div>
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="text-xs uppercase font-bold tracking-wider text-primary">Results</h3>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex flex-col bg-surface-grey border border-primary/30 rounded-lg overflow-hidden shadow-[0_0_10px_rgba(64,243,32,0.05)]">
+<div class="flex items-center justify-between p-3 border-b border-white/5 bg-white/[0.02]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/20 text-primary flex items-center justify-center font-bold text-xs font-mono">
+                                AD
+                            </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white font-mono">AdminUser</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 divide-x divide-white/5 p-3 text-center">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Cash</span>
+<span class="text-sm font-mono text-slate-400 font-bold">+$500</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Env</span>
+<span class="text-sm font-mono text-slate-400 font-bold">-2</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">PNL</span>
+<span class="text-sm font-mono text-primary font-bold">+$210</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-grey border border-white/10 rounded-lg overflow-hidden">
+<div class="flex items-center justify-between p-3 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs font-mono">
+                                JS
+                            </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white font-mono">JohnSmith</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 divide-x divide-white/5 p-3 text-center">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Cash</span>
+<span class="text-sm font-mono text-slate-400 font-bold">+$120</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Env</span>
+<span class="text-sm font-mono text-slate-400 font-bold">0</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">PNL</span>
+<span class="text-sm font-mono text-primary font-bold">+$120</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-grey border border-white/10 rounded-lg overflow-hidden">
+<div class="flex items-center justify-between p-3 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs font-mono">
+                                TK
+                            </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white font-mono">TraderKing</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 divide-x divide-white/5 p-3 text-center">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Cash</span>
+<span class="text-sm font-mono text-slate-400 font-bold">-$400</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Env</span>
+<span class="text-sm font-mono text-slate-400 font-bold">+4</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">PNL</span>
+<span class="text-sm font-mono text-secondary font-bold">-$50</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-grey border border-white/10 rounded-lg overflow-hidden">
+<div class="flex items-center justify-between p-3 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs font-mono">
+                                ME
+                            </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white font-mono">CryptoWhale</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 divide-x divide-white/5 p-3 text-center">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Cash</span>
+<span class="text-sm font-mono text-slate-400 font-bold">-$800</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Delta Env</span>
+<span class="text-sm font-mono text-slate-400 font-bold">+10</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider">PNL</span>
+<span class="text-sm font-mono text-secondary font-bold">-$145</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-0 left-0 right-0 bg-custom-grey border-t border-white/5 z-40 pb-safe">
+<div class="flex items-center justify-around p-4 text-slate-500">
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Create</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Orders</span>
+</button>
+</div>
+</div>
+</body></html>

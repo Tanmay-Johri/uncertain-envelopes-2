@@ -1,0 +1,201 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Game Lobby Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#40f320",
+                        secondary: "#ff3b30",
+                        "status-ready": "#3b82f6",
+                        "status-waiting": "#eab308",
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#132210",
+                        "surface-grey": "#2a2a2a",
+                        "custom-grey": "#1f1f1f",
+                    },
+                    fontFamily: {
+                        display: ["Epilogue", "sans-serif"],
+                        mono: ["Fira Code", "monospace"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+</head>
+<body class="bg-custom-grey font-mono text-slate-100 min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-primary selection:text-black">
+<header class="flex items-center justify-between p-4 bg-custom-grey/95 sticky top-0 z-50 border-b border-white/5 backdrop-blur-md">
+<h1 class="text-sm font-bold uppercase tracking-widest text-primary font-display" style="">UNCERTAIN ENVELOPES</h1>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center text-slate-500 hover:text-white transition-colors" style="">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">account_circle</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex flex-col gap-6 p-4 pb-32 relative z-10 max-w-lg mx-auto w-full">
+<section class="flex flex-col gap-4">
+<div class="flex items-start justify-between">
+<h2 class="text-3xl font-bold font-display text-white" style="">Alpha Flight 01</h2>
+</div>
+<p class="text-sm text-slate-400 font-mono leading-relaxed" style="">
+                High stakes trading session. Brief mission statement for traders participating in this round.
+            </p>
+<div class="bg-surface-grey p-4 rounded-lg border border-white/10 flex flex-col items-center justify-center gap-1 mt-2">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider" style="">Joining Code</span>
+<div class="text-2xl font-bold font-mono text-primary tracking-[0.3em] uppercase" style="">
+                    V 8 J A J
+                </div>
+</div>
+<div class="bg-surface-grey p-4 rounded-lg border border-white/10 flex flex-col items-center justify-center gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider" style="">Time remaining</span>
+<div class="text-2xl font-bold font-mono text-white tracking-widest" style="">
+                    60:00
+                </div>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-2">
+<div class="bg-surface-grey p-3 rounded-lg border border-white/10 flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider" style="">Security</span>
+<div class="flex items-center gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-base self-center" style="">public</span>
+<span class="leading-none mt-0.5" style="">Public</span>
+</div>
+</div>
+<div class="bg-surface-grey p-3 rounded-lg border border-white/10 flex flex-col gap-1">
+<span class="text-[10px] uppercase text-slate-500 font-bold tracking-wider" style="">Ranked</span>
+<div class="flex items-center gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-base text-primary self-center" style="">verified</span>
+<span class="leading-none mt-0.5" style="">Yes</span>
+</div>
+</div>
+</div>
+</section>
+<div class="h-px bg-white/5 w-full"></div>
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="text-xs uppercase font-bold tracking-wider text-primary" style="">Participants (4/8)</h3>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Admin Player -->
+<div class="relative flex items-center justify-between p-3 bg-surface-grey border border-white/10 rounded-lg group">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/20 text-primary flex items-center justify-center font-bold text-xs" style="">
+                            AD
+                        </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-sm font-bold text-white" style="">AdminUser (You)</span>
+<span class="material-symbols-outlined text-[14px] text-yellow-500" style="font-variation-settings: &quot;FILL&quot; 1;">crown</span>
+</div>
+</div>
+</div>
+<span class="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10" style="">
+                        JOINED
+                    </span>
+<button class="absolute -top-1.5 -right-1.5 bg-custom-grey border border-secondary text-secondary rounded-full p-0.5 hover:bg-secondary/10 transition-colors shadow-sm" style="">
+<span class="material-symbols-outlined text-[10px] font-bold block" style="">close</span>
+</button>
+</div>
+<!-- Other Player 1 -->
+<div class="relative flex items-center justify-between p-3 bg-surface-grey border border-white/10 rounded-lg group">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs" style="">
+                            JS
+                        </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white" style="">JohnSmith</span>
+</div>
+</div>
+<span class="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10" style="">
+                        JOINED
+                    </span>
+<button class="absolute -top-1.5 -right-1.5 bg-custom-grey border border-secondary text-secondary rounded-full p-0.5 hover:bg-secondary/10 transition-colors shadow-sm" style="">
+<span class="material-symbols-outlined text-[10px] font-bold block" style="">close</span>
+</button>
+</div>
+<!-- Other Player 2 -->
+<div class="relative flex items-center justify-between p-3 bg-surface-grey border border-white/10 rounded-lg group">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs" style="">
+                            TK
+                        </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white" style="">TraderKing</span>
+</div>
+</div>
+<span class="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10" style="">
+                        JOINED
+                    </span>
+<button class="absolute -top-1.5 -right-1.5 bg-custom-grey border border-secondary text-secondary rounded-full p-0.5 hover:bg-secondary/10 transition-colors shadow-sm" style="">
+<span class="material-symbols-outlined text-[10px] font-bold block" style="">close</span>
+</button>
+</div>
+<!-- Other Player 3 -->
+<div class="relative flex items-center justify-between p-3 bg-surface-grey border border-white/10 rounded-lg group">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs" style="">
+                            CW
+                        </div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white" style="">CryptoWhale</span>
+</div>
+</div>
+<span class="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10" style="">
+                        JOINED
+                    </span>
+<button class="absolute -top-1.5 -right-1.5 bg-custom-grey border border-secondary text-secondary rounded-full p-0.5 hover:bg-secondary/10 transition-colors shadow-sm" style="">
+<span class="material-symbols-outlined text-[10px] font-bold block" style="">close</span>
+</button>
+</div>
+</div>
+</section>
+<div class="mt-auto pt-6 flex flex-col gap-3">
+<button class="w-full bg-primary text-black font-display font-bold text-lg py-4 rounded-lg tracking-widest hover:bg-opacity-90 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(64,243,32,0.3)] uppercase" type="button" style="">
+                Start Game
+            </button>
+<button class="w-full bg-surface-grey border border-secondary text-secondary font-display font-bold text-sm py-3 rounded-lg tracking-widest hover:bg-secondary/10 active:scale-[0.98] transition-all uppercase" type="button" style="">
+                End Game
+            </button>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 bg-custom-grey border-t border-white/5 z-40 pb-safe">
+<div class="flex items-center justify-around p-4 text-slate-500">
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors" style="">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display" style="">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors" style="">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">add_circle</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display" style="">Create</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors" style="">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">list_alt</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display" style="">Orders</span>
+</button>
+</div>
+</div>
+</body></html>

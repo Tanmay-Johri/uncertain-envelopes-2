@@ -1,0 +1,74 @@
+---
+description: 
+alwaysApply: true
+---
+
+Strict engineering system
+---
+description: "Strict engineering system for question-first, test-first, modular, fully verifiable development of entire projects"
+alwaysApply: true
+---
+
+# Core operating rules
+
+## 1. Zero-assumption rule
+- If more than one reasonable interpretation exists and the choice could affect architecture, UX, schema, state, API shape, naming, persistence, or tests, stop and ask clarifying questions before coding.
+- In general, if any statement could mean more than one things, you need to stop and ask first. This doesn't mean you have to bombard the user with wasteful questions, but ask wherever necessary
+- Wrong assumptions are worse than delay.
+
+## 2. Strict TDD rule
+- Nothing exists without a test or verification artifact.
+- Every meaningful unit must have its own dedicated test file or equivalent verification path.
+- Write the test first when practical; otherwise write it alongside the unit before claiming completion.
+- A task is not complete unless the relevant verification command was actually run.
+
+## 3. Smallest-unit construction rule
+- Never build large features in one shot.
+- Break work into the smallest meaningful units: component, hook, service, repository, helper, parser, state machine, API client, screen section, chart module, etc.
+- Build one unit, test it deeply, then compose it with other units and test again.
+
+## 4. Modularity rule
+- If logic or UI can be reused (almost everything can be reused), separate it.
+- Keep widgets/components in separate files.
+- Keep business logic out of UI files.
+- Centralize design tokens such as spacing, radius, colors, typography, durations, and elevation.
+- Prefer composition over monoliths.
+
+## 5. Verification rule
+- After each meaningful edit, run the narrowest relevant verification first.
+- For functions: run unit tests, property tests, edge cases.
+- For UI: render tests, interaction tests, layout/state cases, visual sanity even if it means starting a browser instance.
+- For APIs/backend: call it several times and test success, failure, timeout, retry, invalid input, persistence, concurrency.
+- For charts/graphs: render them and actually observe them visually, check for empty data, huge data, malformed data, improper alignment etc.
+- For async/state: create and check for scenarios which might cause race conditions, rapid repeated actions, cancellation, stale state, partial failure.
+
+## 6. QA severity rule
+- Tests must be adversarial, not decorative.
+- Include weird cases, empty states, large states, invalid states, rapid interaction, partial failure, and boundary values.
+- Try to break the code before accepting it.
+- A lot of times tests are just written for the sake of it. We don't want that. We want genuine tests
+
+## 7. Git discipline rule
+- Work per feature or sub-feature.
+- Keep commits small and logically grouped.
+- Prefer isolated worktrees/branches for independent streams.
+- Do not mix unrelated edits in one change.
+- Worktrees and branches are free. Make as many as you want. But I should be able to individually revert from any state of any feature to any state of that feature
+- Make them descriptive
+
+## 8. Completion rule
+- Never say “done” unless:
+  - code exists
+  - corresponding tests or verification exist
+  - relevant commands were run
+  - known failures and gaps are explicitly stated
+
+## 9. Non-hacky solving rule
+- A lot of times, code is written to just get past that one error that was seen, but we don't want that
+- We want to write code that genuinely understands the root cause of the problem and genuinely solves that
+- We are not trying to hack our way around the error, we are trying to improve our quality of code so that the error could not arise
+
+##10. Fail-proof planning
+- Whenever you come up with a plan, think about the conditions under which it would fail
+- A lot of times, you code and then when it fails, we identify the failure point but this is not what we want to do. We believe almost all failure points can be identified beforehand
+- Plan better to avoid those failings, and report to the user if you can't avoid that failure. The user might need to come up with something better then. User is not always right.

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Game Trading Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&amp;family=Fira+Code:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#40f320", secondary: "#ff3b30", "background-light": "#f6f8f5", "background-dark": "#1f1f1f", "surface-dark": "#162314", "surface-highlight": "#20301d", "surface-grey": "#1e1e1e"}, fontFamily: {display: "Fira Code", mono: ["Fira Code", "monospace"]}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .chart-grid {
+            background-image: linear-gradient(to right, #333 1px, transparent 1px),
+                              linear-gradient(to bottom, #333 1px, transparent 1px);
+            background-size: 40px 40px;
+        }section {
+            position: relative;
+            z-index: 10;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #40f320;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(64, 243, 32, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#1f1f1f] font-mono text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-primary selection:text-black">
+<header class="flex items-center justify-between p-4 bg-background-light dark:bg-[#1f1f1f]/95 sticky top-0 z-50 border-b border-white/5 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+</button>
+</div>
+<h1 class="text-sm font-bold uppercase tracking-widest text-slate-400 absolute left-1/2 -translate-x-1/2">Trading Window</h1>
+<div class="relative group">
+<button class="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">more_vert</span>
+</button>
+<div class="absolute right-0 mt-2 w-48 bg-surface-dark rounded-lg shadow-xl border border-white/10 hidden group-hover:block transition-all z-50">
+<a class="block px-4 py-3 text-sm text-slate-300 hover:bg-surface-highlight hover:text-white rounded-t-lg" href="#">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-lg">terminal</span> Show Logs</span>
+</a>
+<a class="block px-4 py-3 text-sm text-secondary hover:bg-surface-highlight hover:text-red-400 rounded-b-lg" href="#">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-lg">stop_circle</span> End Game</span>
+</a>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col gap-6 p-4 pb-48 relative z-10">
+<section class="flex flex-col items-center justify-center -mb-2">
+<h2 class="text-xl font-bold text-white mb-1 drop-shadow-md">Market Simulation Alpha</h2>
+<div class="text-center w-full max-w-sm">
+<p class="text-xs text-slate-500 truncate px-4">Trading simulation for introductory economics...</p>
+</div>
+</section>
+<section class="flex flex-col items-center justify-center py-2">
+<div class="flex items-center justify-center w-full">
+<div class="text-5xl font-mono font-bold tracking-tighter text-white tabular-nums drop-shadow-lg text-center">
+                    04:59
+                </div>
+</div>
+<p class="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider drop-shadow-md text-center">Time Remaining</p>
+</section>
+<section class="grid grid-cols-2 gap-3 relative z-10">
+<div class="bg-surface-grey rounded-xl p-4 border border-primary/20 relative overflow-hidden group shadow-lg">
+<div class="absolute top-0 right-0 p-2 opacity-30 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-primary">attach_money</span>
+</div>
+<p class="text-xs text-primary/80 font-medium mb-1 relative z-10">Delta Cash</p>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="text-xl font-bold text-white tracking-tight font-mono">+$12,500</span>
+</div>
+</div>
+<div class="bg-surface-grey rounded-xl p-4 border border-secondary/20 relative overflow-hidden group shadow-lg">
+<div class="absolute top-0 right-0 p-2 opacity-40 group-hover:opacity-50 transition-opacity z-10">
+<span class="material-symbols-outlined text-4xl text-secondary">mail</span>
+</div>
+<p class="text-xs text-secondary/80 font-medium mb-1 relative z-10">Delta Envelopes</p>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="text-xl font-bold text-white tracking-tight font-mono">-45</span>
+</div>
+</div>
+</section>
+<section class="relative z-10">
+<details class="bg-surface-grey rounded-xl border border-white/5 shadow-lg overflow-hidden group" open="">
+<summary class="flex items-center justify-between p-3 cursor-pointer bg-white/5 hover:bg-white/10 transition-colors select-none">
+<span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">PnL Calculator</span>
+<span class="material-symbols-outlined text-slate-400 group-open:rotate-180 transition-transform text-sm">expand_more</span>
+</summary>
+<div class="p-4 flex gap-4 items-center">
+<div class="w-2/3 flex flex-col gap-2">
+<div class="flex justify-between text-[10px] text-slate-400 font-mono uppercase">
+<span>Envelope Value</span>
+<span class="text-primary font-bold">$125.00</span>
+</div>
+<input class="w-full" max="200" min="0" type="range" value="125"/>
+<div class="flex justify-between text-[10px] text-slate-600 font-mono">
+<span>$0</span>
+<span>$200</span>
+</div>
+</div>
+<div class="w-px h-12 bg-white/10"></div>
+<div class="w-1/3 flex flex-col items-end justify-center -mt-2">
+<p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">PROJECTED PNL</p>
+<div class="text-lg font-bold text-primary tracking-tight font-mono tabular-nums">
+                    +$6,875
+                </div>
+</div>
+</div>
+</details>
+</section>
+<section class="flex flex-col gap-2 relative z-10">
+<div class="flex justify-between items-end px-1">
+<h2 class="text-sm font-semibold text-slate-300 drop-shadow-md">Market Price</h2>
+<div class="flex items-center gap-2 px-2 rounded backdrop-blur-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-sm font-mono text-primary font-bold">$150.00</span>
+</div>
+</div>
+<div class="h-48 w-full bg-surface-grey rounded-xl border border-white/5 overflow-hidden relative flex flex-col shadow-lg">
+<div class="absolute inset-0 chart-grid opacity-10 pointer-events-none z-0"></div>
+<div class="flex-1 w-full relative overflow-hidden bg-surface-grey z-10">
+<div class="absolute inset-0 flex items-center overflow-x-auto no-scrollbar pl-4 pr-12">
+<svg class="h-32 min-w-[600px]" preserveAspectRatio="none" viewBox="0 0 600 100">
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#40f320" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#40f320" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<path d="M0,80 C50,70 100,90 150,60 C200,30 250,50 300,40 C350,30 400,60 450,50 C500,40 550,20 600,30 V100 H0 Z" fill="url(#chartGradient)"></path>
+<path d="M0,80 C50,70 100,90 150,60 C200,30 250,50 300,40 C350,30 400,60 450,50 C500,40 550,20 600,30" fill="none" stroke="#40f320" stroke-width="2"></path>
+<circle class="animate-pulse" cx="600" cy="30" fill="#40f320" r="3"></circle>
+</svg>
+</div>
+<div class="absolute right-2 top-0 bottom-0 flex flex-col justify-between py-4 text-[10px] text-slate-500 font-mono text-right pointer-events-none z-20">
+<span>$160</span>
+<span>$150</span>
+<span>$140</span>
+</div>
+</div>
+<div class="h-6 w-full border-t border-white/5 bg-surface-grey flex justify-between items-center px-4 pr-12 text-[10px] text-slate-500 font-mono z-20">
+<span>00:00</span>
+<span>00:15</span>
+<span>00:30</span>
+<span>00:45</span>
+<span>01:00</span>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-2 relative z-10">
+<h2 class="text-sm font-semibold text-slate-300 px-1 drop-shadow-md">Order Book</h2>
+<div class="bg-surface-grey rounded-lg border border-white/5 overflow-hidden flex h-64 text-xs font-mono flex-col shadow-lg relative z-20">
+<div class="absolute inset-0 bg-surface-grey z-0"></div>
+<div class="flex w-full border-b border-white/5 bg-surface-grey z-10 relative">
+<div class="flex-1 flex justify-between p-2 text-slate-400 border-r border-white/5">
+<span>Qty</span>
+<span>Bid</span>
+</div>
+<div class="flex-1 flex justify-between p-2 text-slate-400">
+<span>Ask</span>
+<span>Qty</span>
+</div>
+</div>
+<div class="flex-1 flex overflow-y-auto no-scrollbar relative z-10">
+<div class="flex-1 flex flex-col border-r border-white/5 bg-surface-grey">
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[80%] z-0"></div>
+<span class="text-white z-10 relative">50</span>
+<span class="text-primary font-bold z-10 relative">149.50</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[60%] z-0"></div>
+<span class="text-white z-10 relative">25</span>
+<span class="text-primary font-bold z-10 relative">149.20</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[45%] z-0"></div>
+<span class="text-white z-10 relative">100</span>
+<span class="text-primary font-bold z-10 relative">148.90</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[30%] z-0"></div>
+<span class="text-white z-10 relative">12</span>
+<span class="text-primary font-bold z-10 relative">148.50</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[10%] z-0"></div>
+<span class="text-white z-10 relative">5</span>
+<span class="text-primary font-bold z-10 relative">148.00</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[5%] z-0"></div>
+<span class="text-white z-10 relative">2</span>
+<span class="text-primary font-bold z-10 relative">147.50</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-primary/10 w-[2%] z-0"></div>
+<span class="text-white z-10 relative">1</span>
+<span class="text-primary font-bold z-10 relative">147.00</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col bg-surface-grey">
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[20%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">150.50</span>
+<span class="text-white z-10 relative">10</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[35%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">150.80</span>
+<span class="text-white z-10 relative">40</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[50%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">151.00</span>
+<span class="text-white z-10 relative">85</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[75%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">151.50</span>
+<span class="text-white z-10 relative">120</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[90%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">152.00</span>
+<span class="text-white z-10 relative">200</span>
+</div>
+<div class="flex justify-between p-2 hover:bg-white/5 cursor-pointer relative">
+<div class="absolute inset-0 bg-secondary/10 w-[95%] right-0 left-auto z-0"></div>
+<span class="text-secondary font-bold z-10 relative">152.50</span>
+<span class="text-white z-10 relative">250</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-3 relative z-10">
+<h2 class="text-sm font-semibold text-slate-300 px-1 drop-shadow-md">Active Orders</h2>
+<div class="bg-surface-grey rounded-xl border border-white/5 overflow-hidden transition-all shadow-lg relative z-20">
+<div class="absolute inset-0 bg-surface-grey z-0"></div>
+<div class="p-4 flex items-start justify-between cursor-pointer hover:bg-white/5 relative z-10">
+<div class="flex flex-col gap-1 w-full">
+<div class="flex items-start justify-between w-full">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">Buy Limit</span>
+<span class="text-sm font-bold text-white">50 Units</span>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-4">
+<span class="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 text-blue-400 bg-blue-500/10 font-mono">in_queue</span>
+<span class="material-symbols-outlined text-slate-500 transform rotate-180 transition-transform">expand_more</span>
+</div>
+</div>
+</div>
+<span class="text-xs text-slate-500 font-mono -mt-1">@ $140.00</span>
+</div>
+</div>
+<div class="px-4 pb-4 pt-0 relative z-10">
+<div class="h-px bg-white/5 w-full mb-3"></div>
+<div class="flex justify-between items-center">
+<div class="text-xs text-slate-500 font-mono">
+                            ID: #839210<br/>
+                            Created: 10:42 AM<br/>
+                            Initial Qty: 50
+                        </div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 text-xs font-bold transition-colors">
+<span class="material-symbols-outlined text-sm">cancel</span>
+                            Cancel Order
+                        </button>
+</div>
+</div>
+</div>
+<div class="bg-surface-grey rounded-xl border border-white/5 overflow-hidden transition-all group shadow-lg relative z-20">
+<div class="absolute inset-0 bg-surface-grey z-0"></div>
+<div class="p-4 flex items-start justify-between cursor-pointer group-hover:bg-white/5 relative z-10">
+<div class="flex flex-col gap-1 w-full">
+<div class="flex items-start justify-between w-full">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold uppercase text-secondary bg-secondary/10 px-2 py-0.5 rounded">Sell Limit</span>
+<span class="text-sm font-bold text-white">20 Units</span>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-4">
+<span class="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 text-blue-400 bg-blue-500/10 font-mono">open</span>
+<span class="material-symbols-outlined text-slate-500 transition-transform">expand_more</span>
+</div>
+</div>
+</div>
+<span class="text-xs text-slate-500 font-mono -mt-1">@ $155.00</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-background-dark/95 border-t border-white/5 z-40">
+<div class="flex items-center justify-between px-8 text-slate-500">
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] uppercase font-bold tracking-wider">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors text-slate-500 hover:text-primary">
+<span class="material-symbols-outlined text-3xl">add</span>
+<span class="text-[10px] uppercase font-bold tracking-wider">Create</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">list_alt</span>
+<span class="text-[10px] uppercase font-bold tracking-wider">Orders</span>
+</button>
+</div>
+</div>
+<div class="fixed bottom-24 left-4 right-4 z-[9999]">
+<button class="w-full bg-primary hover:bg-primary/90 text-black h-12 rounded-lg shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all active:scale-95 font-bold uppercase tracking-wide text-sm" onclick="document.getElementById('createOrderModal').classList.remove('hidden')">
+<span class="material-symbols-outlined text-xl">add</span> Create New Order
+</button>
+</div>
+<dialog class="hidden fixed inset-0 z-50 w-full h-full bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm" id="createOrderModal">
+<div class="bg-surface-dark w-full max-w-sm rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+<div class="p-4 border-b border-white/5 flex justify-between items-center">
+<h3 class="text-white font-bold text-lg">New Order</h3>
+<button class="text-slate-400 hover:text-white" onclick="document.getElementById('createOrderModal').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 flex flex-col gap-6">
+<div class="flex bg-background-dark p-1 rounded-lg">
+<button class="flex-1 py-2 text-sm font-bold rounded-md bg-primary text-black shadow-sm">Buy</button>
+<button class="flex-1 py-2 text-sm font-medium text-slate-400 hover:text-white">Sell</button>
+</div>
+<div class="space-y-4">
+<div class="space-y-1">
+<label class="text-xs text-slate-400 font-medium ml-1">Quantity</label>
+<div class="relative">
+<input class="w-full bg-background-dark border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary font-mono text-lg" placeholder="0" type="number"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">Units</span>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-xs text-slate-400 font-medium ml-1">Price</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">$</span>
+<input class="w-full bg-background-dark border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-primary font-mono text-lg" placeholder="0.00" type="number"/>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary text-black font-bold py-3.5 rounded-xl hover:brightness-110 transition-all">
+                    Place Buy Order
+                </button>
+</div>
+</div>
+</dialog>
+</body></html>

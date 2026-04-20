@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create New Game Session</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#40f320",
+                        secondary: "#ff3b30",
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#132210",
+                        "surface-grey": "#2a2a2a",
+                        "custom-grey": "#1f1f1f",
+                    },
+                    fontFamily: {
+                        display: ["Epilogue", "sans-serif"],
+                        mono: ["Fira Code", "monospace"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }.toggle-checkbox:checked {
+            right: 0;
+            border-color: #40f320;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #40f320;
+        }
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-custom-grey font-mono text-slate-100 min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-primary selection:text-black">
+<header class="flex items-center justify-between p-4 bg-custom-grey/95 sticky top-0 z-50 border-b border-white/5 backdrop-blur-md">
+<h1 class="text-sm font-bold uppercase tracking-widest text-primary font-display">UNCERTAIN ENVELOPES</h1>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex flex-col gap-6 p-4 pb-32 relative z-10 max-w-lg mx-auto w-full">
+<form class="flex flex-col gap-6 pt-4">
+<div class="flex flex-col gap-2">
+<label class="text-xs uppercase font-bold tracking-wider text-primary" for="game-name">Game Name <span class="text-secondary">*</span></label>
+<input class="bg-surface-grey border border-white/10 rounded-lg p-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono" id="game-name" placeholder="e.g. Alpha Flight 01" required="" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs uppercase font-bold tracking-wider text-slate-400" for="description">Description</label>
+<textarea class="bg-surface-grey border border-white/10 rounded-lg p-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono resize-none" id="description" placeholder="Brief mission statement for traders..." rows="3"></textarea>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs uppercase font-bold tracking-wider text-slate-400">Security Access</label>
+<div class="grid grid-cols-2 gap-3">
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="security" type="radio" value="public"/>
+<div class="flex items-center justify-center gap-2 p-3 rounded-lg border border-white/10 bg-surface-grey text-slate-400 peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/10 transition-all hover:bg-surface-grey/80 h-12">
+<span class="material-symbols-outlined text-sm leading-none flex-shrink-0">public</span>
+<span class="text-sm font-bold leading-none">Public</span>
+</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="security" type="radio" value="private"/>
+<div class="flex items-center justify-center gap-2 p-3 rounded-lg border border-white/10 bg-surface-grey text-slate-400 peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/10 transition-all hover:bg-surface-grey/80 h-12">
+<span class="material-symbols-outlined text-sm leading-none flex-shrink-0">lock</span>
+<span class="text-sm font-bold leading-none">Private</span>
+</div>
+</label>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-grey border border-white/10 rounded-lg">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white">Ranked Mode</span>
+<span class="text-xs text-slate-500">Affects stats</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer" for="is-ranked">
+<input class="sr-only peer" id="is-ranked" type="checkbox"/>
+<div class="w-11 h-6 bg-custom-grey border border-white/20 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+</label>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs uppercase font-bold tracking-wider text-slate-400" for="max-players">Maximum Players</label>
+<div class="flex items-center gap-3">
+<button class="w-12 h-12 flex items-center justify-center bg-surface-grey border border-white/10 rounded-lg hover:border-primary hover:text-primary transition-colors active:bg-white/5" type="button">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div class="flex-1 relative">
+<input class="w-full bg-surface-grey border border-white/10 rounded-lg p-3 text-center text-xl font-bold text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono appearance-none m-0" id="max-players" placeholder="50" type="number" value="50"/>
+</div>
+<button class="w-12 h-12 flex items-center justify-center bg-surface-grey border border-white/10 rounded-lg hover:border-primary hover:text-primary transition-colors active:bg-white/5" type="button">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs uppercase font-bold tracking-wider text-slate-400" for="end-condition">End Condition</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-grey border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono cursor-pointer" id="end-condition">
+<option value="time">Time Elapsed</option>
+<option value="target_price">Target Price</option>
+<option value="volume">Volume Threshold</option>
+<option value="manual">Manual Stop</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+<span class="material-symbols-outlined mt-[2px]">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2 p-4 bg-surface-grey/50 border border-white/5 rounded-lg border-l-2 border-l-primary">
+<label class="text-xs uppercase font-bold tracking-wider text-primary mb-1">Duration (Minutes)</label>
+<div class="flex items-center gap-3">
+<button class="w-12 h-12 flex items-center justify-center bg-custom-grey border border-white/10 rounded-lg hover:border-primary hover:text-primary transition-colors active:bg-white/5" type="button">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div class="flex-1 relative">
+<input class="w-full bg-custom-grey border border-white/10 rounded-lg p-3 text-center text-xl font-bold text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono appearance-none m-0" type="number" value="60"/>
+</div>
+<button class="w-12 h-12 flex items-center justify-center bg-custom-grey border border-white/10 rounded-lg hover:border-primary hover:text-primary transition-colors active:bg-white/5" type="button">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<p class="text-[10px] text-slate-500 mt-1 text-center">Session will auto-close after timer expires</p>
+</div>
+<button class="w-full mt-4 bg-primary text-black font-display font-bold text-lg py-4 rounded-lg tracking-widest hover:bg-opacity-90 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(64,243,32,0.3)]" type="button">
+            CREATE GAME
+        </button>
+</form>
+</main>
+<div class="fixed bottom-0 left-0 right-0 bg-custom-grey border-t border-white/5 z-40 pb-safe">
+<div class="flex items-center justify-around p-4 text-slate-500">
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Create</span>
+</button>
+<button class="flex flex-col items-center gap-1 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="text-[10px] uppercase font-bold tracking-wider font-display">Orders</span>
+</button>
+</div>
+</div>
+</body></html>
