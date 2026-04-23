@@ -18,7 +18,7 @@ abstract final class AppConstants {
   static const maxGameNameLength = 32;
   static const maxGameDescriptionLength = 256;
   static const minMaxPlayers = 1;
-  static const maxMaxPlayers = 100;
+  static const maxMaxPlayers = 128;
   static const joiningCodeLength = 5;
   static const maxCommandRetries = 3;
   static const sweeperIntervalSeconds = 10;

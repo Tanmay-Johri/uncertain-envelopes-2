@@ -33,16 +33,26 @@ class AppShell extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onAccountTap;
 
+  /// Toolbar row height below the status bar (content only).
   static const double headerHeight = 56;
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    final totalHeaderHeight = topInset + headerHeight;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBodyBehindAppBar: true,
+      // When true, shell bodies paint under the header; BackdropFilter then
+      // blurs that content (e.g. white screen titles), which reads as ghost
+      // text behind the brand mark. Keep the body below the app bar instead.
+      extendBodyBehindAppBar: false,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(headerHeight),
-        child: _FrostedHeader(onAccountTap: onAccountTap),
+        preferredSize: Size.fromHeight(totalHeaderHeight),
+        child: _FrostedHeader(
+          onAccountTap: onAccountTap,
+          totalHeight: totalHeaderHeight,
+        ),
       ),
       body: SafeArea(top: false, child: child),
       bottomNavigationBar: _BottomNav(
@@ -54,9 +64,13 @@ class AppShell extends StatelessWidget {
 }
 
 class _FrostedHeader extends StatelessWidget {
-  const _FrostedHeader({required this.onAccountTap});
+  const _FrostedHeader({
+    required this.onAccountTap,
+    required this.totalHeight,
+  });
 
   final VoidCallback onAccountTap;
+  final double totalHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -64,11 +78,12 @@ class _FrostedHeader extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: AppShell.headerHeight,
+          height: totalHeight,
           color: AppColors.background.withValues(alpha: 0.72),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SafeArea(
-            bottom: false,
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            height: AppShell.headerHeight,
             child: Row(
               children: [
                 Expanded(

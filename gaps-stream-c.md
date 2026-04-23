@@ -33,8 +33,8 @@ Execute slices **sequentially**. Each slice runs the **mandatory workflow** abov
 | **C4a** | Replace CREATE branch placeholder with `CreateGameScreen` scaffold (title/section structure); `app_router` `/create` → screen; stable `ValueKey`s for tests. | `app_router_test.dart`: CREATE branch shows new screen; new `create_game_screen_test.dart`: renders scaffold + keys. | `http://127.0.0.1:<port>/create` — shell + CREATE selected, no overflow. |
 | **C4b** | Game **name** (required, max 32) + **description** (optional, max 256); inline validation messages. | `create_game_screen_test.dart`: empty name, too-long name/description, happy short values. | Fill fields, trigger validation, scroll if needed. |
 | **C4c** | **Security** (Public/Private) + **Ranked** toggle; persist in local form state. | Rendering + selection toggles; at least one adversarial rapid-toggle case. | Tap each control; state visible. |
-| **C4d** | **Max players** stepper **1–100** (clamp, bounds on buttons). | Boundary tests: 1, 100, below 1, above 100; rapid increment. | Tap stepper edges. |
-| **C4e** | **End condition** (Timed / Endless); **duration** stepper **only when Timed** (PRD-consistent bounds—align with plan; if PRD silent, use sensible default e.g. 5–180 min and document here). | Duration hidden when Endless; visible when Timed; bounds tests. | Switch end condition; confirm conditional UI. |
+| **C4d** | **Max players** **1–128** (default **16**); ± stepper + **typed** value (floor decimals, clamp). | Bounds, rapid taps, typed cap/floor. | Tap stepper; type into center field. |
+| **C4e** | **End condition** **Timed / Endless** (dropdown); **duration** **1–600** min, **typed** + stepper, **only when Timed**. | Endless hides duration; Timed shows; bounds + typed normalization. | Switch end condition; type duration. |
 | **C4f** | **Submit**: `NeonButton` (or primary action) calls **`onSubmit` / mock callback** with a single DTO/map shape (no backend). | Submit emits expected payload; invalid form does not call submit. | Tap submit with valid vs invalid form. |
 | **C4g** | **Sweep**: `dart analyze` project-wide if needed; `flutter test` full suite; MCP pass on `/create` at mobile-ish width; fix any regressions. | — | Final visual pass; note MCP limitations in Progress log if any. |
 
@@ -50,6 +50,7 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 | 2026-04-23 | **C4b** name + description | `feat(create-game): C4b name and description validation` | Trimmed name required, max 32; description optional, max 256. No `maxLength` on fields so paste/long input hits validator (C4f may add live counters). |
 | 2026-04-23 | **C4c** security + ranked | `feat(create-game): C4c security SegmentedButton and ranked switch` | `CreateGameSecurity` enum; `SegmentedButton` Public/Private (M3; avoids deprecated `RadioListTile.groupValue`); `SwitchListTile` ranked. Tests: defaults, selection, ranked + rapid toggles. |
 | 2026-04-23 | **C4d** max players | `feat(create-game): C4d max players stepper` | `CreateGamePlayerLimits` 1–100, default 8; `IconButton` ± row; tests use `ensureVisible` (stepper below fold). |
+| 2026-04-23 | **Create game** polish + shell | `feat(create-game): design parity, editable limits, shell header fix` | HTML ref layout (security tiles, Timed/Endless dropdown, boxed steppers, `NeonButton`); description placeholder; duration **1–600** + max players **1–128** (default **16**) with commit-on-blur typing; primary section labels; `AppShell` body below frosted header (no blurred ghost text); `AppConstants.maxMaxPlayers` 128; `flutter test` full suite green. |
 
 ---
 
