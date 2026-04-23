@@ -635,7 +635,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
                               ),
                               textAlign: TextAlign.center,
                               style: AppTypography.statValue.copyWith(
-                                color: AppColors.primary,
+                                color: AppColors.textPrimary,
                               ),
                               decoration: InputDecoration(
                                 filled: true,
