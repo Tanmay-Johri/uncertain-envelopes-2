@@ -4,6 +4,52 @@ This file lives in the **stream-c** worktree. After **stream-a**, **stream-b**, 
 
 ---
 
+## Stream C unit workflow (mandatory per slice)
+
+Use this **in order** for every sub-step (e.g. C4a, C4b). Do not skip; do not commit before approval.
+
+| Step | Action |
+|------|--------|
+| **1. Test** | Add or extend tests **first** when practical; otherwise in the same change before “done.” Each meaningful unit keeps its **own test file** (strict TDD). Include adversarial cases (bounds, empty, rapid taps). |
+| **2. Implement** | Minimal code to satisfy tests; match existing style; no drive-by refactors. |
+| **3. Analyze** | `dart analyze` on every touched library path (fix issues). |
+| **4. Unit verify** | `flutter test` on the **narrowest** test file(s), then widen if the change affects shared code (e.g. router → run `app_router_test.dart`). |
+| **5. Full verify** | Before any commit: `flutter test` **full suite** for this worktree. |
+| **6. Browser MCP** | Run `flutter run -d web-server --web-hostname 127.0.0.1 --web-port <free port>`. In **cursor-ide-browser** MCP: `browser_navigate` to the relevant URL (e.g. `/create`). If the tree is empty, use **Enable accessibility**, wait, `browser_snapshot` again. Exercise the slice (tabs, validation, scroll). Capture screenshot or note if MCP is flaky. |
+| **7. STOP — approval** | **No `git commit` until the user explicitly approves** the slice (visual + tests). |
+| **8. Commit** | One **scoped** commit per slice; message references plan id (e.g. `feat(create-game): C4b form fields + validation (plan C4)`). |
+| **9. Gaps** | Update **this file** in the same commit or immediately after: add newly discovered gaps, mark resolved items, or append a line under **Progress log** below. |
+
+---
+
+## Plan mapping — C4 Create Game screen (`stream-c-create`)
+
+Official plan refs: YAML todos **`stream-c-create`** + **`stream-c-create-test`**; narrative **C4** in `uncertain_envelopes_v2_0644749c.plan.md`. Design ref: `design-uncertain-envelopes-2/.../admin_game_trading_dashboard_5/code.html`.
+
+Execute slices **sequentially**. Each slice runs the **mandatory workflow** above end-to-end (including MCP, approval, commit, gaps).
+
+| Id | Scope | Tests (minimum) | Browser MCP target |
+|----|--------|-----------------|---------------------|
+| **C4a** | Replace CREATE branch placeholder with `CreateGameScreen` scaffold (title/section structure); `app_router` `/create` → screen; stable `ValueKey`s for tests. | `app_router_test.dart`: CREATE branch shows new screen; new `create_game_screen_test.dart`: renders scaffold + keys. | `http://127.0.0.1:<port>/create` — shell + CREATE selected, no overflow. |
+| **C4b** | Game **name** (required, max 32) + **description** (optional, max 256); inline validation messages. | `create_game_screen_test.dart`: empty name, too-long name/description, happy short values. | Fill fields, trigger validation, scroll if needed. |
+| **C4c** | **Security** (Public/Private) + **Ranked** toggle; persist in local form state. | Rendering + selection toggles; at least one adversarial rapid-toggle case. | Tap each control; state visible. |
+| **C4d** | **Max players** stepper **1–100** (clamp, bounds on buttons). | Boundary tests: 1, 100, below 1, above 100; rapid increment. | Tap stepper edges. |
+| **C4e** | **End condition** (Timed / Endless); **duration** stepper **only when Timed** (PRD-consistent bounds—align with plan; if PRD silent, use sensible default e.g. 5–180 min and document here). | Duration hidden when Endless; visible when Timed; bounds tests. | Switch end condition; confirm conditional UI. |
+| **C4f** | **Submit**: `NeonButton` (or primary action) calls **`onSubmit` / mock callback** with a single DTO/map shape (no backend). | Submit emits expected payload; invalid form does not call submit. | Tap submit with valid vs invalid form. |
+| **C4g** | **Sweep**: `dart analyze` project-wide if needed; `flutter test` full suite; MCP pass on `/create` at mobile-ish width; fix any regressions. | — | Final visual pass; note MCP limitations in Progress log if any. |
+
+After **C4g**, add a short **Progress log** entry (date + commit hash). Optionally sync plan YAML todos elsewhere (`stream-c-create` → completed) if you maintain that file in-repo.
+
+---
+
+## Progress log (Stream C)
+
+| Date | Slice | Commit | Notes |
+|------|-------|--------|-------|
+| *(fill on each merged slice)* | | | |
+
+---
+
 ## Data and backend
 
 | Gap | Notes | Suggested direction |
@@ -62,6 +108,7 @@ This file lives in the **stream-c** worktree. After **stream-a**, **stream-b**, 
 
 ## What’s next on Stream C (before or right after merge)
 
-1. **Wire `HomeScreen` to real data and `onEnterGame`** once API contracts exist (or stub with Riverpod + fake repo behind the same interface).
-2. **Navigate from `GameCard` to the correct game route** with real IDs.
-3. **Triage this file + `gaps-stream-a.md` + `gaps-stream-b.md`** on `main` and turn rows into issues or PRs.
+1. **Execute C4** using the table and **mandatory workflow** above (then C5 lobby, etc., same ritual).
+2. **Wire `HomeScreen` to real data and `onEnterGame`** once API contracts exist (or stub with Riverpod + fake repo behind the same interface).
+3. **Navigate from `GameCard` to the correct game route** with real IDs (partially addressed when router + `onOpenGame` land; keep row until verified).
+4. **Triage this file + `gaps-stream-a.md` + `gaps-stream-b.md`** on `main` and turn rows into issues or PRs.
