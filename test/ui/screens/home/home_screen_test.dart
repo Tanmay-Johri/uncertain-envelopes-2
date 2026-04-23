@@ -154,5 +154,33 @@ void main() {
       }
       expect(find.text('Penny Stocks Derby'), findsNothing);
     });
+
+    testWidgets('tapping game card invokes onOpenGame with id', (tester) async {
+      String? openedId;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: HomeScreen(
+            games: const [
+              MockHomeGame(
+                id: 'z9',
+                title: 'Tap target',
+                description: 'd',
+                status: GameStatusBadge.active,
+                isPublic: true,
+                isJoined: true,
+                isAdmin: false,
+                playerInitials: ['A'],
+              ),
+            ],
+            onOpenGame: (id) => openedId = id,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('game-card-z9')));
+      await tester.pump();
+      expect(openedId, 'z9');
+    });
   });
 }

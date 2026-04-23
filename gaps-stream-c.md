@@ -46,7 +46,7 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 
 | Date | Slice | Commit | Notes |
 |------|-------|--------|-------|
-| *(fill on each merged slice)* | | | |
+| 2026-04-23 | Game list → lobby + **C4a** | `feat(stream-c): GameCard opens lobby; C4a CreateGameScreen + /create` | `onOpenGame` + lobby route; `CreateGameScreen` + `/create`; full `flutter test`. MCP `/create`: enable-a11y click can be intercepted by `flutter-view`. |
 
 ---
 
@@ -64,8 +64,8 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 
 | Gap | Notes | Suggested direction |
 |-----|--------|---------------------|
-| **Game cards don’t open real destinations** | `GameCard.onOpen` / home screen likely stub or debug-only. | `context.go(AppRoutes.gameLobby(id))` (or trading/results per design); pass real `id` from API model. |
-| **CREATE / ORDERS shell branches** | Still `PlaceholderScreen` in `app_router.dart`. | Owned by other streams or Phase 2; align routes with merged nav spec. |
+| **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router passes `go(AppRoutes.gameLobby(id))`. Still placeholder lobby UI until C5. | Replace lobby placeholder with real `GameLobbyScreen`; ensure API `id` shape matches route param. |
+| **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen` scaffold (plan **C4a**). **ORDERS:** still `PlaceholderScreen`. | Finish C4b–f on create; build pending orders screen (C9) or Phase 2. |
 | **Profile / history** | Top-level placeholders; account icon goes to `/profile`. | Merge with Stream A/B auth and profile work; single source of routes. |
 
 ---

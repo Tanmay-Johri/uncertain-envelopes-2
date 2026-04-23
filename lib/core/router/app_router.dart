@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
 import '../../ui/screens/auth/auth_screen.dart';
+import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
@@ -103,7 +104,10 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.home,
-                builder: (_, __) => const HomeScreen(),
+                builder: (context, _) => HomeScreen(
+                  onOpenGame: (id) =>
+                      GoRouter.of(context).go(AppRoutes.gameLobby(id)),
+                ),
               ),
             ],
           ),
@@ -111,8 +115,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.create,
-                builder: (_, __) =>
-                    const PlaceholderScreen(routeName: 'CREATE'),
+                builder: (_, __) => const CreateGameScreen(),
               ),
             ],
           ),

@@ -16,11 +16,15 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     this.onEnterGame,
+    this.onOpenGame,
     this.games = kMockHomeGames,
   });
 
   /// Called with a five-character joining code when the user taps Enter.
   final ValueChanged<String>? onEnterGame;
+
+  /// Called with a game id when the user opens a row from the list.
+  final ValueChanged<String>? onOpenGame;
 
   /// Override for tests; defaults to [kMockHomeGames].
   final List<MockHomeGame> games;
@@ -143,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       status: g.status,
                       playerInitials: g.playerInitials,
                       dimmed: _dimCard(g),
-                      onOpen: () {},
+                      onOpen: () => widget.onOpenGame?.call(g.id),
                     );
                   },
                 ),

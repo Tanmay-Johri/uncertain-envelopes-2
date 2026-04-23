@@ -6,6 +6,7 @@ import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
+import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
@@ -73,9 +74,22 @@ void main() {
       await _pumpAppWith(tester);
       await tester.tap(find.text('CREATE'));
       await tester.pumpAndSettle();
-      // The CREATE placeholder renders its routeName text.
-      expect(find.text('CREATE'), findsWidgets);
+      expect(find.byType(CreateGameScreen), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('create-game-heading')),
+        findsOneWidget,
+      );
       expect(find.byType(AppShell), findsOneWidget);
+    });
+
+    testWidgets('tapping a home game card navigates to game lobby',
+        (tester) async {
+      await _pumpAppWith(tester);
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('game-card-g1')));
+      await tester.pumpAndSettle();
+      expect(find.text('GAME LOBBY'), findsOneWidget);
+      expect(find.textContaining('id=g1'), findsOneWidget);
     });
 
     testWidgets('tapping ORDERS switches the shell branch',
