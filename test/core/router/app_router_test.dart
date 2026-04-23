@@ -6,6 +6,7 @@ import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
+import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -57,11 +58,13 @@ void main() {
   });
 
   group('GoRouter shell routes', () {
-    testWidgets('default initial location shows HOME under shell',
+    testWidgets('default initial location shows HomeScreen under shell',
         (tester) async {
       await _pumpAppWith(tester);
       expect(find.byType(AppShell), findsOneWidget);
-      // "HOME" appears both as the placeholder hero and as a nav label.
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('ENTER JOINING CODE'), findsOneWidget);
+      // Bottom nav still labels the first branch HOME.
       expect(find.text('HOME'), findsWidgets);
     });
 

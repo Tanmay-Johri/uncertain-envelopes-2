@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
 import '../../ui/screens/auth/auth_screen.dart';
+import '../../ui/screens/home/home_screen.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
 
@@ -102,8 +103,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.home,
-                builder: (_, __) =>
-                    const PlaceholderScreen(routeName: 'HOME'),
+                builder: (_, __) => const HomeScreen(),
               ),
             ],
           ),

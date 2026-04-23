@@ -71,13 +71,15 @@ class _FrostedHeader extends StatelessWidget {
             bottom: false,
             child: Row(
               children: [
-                const SizedBox(width: 40), // balance for the trailing icon
-                const Expanded(
-                  child: Center(
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
                       'UNCERTAIN ENVELOPES',
                       style: AppTypography.brandHeader,
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.left,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
