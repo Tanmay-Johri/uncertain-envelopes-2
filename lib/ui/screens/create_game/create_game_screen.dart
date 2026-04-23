@@ -62,10 +62,71 @@ int _normalizeMaxPlayersInput(String raw) {
   );
 }
 
+/// Local payload for create-game submit (plan **C4f**); no backend call here.
+@immutable
+class CreateGameDraft {
+  const CreateGameDraft({
+    required this.name,
+    required this.description,
+    required this.security,
+    required this.ranked,
+    required this.maxPlayers,
+    required this.endCondition,
+    required this.durationMinutes,
+  });
+
+  final String name;
+  final String description;
+  final CreateGameSecurity security;
+  final bool ranked;
+  final int maxPlayers;
+  final CreateGameEndCondition endCondition;
+
+  /// Minutes when [endCondition] is [CreateGameEndCondition.timed]; otherwise
+  /// `null` (endless).
+  final int? durationMinutes;
+
+  /// Stable JSON-style map for future API wiring.
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'description': description,
+        'security': security.name,
+        'ranked': ranked,
+        'maxPlayers': maxPlayers,
+        'endCondition': endCondition.name,
+        'durationMinutes': durationMinutes,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is CreateGameDraft &&
+      other.name == name &&
+      other.description == description &&
+      other.security == security &&
+      other.ranked == ranked &&
+      other.maxPlayers == maxPlayers &&
+      other.endCondition == endCondition &&
+      other.durationMinutes == durationMinutes;
+
+  @override
+  int get hashCode => Object.hash(
+        name,
+        description,
+        security,
+        ranked,
+        maxPlayers,
+        endCondition,
+        durationMinutes,
+      );
+}
+
 /// Stream C — Create Game flow (plan C4). Visual layout follows
 /// `design-uncertain-envelopes-2/.../admin_game_trading_dashboard_5/code.html`.
 class CreateGameScreen extends StatefulWidget {
-  const CreateGameScreen({super.key});
+  const CreateGameScreen({super.key, this.onSubmit});
+
+  /// When non-null and the form validates, called with a single draft (C4f).
+  final ValueChanged<CreateGameDraft>? onSubmit;
 
   @override
   State<CreateGameScreen> createState() => _CreateGameScreenState();
@@ -186,6 +247,27 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
       hintText: hint,
       filled: true,
       fillColor: _inputFill,
+    );
+  }
+
+  void _handleSubmit() {
+    _commitMaxPlayersFromField();
+    _commitDurationFromField();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final callback = widget.onSubmit;
+    if (callback == null) return;
+    callback(
+      CreateGameDraft(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        security: _security,
+        ranked: _ranked,
+        maxPlayers: _maxPlayers,
+        endCondition: _endCondition,
+        durationMinutes: _endCondition == CreateGameEndCondition.timed
+            ? _durationMinutes
+            : null,
+      ),
     );
   }
 
@@ -634,9 +716,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
               NeonButton(
                 key: const ValueKey('create-game-submit'),
                 label: 'Create Game',
-                onPressed: () {
-                  _formKey.currentState?.validate();
-                },
+                onPressed: _handleSubmit,
               ),
             ],
           ),

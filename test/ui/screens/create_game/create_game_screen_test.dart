@@ -3,9 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart'
     show
+        CreateGameDraft,
         CreateGameDurationLimits,
+        CreateGameEndCondition,
         CreateGamePlayerLimits,
-        CreateGameScreen;
+        CreateGameScreen,
+        CreateGameSecurity;
 
 Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -14,6 +17,32 @@ Future<void> _pump(WidgetTester tester) async {
       home: const CreateGameScreen(),
     ),
   );
+}
+
+/// Tall surface so CREATE GAME is in the hit-testable viewport (default ~600px
+/// tall tests put the button under overlays that absorb taps).
+void _bindTallSurfaceForSubmit(WidgetTester tester) {
+  tester.view.physicalSize = const Size(480, 2000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+}
+
+Future<void> _tapCreateGameSubmit(WidgetTester tester) async {
+  final submit = find.byKey(const ValueKey('create-game-submit'));
+  await tester.ensureVisible(submit);
+  await tester.pump();
+  await tester.tap(submit);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectEndCondition(WidgetTester tester, String label) async {
+  final drop = find.byKey(const ValueKey('create-game-end-dropdown'));
+  await tester.ensureVisible(drop);
+  await tester.pump();
+  await tester.tap(drop);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label).last);
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -328,12 +357,7 @@ void main() {
       WidgetTester tester,
       String label,
     ) async {
-      await tester.tap(
-        find.byKey(const ValueKey('create-game-end-dropdown')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(label).last);
-      await tester.pumpAndSettle();
+      await _selectEndCondition(tester, label);
     }
 
     Future<void> revealDurationStepper(WidgetTester tester) async {
@@ -463,6 +487,126 @@ void main() {
       await tester.enterText(field, 'abc');
       await commitDurationField(tester);
       expect(readDurationMinutes(tester), 1);
+    });
+  });
+
+  group('CreateGameScreen (C4f submit)', () {
+    testWidgets('submit does not call onSubmit when name empty', (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: CreateGameScreen(
+            onSubmit: (_) => calls++,
+          ),
+        ),
+      );
+      await _tapCreateGameSubmit(tester);
+      expect(calls, 0);
+      expect(find.text('Required'), findsOneWidget);
+    });
+
+    testWidgets('submit does not call onSubmit when name too long',
+        (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: CreateGameScreen(
+            onSubmit: (_) => calls++,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-name-field')),
+        'A' * 33,
+      );
+      await _tapCreateGameSubmit(tester);
+      expect(calls, 0);
+      expect(find.text('Max 32 characters'), findsOneWidget);
+    });
+
+    testWidgets('submit with valid form emits trimmed draft and toJson',
+        (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      CreateGameDraft? last;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: CreateGameScreen(
+            onSubmit: (d) => last = d,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-name-field')),
+        '  Nova Session  ',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-description-field')),
+        '  Brief  ',
+      );
+      await _tapCreateGameSubmit(tester);
+      expect(last, isNotNull);
+      expect(
+        last,
+        const CreateGameDraft(
+          name: 'Nova Session',
+          description: 'Brief',
+          security: CreateGameSecurity.public,
+          ranked: false,
+          maxPlayers: 16,
+          endCondition: CreateGameEndCondition.timed,
+          durationMinutes: 30,
+        ),
+      );
+      expect(last!.toJson()['endCondition'], 'timed');
+      expect(last!.toJson()['durationMinutes'], 30);
+    });
+
+    testWidgets('submit uses null duration when Endless', (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      CreateGameDraft? last;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: CreateGameScreen(
+            onSubmit: (d) => last = d,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-name-field')),
+        'E2E',
+      );
+      await _selectEndCondition(tester, 'Endless');
+      await _tapCreateGameSubmit(tester);
+      expect(last, isNotNull);
+      expect(last!.endCondition, CreateGameEndCondition.endless);
+      expect(last!.durationMinutes, isNull);
+      expect(last!.toJson()['durationMinutes'], isNull);
+    });
+
+    testWidgets('rapid duplicate submits each invoke callback', (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: CreateGameScreen(
+            onSubmit: (_) => calls++,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-name-field')),
+        'RapidSubmit',
+      );
+      await _tapCreateGameSubmit(tester);
+      await _tapCreateGameSubmit(tester);
+      expect(calls, 2);
     });
   });
 }
