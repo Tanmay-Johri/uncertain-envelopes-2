@@ -10,7 +10,16 @@ enum CreateGameSecurity {
   private,
 }
 
-/// Stream C — Create Game flow (plan C4). C4b–C4c: form fields + security + ranked.
+/// Bounds for the max-players stepper (plan C4 / PRD).
+abstract final class CreateGamePlayerLimits {
+  CreateGamePlayerLimits._();
+
+  static const int min = 1;
+  static const int max = 100;
+  static const int defaultMaxPlayers = 8;
+}
+
+/// Stream C — Create Game flow (plan C4). C4b–C4d: form through max players.
 class CreateGameScreen extends StatefulWidget {
   const CreateGameScreen({super.key});
 
@@ -25,6 +34,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
 
   CreateGameSecurity _security = CreateGameSecurity.public;
   bool _ranked = false;
+  int _maxPlayers = CreateGamePlayerLimits.defaultMaxPlayers;
 
   @override
   void dispose() {
@@ -159,6 +169,50 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
                   inactiveThumbColor: AppColors.textSecondary,
                   inactiveTrackColor: AppColors.surfaceContainerHigh,
                   onChanged: (v) => setState(() => _ranked = v),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('MAX PLAYERS', style: AppTypography.label),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  '${CreateGamePlayerLimits.min}–${CreateGamePlayerLimits.max} '
+                  '(including you as host)',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      key: const ValueKey('create-game-max-players-minus'),
+                      onPressed: _maxPlayers > CreateGamePlayerLimits.min
+                          ? () => setState(() => _maxPlayers--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: AppColors.textPrimary,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                      ),
+                      child: Text(
+                        '$_maxPlayers',
+                        key: const ValueKey('create-game-max-players-value'),
+                        style: AppTypography.statValue.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      key: const ValueKey('create-game-max-players-plus'),
+                      onPressed: _maxPlayers < CreateGamePlayerLimits.max
+                          ? () => setState(() => _maxPlayers++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                      color: AppColors.textPrimary,
+                    ),
+                  ],
                 ),
               ],
             ),

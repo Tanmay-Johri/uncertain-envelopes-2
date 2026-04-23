@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart'
-    show CreateGameScreen, CreateGameSecurity;
+    show
+        CreateGamePlayerLimits,
+        CreateGameScreen,
+        CreateGameSecurity;
 
 Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -169,6 +172,89 @@ void main() {
       expect(tester.widget<SwitchListTile>(tileFinder).value, isTrue);
       final formState = tester.state<FormState>(find.byType(Form));
       expect(formState.validate(), isTrue);
+    });
+  });
+
+  group('CreateGameScreen (C4d max players)', () {
+    int readMaxPlayers(WidgetTester tester) {
+      final t = tester.widget<Text>(
+        find.byKey(const ValueKey('create-game-max-players-value')),
+      );
+      return int.parse(t.data!);
+    }
+
+    Future<void> revealStepper(WidgetTester tester) async {
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('create-game-max-players-plus')),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('renders max players stepper with default', (tester) async {
+      await _pump(tester);
+      await revealStepper(tester);
+      expect(find.text('MAX PLAYERS'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('create-game-max-players-minus')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('create-game-max-players-plus')),
+        findsOneWidget,
+      );
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.defaultMaxPlayers);
+    });
+
+    testWidgets('plus increments until cap', (tester) async {
+      await _pump(tester);
+      await revealStepper(tester);
+      final plus = find.byKey(const ValueKey('create-game-max-players-plus'));
+      for (var i = CreateGamePlayerLimits.defaultMaxPlayers;
+          i < CreateGamePlayerLimits.max;
+          i++) {
+        await tester.tap(plus);
+        await tester.pump();
+        expect(readMaxPlayers(tester), i + 1);
+      }
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.max);
+      await tester.tap(plus);
+      await tester.pump();
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.max);
+    });
+
+    testWidgets('minus decrements until floor', (tester) async {
+      await _pump(tester);
+      await revealStepper(tester);
+      final minus = find.byKey(const ValueKey('create-game-max-players-minus'));
+      for (var i = CreateGamePlayerLimits.defaultMaxPlayers;
+          i > CreateGamePlayerLimits.min;
+          i--) {
+        await tester.tap(minus);
+        await tester.pump();
+        expect(readMaxPlayers(tester), i - 1);
+      }
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.min);
+      await tester.tap(minus);
+      await tester.pump();
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.min);
+    });
+
+    testWidgets('rapid plus taps from 95 reach 100 then clamp', (tester) async {
+      await _pump(tester);
+      await revealStepper(tester);
+      final plus = find.byKey(const ValueKey('create-game-max-players-plus'));
+      for (var i = CreateGamePlayerLimits.defaultMaxPlayers;
+          i < 95;
+          i++) {
+        await tester.tap(plus);
+        await tester.pump();
+      }
+      expect(readMaxPlayers(tester), 95);
+      for (var k = 0; k < 20; k++) {
+        await tester.tap(plus);
+        await tester.pump();
+      }
+      expect(readMaxPlayers(tester), CreateGamePlayerLimits.max);
     });
   });
 }
