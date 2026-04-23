@@ -4,7 +4,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 
-/// Stream C — Create Game flow (plan C4). C4b: name + description validation.
+/// Who can discover / join the game (plan C4).
+enum CreateGameSecurity {
+  public,
+  private,
+}
+
+/// Stream C — Create Game flow (plan C4). C4b–C4c: form fields + security + ranked.
 class CreateGameScreen extends StatefulWidget {
   const CreateGameScreen({super.key});
 
@@ -16,6 +22,9 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  CreateGameSecurity _security = CreateGameSecurity.public;
+  bool _ranked = false;
 
   @override
   void dispose() {
@@ -96,6 +105,60 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
                     hintText: 'Optional, max 256 characters',
                   ),
                   validator: _validateDescription,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('SECURITY', style: AppTypography.label),
+                const SizedBox(height: AppSpacing.sm),
+                SegmentedButton<CreateGameSecurity>(
+                  key: const ValueKey('create-game-security-segmented'),
+                  segments: const [
+                    ButtonSegment<CreateGameSecurity>(
+                      value: CreateGameSecurity.public,
+                      label: Text('Public'),
+                      icon: Icon(Icons.public_outlined, size: 18),
+                    ),
+                    ButtonSegment<CreateGameSecurity>(
+                      value: CreateGameSecurity.private,
+                      label: Text('Private'),
+                      icon: Icon(Icons.lock_outline, size: 18),
+                    ),
+                  ],
+                  selected: {_security},
+                  onSelectionChanged: (next) {
+                    if (next.isEmpty) return;
+                    setState(() => _security = next.first);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _security == CreateGameSecurity.public
+                      ? 'Anyone can see this game under Public games.'
+                      : 'Only people with the joining code can join.',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SwitchListTile(
+                  key: const ValueKey('create-game-ranked-tile'),
+                  title: Text(
+                    'RANKED',
+                    style: AppTypography.label.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Counts toward competitive stats when backend supports it.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  value: _ranked,
+                  activeThumbColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary.withValues(alpha: 0.35),
+                  inactiveThumbColor: AppColors.textSecondary,
+                  inactiveTrackColor: AppColors.surfaceContainerHigh,
+                  onChanged: (v) => setState(() => _ranked = v),
                 ),
               ],
             ),

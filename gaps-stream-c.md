@@ -48,6 +48,7 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 |------|-------|--------|-------|
 | 2026-04-23 | Game list → lobby + **C4a** | `feat(stream-c): GameCard opens lobby; C4a CreateGameScreen + /create` | `onOpenGame` + lobby route; `CreateGameScreen` + `/create`; full `flutter test`. MCP `/create`: enable-a11y click can be intercepted by `flutter-view`. |
 | 2026-04-23 | **C4b** name + description | `feat(create-game): C4b name and description validation` | Trimmed name required, max 32; description optional, max 256. No `maxLength` on fields so paste/long input hits validator (C4f may add live counters). |
+| 2026-04-23 | **C4c** security + ranked | `feat(create-game): C4c security SegmentedButton and ranked switch` | `CreateGameSecurity` enum; `SegmentedButton` Public/Private (M3; avoids deprecated `RadioListTile.groupValue`); `SwitchListTile` ranked. Tests: defaults, selection, ranked + rapid toggles. |
 
 ---
 
