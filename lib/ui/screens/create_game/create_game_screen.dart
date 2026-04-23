@@ -141,7 +141,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
   late final TextEditingController _durationMinutesController;
   late final FocusNode _durationFocusNode;
 
-  CreateGameSecurity _security = CreateGameSecurity.public;
+  CreateGameSecurity _security = CreateGameSecurity.private;
   bool _ranked = false;
   int _maxPlayers = CreateGamePlayerLimits.defaultMaxPlayers;
   CreateGameEndCondition _endCondition = CreateGameEndCondition.timed;

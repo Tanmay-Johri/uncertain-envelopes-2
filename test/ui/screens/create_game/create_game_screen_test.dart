@@ -177,22 +177,22 @@ void main() {
       expect(find.text('Ranked Mode'), findsOneWidget);
     });
 
-    testWidgets('security defaults to Public', (tester) async {
+    testWidgets('security defaults to Private', (tester) async {
       await _pump(tester);
       expect(
-        find.text('Anyone can see this game under Public games.'),
+        find.text('Only people with the joining code can join.'),
         findsOneWidget,
       );
     });
 
-    testWidgets('selecting Private updates selection', (tester) async {
+    testWidgets('selecting Public updates selection', (tester) async {
       await _pump(tester);
       await tester.tap(
-        find.byKey(const ValueKey('create-game-security-private')),
+        find.byKey(const ValueKey('create-game-security-public')),
       );
       await tester.pump();
       expect(
-        find.text('Only people with the joining code can join.'),
+        find.text('Anyone can see this game under Public games.'),
         findsOneWidget,
       );
     });
@@ -555,7 +555,7 @@ void main() {
         const CreateGameDraft(
           name: 'Nova Session',
           description: 'Brief',
-          security: CreateGameSecurity.public,
+          security: CreateGameSecurity.private,
           ranked: false,
           maxPlayers: 16,
           endCondition: CreateGameEndCondition.timed,
