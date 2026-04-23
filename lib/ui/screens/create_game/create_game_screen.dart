@@ -356,8 +356,8 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
                 style: AppTypography.monoMedium,
                 decoration: _fieldDecoration(
                   hint:
-                      'OPTIONAL - MAX 256 CHARACTERS. Brief mission statement '
-                      'for traders...',
+                      'OPTIONAL - MAX 256 CHARACTERS Brief mission statement '
+                      'for traders',
                 ),
                 validator: _validateDescription,
               ),

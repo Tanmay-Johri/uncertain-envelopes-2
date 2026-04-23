@@ -74,7 +74,7 @@ void main() {
       );
       expect(
         innerTextField.decoration?.hintText,
-        'OPTIONAL - MAX 256 CHARACTERS. Brief mission statement for traders...',
+        'OPTIONAL - MAX 256 CHARACTERS Brief mission statement for traders',
       );
     });
 
