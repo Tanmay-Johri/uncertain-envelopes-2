@@ -7,7 +7,9 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/chart/chart_axis.dart';
 import '../../widgets/countdown_timer.dart';
+import '../../widgets/price_chart.dart';
 import '../../widgets/stat_tile.dart';
 import 'order_book_widget.dart';
 import 'trading_stat_format.dart';
@@ -135,15 +137,21 @@ class GameTradingScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    PriceChart(
+                      key: const ValueKey('trading-chart-section'),
+                      marketPrice: data.marketPrice,
+                      points: data.priceHistory,
+                      gameStartedAtUtc: data.gameStartedAtUtc,
+                      axis: ChartAxisConfig.fromExecutionHistory(
+                        sessionElapsed: data.chartSessionElapsed,
+                        points: data.priceHistory,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     OrderBookWidget(
                       key: const ValueKey('trading-orderbook-section'),
                       bids: data.orderBookBids,
                       asks: data.orderBookAsks,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _SectionPlaceholder(
-                      key: const ValueKey('trading-chart-section'),
-                      label: 'Price chart (coming in C6)',
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _SectionPlaceholder(
@@ -323,11 +331,7 @@ class _AddTimeButton extends StatelessWidget {
         child: const SizedBox(
           width: 40,
           height: 40,
-          child: Icon(
-            Icons.add,
-            color: AppColors.textPrimary,
-            size: 24,
-          ),
+          child: Icon(Icons.add, color: AppColors.textPrimary, size: 24),
         ),
       ),
     );
@@ -335,10 +339,7 @@ class _AddTimeButton extends StatelessWidget {
 }
 
 class _SectionPlaceholder extends StatelessWidget {
-  const _SectionPlaceholder({
-    super.key,
-    required this.label,
-  });
+  const _SectionPlaceholder({super.key, required this.label});
 
   final String label;
 
@@ -354,9 +355,7 @@ class _SectionPlaceholder extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: AppTypography.monoSmall.copyWith(
-          color: AppColors.textTertiary,
-        ),
+        style: AppTypography.monoSmall.copyWith(color: AppColors.textTertiary),
       ),
     );
   }

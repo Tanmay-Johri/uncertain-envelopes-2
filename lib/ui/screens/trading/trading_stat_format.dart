@@ -6,13 +6,17 @@ final _cashWholeUsd = NumberFormat.currency(
   decimalDigits: 0,
 );
 
-/// Cash line for stat tiles: no leading `+`; negative shows `-` before `$`.
+/// Cash line for stat tiles: positive shows `+$`; negative `-$`; zero `$0`.
 String formatTradingDeltaCash(double v) {
   final n = v.round();
-  final body = _cashWholeUsd.format(n.abs());
-  if (n < 0) return '-$body';
-  return body;
+  if (n > 0) return '+${_cashWholeUsd.format(n)}';
+  if (n < 0) return '-${_cashWholeUsd.format(n.abs())}';
+  return _cashWholeUsd.format(0);
 }
 
-/// Envelope count: integer string, no leading `+`.
-String formatTradingDeltaEnvelopes(double v) => v.round().toString();
+/// Envelope count: positive shows leading `+`; zero and negative unchanged.
+String formatTradingDeltaEnvelopes(double v) {
+  final n = v.round();
+  if (n > 0) return '+$n';
+  return '$n';
+}

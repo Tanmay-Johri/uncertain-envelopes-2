@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/chart/price_chart_point.dart';
+
+export '../../../core/chart/price_chart_point.dart' show PriceChartPoint;
+
 @immutable
 class OrderBookLevel {
-  const OrderBookLevel({
-    required this.price,
-    required this.quantity,
-  });
+  const OrderBookLevel({required this.price, required this.quantity});
 
   final double price;
   final int quantity;
@@ -25,6 +26,10 @@ class GameTradingViewData {
     required this.deltaEnvelopes,
     required this.orderBookBids,
     required this.orderBookAsks,
+    required this.marketPrice,
+    required this.priceHistory,
+    required this.chartSessionElapsed,
+    this.gameStartedAtUtc,
     this.tradingTimeRemaining,
   });
 
@@ -48,6 +53,18 @@ class GameTradingViewData {
 
   /// Ask side (price asc. in mock).
   final List<OrderBookLevel> orderBookAsks;
+
+  /// Headline market price (e.g. last trade).
+  final double marketPrice;
+
+  /// `(timeElapsed, price)` from executions, sorted ascending by time (plan **B9**).
+  final List<PriceChartPoint> priceHistory;
+
+  /// Elapsed since game start — drives horizontal division minutes (plan **B9**).
+  final Duration chartSessionElapsed;
+
+  /// Game start instant in UTC (Supabase `start_time`); used for touch tooltips only.
+  final DateTime? gameStartedAtUtc;
 }
 
 @immutable

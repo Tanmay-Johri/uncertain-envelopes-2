@@ -20,7 +20,10 @@ Future<GoRouter> _pumpAppWith(
   await tester.pumpWidget(
     MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
   );
-  await tester.pumpAndSettle();
+  // One-shot pumps: trading screen live dot repeats opacity forever, so
+  // pumpAndSettle would time out waiting for animations to finish.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
   return router;
 }
 
@@ -180,7 +183,8 @@ void main() {
       expect(find.byType(GameLobbyScreen), findsOneWidget);
       await tester.ensureVisible(find.byKey(const ValueKey('game-lobby-enter')));
       await tester.tap(find.byKey(const ValueKey('game-lobby-enter')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(GameTradingScreen), findsOneWidget);
       expect(find.text('Forex Masters'), findsWidgets);
     });

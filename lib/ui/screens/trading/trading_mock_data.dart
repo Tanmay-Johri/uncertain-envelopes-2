@@ -22,6 +22,34 @@ const _kMockOrderBookAsks = <OrderBookLevel>[
   OrderBookLevel(price: 152.5, quantity: 250),
 ];
 
+/// Elapsed session for axis rule (plan **B9**): 55 min → 10-minute divisions.
+const _kMockChartSessionElapsed = Duration(minutes: 55);
+
+/// Fixed UTC game start for mocks (Phase 2: Supabase `start_time`).
+final _kMockGameStartedAtUtc = DateTime.utc(2026, 4, 10, 14, 0, 0);
+
+/// Prices roughly follow `dashboard_7` SVG; times spread 0–55 min (mock executions).
+final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
+  const prices = <double>[
+    144,
+    146,
+    142,
+    148,
+    152,
+    150,
+    151,
+    149,
+    150.5,
+    150.25,
+    150.0,
+  ];
+  final minutes = (i * 55 / 10).round();
+  return PriceChartPoint(
+    timeElapsed: Duration(minutes: minutes),
+    price: prices[i],
+  );
+});
+
 /// Mock trading scenarios keyed by game id; aligns with [mockLobbyScenarioForGameId]
 /// titles where possible.
 GameTradingScenario mockTradingScenarioForGameId(String gameId) {
@@ -46,6 +74,9 @@ GameTradingScenario mockTradingScenarioForGameId(String gameId) {
             deltaEnvelopes: 0,
             orderBookBids: const [],
             orderBookAsks: const [],
+            marketPrice: 100,
+            priceHistory: const [],
+            chartSessionElapsed: Duration.zero,
           ),
         );
       }
@@ -66,6 +97,10 @@ final GameTradingScenario _g1PlayerTrading = GameTradingScenario(
     deltaEnvelopes: -45,
     orderBookBids: _kMockOrderBookBids,
     orderBookAsks: _kMockOrderBookAsks,
+    marketPrice: 150,
+    priceHistory: _kMockPriceHistory,
+    chartSessionElapsed: _kMockChartSessionElapsed,
+    gameStartedAtUtc: _kMockGameStartedAtUtc,
   ),
 );
 
@@ -82,5 +117,9 @@ final GameTradingScenario _g2AdminTrading = GameTradingScenario(
     deltaEnvelopes: -12,
     orderBookBids: _kMockOrderBookBids,
     orderBookAsks: _kMockOrderBookAsks,
+    marketPrice: 150,
+    priceHistory: _kMockPriceHistory,
+    chartSessionElapsed: _kMockChartSessionElapsed,
+    gameStartedAtUtc: _kMockGameStartedAtUtc,
   ),
 );

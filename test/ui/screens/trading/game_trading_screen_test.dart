@@ -21,11 +21,32 @@ void main() {
       expect(find.text('TRADING WINDOW'), findsOneWidget);
       expect(find.text('Forex Masters'), findsWidgets);
       expect(find.byKey(const ValueKey('trading-stat-delta-cash')), findsOneWidget);
-      expect(find.text(r'$12,500'), findsOneWidget);
+      expect(find.text(r'+$12,500'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-orderbook-section')), findsOneWidget);
       expect(find.text('Order Book'), findsOneWidget);
       expect(find.text(r'$149.50'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-chart-section')), findsOneWidget);
+      expect(find.text('Market Price'), findsOneWidget);
+      expect(find.text(r'$150.00'), findsOneWidget);
+      expect(find.text('0'), findsWidgets);
+      expect(find.text('Minutes since game start'), findsOneWidget);
+    });
+
+    testWidgets('market price chart is above order book', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      final chartTop = tester.getRect(
+        find.byKey(const ValueKey('trading-chart-section')),
+      ).top;
+      final bookTop = tester.getRect(
+        find.byKey(const ValueKey('trading-orderbook-section')),
+      ).top;
+      expect(chartTop, lessThan(bookTop));
     });
 
     testWidgets('g1 shows live countdown when timed', (tester) async {
@@ -79,6 +100,9 @@ void main() {
         deltaEnvelopes: 0,
         orderBookBids: const [],
         orderBookAsks: const [],
+        marketPrice: 10,
+        priceHistory: const [],
+        chartSessionElapsed: Duration.zero,
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -97,10 +121,15 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: GameTradingScreen(
-            data: s.data,
-            onShowLogs: () => logs = true,
-            onEndGameFromMenu: () => ended = true,
+          // Stops the market-price pulsing dot’s repeat animation so
+          // pumpAndSettle can finish (otherwise it never idles).
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(
+              data: s.data,
+              onShowLogs: () => logs = true,
+              onEndGameFromMenu: () => ended = true,
+            ),
           ),
         ),
       );

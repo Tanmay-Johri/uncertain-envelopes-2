@@ -13,14 +13,14 @@ void main() {
           home: const Scaffold(
             body: StatTile(
               label: 'Delta Cash',
-              value: r'$99',
+              value: r'+$99',
               signedValue: 99,
             ),
           ),
         ),
       );
       expect(find.text('Delta Cash'), findsOneWidget);
-      expect(find.text(r'$99'), findsOneWidget);
+      expect(find.text(r'+$99'), findsOneWidget);
       final border = tester.widget<Container>(find.byType(Container).first);
       final deco = border.decoration! as BoxDecoration;
       expect(deco.border, isA<Border>());
@@ -77,7 +77,7 @@ void main() {
               width: 120,
               child: StatTile(
                 label: 'L',
-                value: r'$9,999,999',
+                value: r'+$9,999,999',
                 signedValue: 9999999,
               ),
             ),

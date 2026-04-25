@@ -3,8 +3,8 @@ import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dar
 
 void main() {
   group('formatTradingDeltaCash', () {
-    test('omits plus for positive', () {
-      expect(formatTradingDeltaCash(12500), r'$12,500');
+    test('prefixes plus for positive', () {
+      expect(formatTradingDeltaCash(12500), r'+$12,500');
     });
 
     test('prefixes minus before dollar for negative', () {
@@ -17,12 +17,16 @@ void main() {
   });
 
   group('formatTradingDeltaEnvelopes', () {
-    test('omits plus for positive', () {
-      expect(formatTradingDeltaEnvelopes(45), '45');
+    test('prefixes plus for positive', () {
+      expect(formatTradingDeltaEnvelopes(45), '+45');
     });
 
     test('keeps minus for negative', () {
       expect(formatTradingDeltaEnvelopes(-45), '-45');
+    });
+
+    test('zero has no plus', () {
+      expect(formatTradingDeltaEnvelopes(0), '0');
     });
   });
 }
