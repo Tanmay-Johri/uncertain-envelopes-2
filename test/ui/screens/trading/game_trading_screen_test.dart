@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/countdown_timer.dart';
+
+void main() {
+  group('GameTradingScreen', () {
+    testWidgets('renders scaffold, title, and section placeholders',
+        (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-scaffold')), findsOneWidget);
+      expect(find.text('TRADING WINDOW'), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
+      expect(find.byKey(const ValueKey('trading-stat-delta-cash')), findsOneWidget);
+      expect(find.text(r'$12,500'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trading-orderbook-section')), findsOneWidget);
+      expect(find.byKey(const ValueKey('trading-chart-section')), findsOneWidget);
+    });
+
+    testWidgets('g1 shows live countdown when timed', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-countdown')), findsOneWidget);
+      expect(find.byType(CountdownTimer), findsOneWidget);
+      expect(find.text('60:00'), findsOneWidget);
+    });
+
+    testWidgets('non-admin does not show admin overflow menu', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      expect(s.data.isViewerAdmin, isFalse);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-admin-menu')), findsNothing);
+      expect(find.byKey(const ValueKey('game-trading-add-time')), findsNothing);
+    });
+
+    testWidgets('admin sees overflow menu and add-time control', (tester) async {
+      final s = mockTradingScenarioForGameId('g2');
+      expect(s.data.isViewerAdmin, isTrue);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-admin-menu')), findsOneWidget);
+      expect(find.byKey(const ValueKey('game-trading-add-time')), findsOneWidget);
+    });
+
+    testWidgets('untimed mock hides countdown', (tester) async {
+      const data = GameTradingViewData(
+        gameTitle: 'T',
+        description: 'd',
+        isViewerAdmin: false,
+        currentPlayerId: 'p1',
+        isTimed: false,
+        tradingTimeRemaining: null,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: data),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-countdown')), findsNothing);
+      expect(find.byType(CountdownTimer), findsNothing);
+    });
+
+    testWidgets('admin menu selections invoke callbacks', (tester) async {
+      var logs = false;
+      var ended = false;
+      final s = mockTradingScenarioForGameId('g2');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(
+            data: s.data,
+            onShowLogs: () => logs = true,
+            onEndGameFromMenu: () => ended = true,
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-admin-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show Logs'));
+      await tester.pump();
+      expect(logs, isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('game-trading-admin-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('End Game'));
+      await tester.pump();
+      expect(ended, isTrue);
+    });
+  });
+}

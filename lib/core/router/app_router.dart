@@ -7,6 +7,8 @@ import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/lobby/game_lobby_screen.dart';
 import '../../ui/screens/lobby/lobby_mock_data.dart';
+import '../../ui/screens/trading/game_trading_screen.dart';
+import '../../ui/screens/trading/trading_mock_data.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
 
@@ -72,7 +74,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: '/game/:id/lobby',
-        builder: (_, state) {
+        builder: (context, state) {
           final id = state.pathParameters['id']!;
           final scenario = mockLobbyScenarioForGameId(id);
           return GameLobbyScreen(
@@ -82,7 +84,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             isViewerAdmin: scenario.isViewerAdmin,
             onStartGame: () {},
             onEndGame: () {},
-            onEnterGame: () {},
+            onEnterGame: () => context.go(AppRoutes.gameTrading(id)),
             onJoinGame: () {},
             onLeaveGame: () {},
             onKickPlayer: (_) {},
@@ -91,10 +93,16 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: '/game/:id/trading',
-        builder: (_, state) => PlaceholderScreen(
-          routeName: 'GAME TRADING',
-          subtitle: 'id=${state.pathParameters['id']}',
-        ),
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          final scenario = mockTradingScenarioForGameId(id);
+          return GameTradingScreen(
+            data: scenario.data,
+            onShowLogs: () {},
+            onEndGameFromMenu: () {},
+            onAddTime: () {},
+          );
+        },
       ),
       GoRoute(
         path: '/game/:id/results',

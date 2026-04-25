@@ -131,6 +131,17 @@ abstract final class AppTypography {
     height: 1.1,
   );
 
+  /// Sticky trading header title (`admin_game_trading_dashboard_7`):
+  /// `text-sm font-bold uppercase tracking-widest text-slate-400` in mono.
+  static const tradingWindowHeaderTitle = TextStyle(
+    fontFamily: AppFontFamilies.mono,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+    letterSpacing: 2.8,
+    height: 1.2,
+  );
+
   // ── Brand header ───────────────────────────────────────────────
 
   static const brandHeader = TextStyle(

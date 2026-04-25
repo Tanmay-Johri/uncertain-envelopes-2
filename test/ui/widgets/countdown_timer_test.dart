@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/core/theme/app_typography.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/countdown_timer.dart';
 
 void main() {
@@ -88,6 +89,22 @@ void main() {
         ),
       );
       expect(find.text('00:00'), findsOneWidget);
+    });
+
+    testWidgets('uses custom textStyle when provided', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: CountdownTimer(
+              initialRemaining: const Duration(minutes: 1),
+              textStyle: AppTypography.timerDisplay,
+            ),
+          ),
+        ),
+      );
+      final text = tester.widget<Text>(find.byKey(const ValueKey('lobby-countdown-mmss')));
+      expect(text.style?.fontSize, 48);
     });
   });
 }

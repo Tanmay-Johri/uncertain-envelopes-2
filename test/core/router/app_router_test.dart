@@ -9,6 +9,7 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/game_lobby_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -165,10 +166,23 @@ void main() {
       expect(find.text('JOIN GAME'), findsOneWidget);
     });
 
-    testWidgets('/game/:id/trading parses id correctly', (tester) async {
-      await _pumpAppWith(tester, initialLocation: '/game/xyz-99/trading');
-      expect(find.text('GAME TRADING'), findsOneWidget);
-      expect(find.text('id=xyz-99'), findsOneWidget);
+    testWidgets('/game/:id/trading parses id and shows GameTradingScreen',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/g1/trading');
+      expect(find.byType(GameTradingScreen), findsOneWidget);
+      expect(find.byKey(const ValueKey('game-trading-scaffold')), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
+    });
+
+    testWidgets('lobby Enter Game navigates to trading for same game id',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/g1/lobby');
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const ValueKey('game-lobby-enter')));
+      await tester.tap(find.byKey(const ValueKey('game-lobby-enter')));
+      await tester.pumpAndSettle();
+      expect(find.byType(GameTradingScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
     });
 
     testWidgets('/game/:id/results parses id correctly', (tester) async {

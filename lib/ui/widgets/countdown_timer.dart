@@ -22,10 +22,14 @@ class CountdownTimer extends StatefulWidget {
     super.key,
     required this.initialRemaining,
     this.onExpired,
+    this.textStyle,
   });
 
   final Duration initialRemaining;
   final VoidCallback? onExpired;
+
+  /// When null, uses the default lobby-sized style.
+  final TextStyle? textStyle;
 
   @override
   State<CountdownTimer> createState() => _CountdownTimerState();
@@ -72,15 +76,17 @@ class _CountdownTimerState extends State<CountdownTimer> {
   @override
   Widget build(BuildContext context) {
     final text = formatCountdownMmSs(Duration(seconds: _remainingSeconds));
+    final style = widget.textStyle ??
+        AppTypography.monoMedium.copyWith(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+          letterSpacing: 2,
+        );
     return Text(
       text,
       key: const ValueKey('lobby-countdown-mmss'),
-      style: AppTypography.monoMedium.copyWith(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        letterSpacing: 2,
-      ),
+      style: style,
     );
   }
 }
