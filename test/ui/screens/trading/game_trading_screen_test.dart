@@ -23,6 +23,8 @@ void main() {
       expect(find.byKey(const ValueKey('trading-stat-delta-cash')), findsOneWidget);
       expect(find.text(r'$12,500'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-orderbook-section')), findsOneWidget);
+      expect(find.text('Order Book'), findsOneWidget);
+      expect(find.text(r'$149.50'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-chart-section')), findsOneWidget);
     });
 
@@ -75,6 +77,8 @@ void main() {
         tradingTimeRemaining: null,
         deltaCash: 0,
         deltaEnvelopes: 0,
+        orderBookBids: const [],
+        orderBookAsks: const [],
       );
       await tester.pumpWidget(
         MaterialApp(

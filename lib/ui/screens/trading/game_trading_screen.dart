@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../widgets/countdown_timer.dart';
 import '../../widgets/stat_tile.dart';
+import 'order_book_widget.dart';
 import 'trading_stat_format.dart';
 import 'trading_view_data.dart';
 
@@ -134,9 +135,10 @@ class GameTradingScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    _SectionPlaceholder(
+                    OrderBookWidget(
                       key: const ValueKey('trading-orderbook-section'),
-                      label: 'Order book (coming in C6)',
+                      bids: data.orderBookBids,
+                      asks: data.orderBookAsks,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _SectionPlaceholder(

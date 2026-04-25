@@ -2,6 +2,26 @@ import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 
 import 'trading_view_data.dart';
 
+/// Sample book from `admin_game_trading_dashboard_7` (prices / qty).
+const _kMockOrderBookBids = <OrderBookLevel>[
+  OrderBookLevel(price: 149.5, quantity: 50),
+  OrderBookLevel(price: 149.2, quantity: 25),
+  OrderBookLevel(price: 148.9, quantity: 100),
+  OrderBookLevel(price: 148.5, quantity: 12),
+  OrderBookLevel(price: 148.0, quantity: 5),
+  OrderBookLevel(price: 147.5, quantity: 2),
+  OrderBookLevel(price: 147.0, quantity: 1),
+];
+
+const _kMockOrderBookAsks = <OrderBookLevel>[
+  OrderBookLevel(price: 150.5, quantity: 10),
+  OrderBookLevel(price: 150.8, quantity: 40),
+  OrderBookLevel(price: 151.0, quantity: 85),
+  OrderBookLevel(price: 151.5, quantity: 120),
+  OrderBookLevel(price: 152.0, quantity: 200),
+  OrderBookLevel(price: 152.5, quantity: 250),
+];
+
 /// Mock trading scenarios keyed by game id; aligns with [mockLobbyScenarioForGameId]
 /// titles where possible.
 GameTradingScenario mockTradingScenarioForGameId(String gameId) {
@@ -24,6 +44,8 @@ GameTradingScenario mockTradingScenarioForGameId(String gameId) {
             tradingTimeRemaining: const Duration(minutes: 60),
             deltaCash: 0,
             deltaEnvelopes: 0,
+            orderBookBids: const [],
+            orderBookAsks: const [],
           ),
         );
       }
@@ -42,6 +64,8 @@ final GameTradingScenario _g1PlayerTrading = GameTradingScenario(
     tradingTimeRemaining: const Duration(minutes: 60),
     deltaCash: 12500,
     deltaEnvelopes: -45,
+    orderBookBids: _kMockOrderBookBids,
+    orderBookAsks: _kMockOrderBookAsks,
   ),
 );
 
@@ -56,5 +80,7 @@ final GameTradingScenario _g2AdminTrading = GameTradingScenario(
     tradingTimeRemaining: const Duration(minutes: 60),
     deltaCash: 2400,
     deltaEnvelopes: -12,
+    orderBookBids: _kMockOrderBookBids,
+    orderBookAsks: _kMockOrderBookAsks,
   ),
 );

@@ -41,13 +41,6 @@ class StatTile extends StatelessWidget {
         color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       clipBehavior: Clip.hardEdge,
       child: Column(
