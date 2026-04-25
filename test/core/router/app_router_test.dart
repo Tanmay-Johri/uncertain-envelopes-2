@@ -8,6 +8,7 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/lobby/game_lobby_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -88,8 +89,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('game-card-g1')));
       await tester.pumpAndSettle();
-      expect(find.text('GAME LOBBY'), findsOneWidget);
-      expect(find.textContaining('id=g1'), findsOneWidget);
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
+      expect(find.text('V 8 J A J'), findsOneWidget);
     });
 
     testWidgets('tapping ORDERS switches the shell branch',
@@ -150,8 +152,17 @@ void main() {
   group('GoRouter deep link parsing', () {
     testWidgets('/game/abc/lobby parses id correctly', (tester) async {
       await _pumpAppWith(tester, initialLocation: '/game/abc/lobby');
-      expect(find.text('GAME LOBBY'), findsOneWidget);
-      expect(find.text('id=abc'), findsOneWidget);
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
+    });
+
+    testWidgets(
+        '/game/g4/lobby shows Join Game when mock viewer is not seated',
+        (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/game/g4/lobby');
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      expect(find.byKey(const ValueKey('game-lobby-join')), findsOneWidget);
+      expect(find.text('JOIN GAME'), findsOneWidget);
     });
 
     testWidgets('/game/:id/trading parses id correctly', (tester) async {
@@ -169,7 +180,8 @@ void main() {
     testWidgets('long uuid id is accepted in deep link', (tester) async {
       const uuid = '550e8400-e29b-41d4-a716-446655440000';
       await _pumpAppWith(tester, initialLocation: '/game/$uuid/lobby');
-      expect(find.text('id=$uuid'), findsOneWidget);
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
     });
   });
 
@@ -216,8 +228,8 @@ void main() {
       final router = await _pumpAppWith(tester);
       router.go(AppRoutes.gameLobby('abc'));
       await tester.pumpAndSettle();
-      expect(find.text('GAME LOBBY'), findsOneWidget);
-      expect(find.text('id=abc'), findsOneWidget);
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
     });
   });
 }

@@ -42,6 +42,18 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 
 ---
 
+## Plan mapping — C5 Game Lobby (`stream-c-lobby`)
+
+Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `design-uncertain-envelopes-2/game_lobby_admin_with_joining_code/code.html`, `game_lobby_screen_admin_navigation_update/code.html`.
+
+| Id | Scope | Tests (minimum) | Browser MCP target |
+|----|--------|-----------------|---------------------|
+| **C5** | `CountdownTimer`, `PlayerListTile`, `GameLobbyScreen`, `lobby_view_data` + `lobby_mock_data`; `/game/:id/lobby` → screen; mock scenarios **g1** (trading, joined non-admin → Enter), **g1pre** (pre-start, joined non-admin → Leave), **g2** (pre-start admin → Start + End + kicks). Non-admin **not** in `players` → **Join Game** (any phase). Admin primary: **Start** if pre-start else **Enter**, always **End** below. `NeonButtonVariant.outlineDanger` + red ink for End. | Same test files + `neon_button_test` outlineDanger / ink. | `/game/g1/lobby`, `/game/g1pre/lobby`, `/game/g2/lobby`, `/game/g4/lobby` (not seated → Join). |
+
+**Follow-ups (not in this slice):** wire `onStartGame` / `onEndGame` / `onEnterGame` / `onJoinGame` / `onLeaveGame` / `onKickPlayer` to commands or navigation; rich empty-state when `players` is empty; replace `mockLobbyScenarioForGameId` with real `game_state` + session `currentPlayerId` after join/leave.
+
+---
+
 ## Progress log (Stream C)
 
 | Date | Slice | Commit | Notes |
@@ -52,6 +64,16 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 | 2026-04-23 | **C4d** max players | `feat(create-game): C4d max players stepper` | `CreateGamePlayerLimits` 1–100, default 8; `IconButton` ± row; tests use `ensureVisible` (stepper below fold). |
 | 2026-04-23 | **Create game** polish + shell | `feat(create-game): design parity, editable limits, shell header fix` | HTML ref layout (security tiles, Timed/Endless dropdown, boxed steppers, `NeonButton`); description placeholder; duration **1–600** + max players **1–128** (default **16**) with commit-on-blur typing; primary section labels; `AppShell` body below frosted header (no blurred ghost text); `AppConstants.maxMaxPlayers` 128; `flutter test` full suite green. |
 | 2026-04-23 | **C4f** submit + DTO + **C4g** sweep | `feat(create-game): C4f CreateGameDraft onSubmit + C4g verify` | `CreateGameDraft` + `toJson()`; `CreateGameScreen(onSubmit?)` wires `NeonButton` to validate, commit blur fields, then callback; router keeps `const CreateGameScreen()`. Tests: invalid → no callback; valid trimmed payload; Endless → `durationMinutes` null in JSON; rapid double submit → two calls. C4f widget tests use a **tall surface** (`physicalSize` 2000px) + `ensureVisible` so submit is hit-testable (default ~600px viewport put the button under absorbing/offstage layers). C4g: full `flutter test` green; `dart analyze` still reports **8 info** issues elsewhere (`app_router` unnecessary underscores, `main` depend_on_referenced_packages, `auth_tab_switcher_test` / `confirmation_dialog_test` lints) — not introduced here. Browser MCP `/create` not re-run in this session; use `flutter run -d web-server` + snapshot when needed. |
+| 2026-04-23 | **C5** Game Lobby (mock) | `feat(lobby): C5 game lobby mock UI, routes, and tests` | `GameLobbyScreen`, `CountdownTimer`, `PlayerListTile`, `lobby_view_data`, `lobby_mock_data`; router `/game/:id/lobby` with no-op callbacks for all actions. Mocks: **g1** trading, **g1pre** non-admin pre-start (same roster as g1), **g2** admin pre-start; other ids from `kMockHomeGames` default to **trading** + `currentPlayerId: 'viewer'` (e.g. **g4** → Join Game). Joined vs not: `lobbyViewerIsInPlayerList`. `CountdownTimer`: **1s `Timer.periodic`** (not per-frame ticker) for `pumpAndSettle`. `NeonButton` **outlineDanger** + red splash/highlight for End. **Browser MCP:** Flutter web often needs **Enable accessibility** before the tree fills; blank white can appear briefly; use a fresh `flutter run` port if bundle stale. Full `flutter test` green before commit. |
+
+---
+
+## Worktree / merge remarks — C5 (stream-c)
+
+- **Branch:** `stream-c`. No other worktrees touched in this commit; when merging to `main`, reconcile with **stream-a** / **stream-b** using the **Merge checklist (Phase 2)** below (routes, auth entry, game model).
+- **Router:** Lobby is a **top-level** `GoRoute` (outside shell); **HomeScreen** `onOpenGame` navigates with `go`. Merge conflicts most likely in `app_router.dart` if other streams add sibling routes—preserve shell vs top-level distinction.
+- **Mock seam:** `mockLobbyScenarioForGameId` is **temporary**; deleting or renaming game ids (`g1pre`, etc.) will break tests and manual QA URLs until replaced by API-driven scenarios.
+- **Analyze:** Project may still report **info**-level lints unrelated to C5 (e.g. `app_router` unnecessary underscores, `visible_for_testing` on `formatCountdownMmSs` consumer). Triage on merge; not blocking this slice.
 
 ---
 
@@ -69,7 +91,7 @@ After **C4g**, add a short **Progress log** entry (date + commit hash). Optional
 
 | Gap | Notes | Suggested direction |
 |-----|--------|---------------------|
-| **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router passes `go(AppRoutes.gameLobby(id))`. Still placeholder lobby UI until C5. | Replace lobby placeholder with real `GameLobbyScreen`; ensure API `id` shape matches route param. |
+| **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router → `GameLobbyScreen` (mock data by id). | Phase 2: replace mocks with `GameRepository` snapshot; ensure API `id` shape matches route param. |
 | **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen` scaffold (plan **C4a**). **ORDERS:** still `PlaceholderScreen`. | Finish C4b–f on create; build pending orders screen (C9) or Phase 2. |
 | **Profile / history** | Top-level placeholders; account icon goes to `/profile`. | Merge with Stream A/B auth and profile work; single source of routes. |
 

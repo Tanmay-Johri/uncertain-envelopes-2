@@ -5,6 +5,8 @@ import '../../ui/screens/_placeholder_screen.dart';
 import '../../ui/screens/auth/auth_screen.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
+import '../../ui/screens/lobby/game_lobby_screen.dart';
+import '../../ui/screens/lobby/lobby_mock_data.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
 
@@ -70,10 +72,22 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: '/game/:id/lobby',
-        builder: (_, state) => PlaceholderScreen(
-          routeName: 'GAME LOBBY',
-          subtitle: 'id=${state.pathParameters['id']}',
-        ),
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          final scenario = mockLobbyScenarioForGameId(id);
+          return GameLobbyScreen(
+            data: scenario.data,
+            phase: scenario.phase,
+            currentPlayerId: scenario.currentPlayerId,
+            isViewerAdmin: scenario.isViewerAdmin,
+            onStartGame: () {},
+            onEndGame: () {},
+            onEnterGame: () {},
+            onJoinGame: () {},
+            onLeaveGame: () {},
+            onKickPlayer: (_) {},
+          );
+        },
       ),
       GoRoute(
         path: '/game/:id/trading',

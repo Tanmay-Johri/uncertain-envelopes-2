@@ -160,6 +160,49 @@ void main() {
       expect(borderSide.color, AppColors.outline);
     });
 
+    testWidgets(
+        'outlineDanger uses transparent background with red border',
+        (tester) async {
+      await _pump(
+        tester,
+        NeonButton(
+          label: 'End Game',
+          onPressed: () {},
+          variant: NeonButtonVariant.outlineDanger,
+        ),
+      );
+      final box = _decoratedBoxOf(tester);
+      final decoration = box.decoration as BoxDecoration;
+      expect(decoration.color, Colors.transparent);
+      final borderSide = (decoration.border as Border).top;
+      expect(borderSide.color, AppColors.secondary);
+      final text = tester.widget<Text>(find.text('END GAME'));
+      expect(text.style?.color, AppColors.secondary);
+    });
+
+    testWidgets('outlineDanger uses red-tinted ink splash, not theme default',
+        (tester) async {
+      await _pump(
+        tester,
+        NeonButton(
+          label: 'End Game',
+          onPressed: () {},
+          variant: NeonButtonVariant.outlineDanger,
+        ),
+      );
+      final inkWell = tester.widget<InkWell>(
+        find.descendant(
+          of: find.byType(NeonButton),
+          matching: find.byType(InkWell),
+        ),
+      );
+      expect(inkWell.splashColor, AppColors.secondary.withValues(alpha: 0.38));
+      expect(
+        inkWell.highlightColor,
+        AppColors.secondary.withValues(alpha: 0.16),
+      );
+    });
+
     testWidgets('primary variant has a green glow shadow', (tester) async {
       await _pump(tester, NeonButton(label: 'GO', onPressed: () {}));
       final box = _decoratedBoxOf(tester);

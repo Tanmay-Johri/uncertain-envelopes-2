@@ -11,7 +11,9 @@ import '../../core/theme/app_typography.dart';
 ///   actions that remove, end, kick, or cancel.
 /// - [outline]: transparent background with a ghost border. Used for
 ///   secondary actions and navigation.
-enum NeonButtonVariant { primary, destructive, outline }
+/// - [outlineDanger]: transparent background, red border and label (e.g. End
+///   Game in lobby HTML: `border-secondary text-secondary`).
+enum NeonButtonVariant { primary, destructive, outline, outlineDanger }
 
 /// The single shared button used across the app.
 ///
@@ -53,6 +55,7 @@ class NeonButton extends StatelessWidget {
       case NeonButtonVariant.destructive:
         return AppColors.secondary;
       case NeonButtonVariant.outline:
+      case NeonButtonVariant.outlineDanger:
         return Colors.transparent;
     }
   }
@@ -65,14 +68,21 @@ class NeonButton extends StatelessWidget {
       case NeonButtonVariant.destructive:
       case NeonButtonVariant.outline:
         return AppColors.textPrimary;
+      case NeonButtonVariant.outlineDanger:
+        return AppColors.secondary;
     }
   }
 
   BorderSide? _border() {
-    if (variant == NeonButtonVariant.outline) {
-      return const BorderSide(color: AppColors.outline, width: 1);
+    switch (variant) {
+      case NeonButtonVariant.outline:
+        return const BorderSide(color: AppColors.outline, width: 1);
+      case NeonButtonVariant.outlineDanger:
+        return const BorderSide(color: AppColors.secondary, width: 1);
+      case NeonButtonVariant.primary:
+      case NeonButtonVariant.destructive:
+        return null;
     }
-    return null;
   }
 
   List<BoxShadow> _shadows() {
@@ -95,8 +105,29 @@ class NeonButton extends StatelessWidget {
           ),
         ];
       case NeonButtonVariant.outline:
+      case NeonButtonVariant.outlineDanger:
         return const [];
     }
+  }
+
+  /// Ink ripple/highlight for [InkWell]. [outlineDanger] must not inherit the
+  /// app theme’s primary (green) splash.
+  Color? _splashColor() {
+    if (!_enabled) return null;
+    return switch (variant) {
+      NeonButtonVariant.outlineDanger =>
+        AppColors.secondary.withValues(alpha: 0.38),
+      _ => null,
+    };
+  }
+
+  Color? _highlightColor() {
+    if (!_enabled) return null;
+    return switch (variant) {
+      NeonButtonVariant.outlineDanger =>
+        AppColors.secondary.withValues(alpha: 0.16),
+      _ => null,
+    };
   }
 
   @override
@@ -107,7 +138,12 @@ class NeonButton extends StatelessWidget {
     final textStyle = (variant == NeonButtonVariant.primary
             ? AppTypography.buttonPrimary
             : AppTypography.buttonSecondary)
-        .copyWith(color: fg);
+        .copyWith(
+          color: fg,
+          fontWeight: variant == NeonButtonVariant.outlineDanger
+              ? FontWeight.w700
+              : null,
+        );
 
     final content = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -145,6 +181,8 @@ class NeonButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(AppRadius.md),
+          splashColor: _splashColor(),
+          highlightColor: _highlightColor(),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
