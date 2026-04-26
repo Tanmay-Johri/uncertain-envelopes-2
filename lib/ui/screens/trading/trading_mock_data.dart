@@ -50,6 +50,53 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
   );
 });
 
+/// Mix of statuses for **Active orders** (C6): cancel only on [PersonalOrderStatus.resting].
+const _g1PersonalOrders = <PersonalOrder>[
+  PersonalOrder(
+    id: 'po_g1_rest',
+    side: PersonalOrderSide.buy,
+    orderType: PersonalOrderType.limit,
+    quantity: 10,
+    limitPrice: 149.5,
+    status: PersonalOrderStatus.resting,
+  ),
+  PersonalOrder(
+    id: 'po_g1_q',
+    side: PersonalOrderSide.sell,
+    orderType: PersonalOrderType.market,
+    quantity: 5,
+    limitPrice: null,
+    status: PersonalOrderStatus.inQueue,
+  ),
+  PersonalOrder(
+    id: 'po_g1_proc',
+    side: PersonalOrderSide.sell,
+    orderType: PersonalOrderType.limit,
+    quantity: 3,
+    limitPrice: 151,
+    status: PersonalOrderStatus.beingProcessed,
+  ),
+];
+
+const _g2PersonalOrders = <PersonalOrder>[
+  PersonalOrder(
+    id: 'po_g2_rest',
+    side: PersonalOrderSide.sell,
+    orderType: PersonalOrderType.limit,
+    quantity: 8,
+    limitPrice: 150.8,
+    status: PersonalOrderStatus.resting,
+  ),
+  PersonalOrder(
+    id: 'po_g2_fill',
+    side: PersonalOrderSide.buy,
+    orderType: PersonalOrderType.limit,
+    quantity: 2,
+    limitPrice: 148,
+    status: PersonalOrderStatus.filled,
+  ),
+];
+
 /// Mock trading scenarios keyed by game id; aligns with [mockLobbyScenarioForGameId]
 /// titles where possible.
 GameTradingScenario mockTradingScenarioForGameId(String gameId) {
@@ -101,6 +148,7 @@ final GameTradingScenario _g1PlayerTrading = GameTradingScenario(
     priceHistory: _kMockPriceHistory,
     chartSessionElapsed: _kMockChartSessionElapsed,
     gameStartedAtUtc: _kMockGameStartedAtUtc,
+    personalOrders: _g1PersonalOrders,
   ),
 );
 
@@ -121,5 +169,6 @@ final GameTradingScenario _g2AdminTrading = GameTradingScenario(
     priceHistory: _kMockPriceHistory,
     chartSessionElapsed: _kMockChartSessionElapsed,
     gameStartedAtUtc: _kMockGameStartedAtUtc,
+    personalOrders: _g2PersonalOrders,
   ),
 );

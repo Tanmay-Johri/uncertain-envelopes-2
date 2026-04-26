@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/chart/price_chart_point.dart';
+import '../../../core/trading/personal_order.dart';
 
 export '../../../core/chart/price_chart_point.dart' show PriceChartPoint;
+export '../../../core/trading/personal_order.dart'
+    show PersonalOrder, PersonalOrderSide, PersonalOrderStatus, PersonalOrderType;
 
 @immutable
 class OrderBookLevel {
@@ -29,6 +32,7 @@ class GameTradingViewData {
     required this.marketPrice,
     required this.priceHistory,
     required this.chartSessionElapsed,
+    this.personalOrders = const [],
     this.gameStartedAtUtc,
     this.tradingTimeRemaining,
   });
@@ -62,6 +66,9 @@ class GameTradingViewData {
 
   /// Elapsed since game start — drives horizontal division minutes (plan **B9**).
   final Duration chartSessionElapsed;
+
+  /// Player’s own orders for **Active orders** (C6 mock; Phase 2 from providers).
+  final List<PersonalOrder> personalOrders;
 
   /// Game start instant in UTC (Supabase `start_time`); used for touch tooltips only.
   final DateTime? gameStartedAtUtc;

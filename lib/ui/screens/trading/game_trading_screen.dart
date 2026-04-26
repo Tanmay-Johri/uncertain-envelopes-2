@@ -8,7 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/chart/chart_axis.dart';
+import '../../widgets/active_orders_widget.dart';
 import '../../widgets/countdown_timer.dart';
+import '../../widgets/neon_button.dart';
+import '../../widgets/new_order_modal.dart';
 import '../../widgets/pnl_calculator.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/stat_tile.dart';
@@ -18,7 +21,7 @@ import 'trading_view_data.dart';
 
 /// Trading dashboard (C6). Layout follows
 /// `design-uncertain-envelopes-2/admin_game_trading_dashboard_7/code.html`.
-class GameTradingScreen extends StatelessWidget {
+class GameTradingScreen extends StatefulWidget {
   const GameTradingScreen({
     super.key,
     required this.data,
@@ -33,10 +36,77 @@ class GameTradingScreen extends StatelessWidget {
   final VoidCallback? onAddTime;
 
   @override
+  State<GameTradingScreen> createState() => _GameTradingScreenState();
+}
+
+class _GameTradingScreenState extends State<GameTradingScreen> {
+  late List<PersonalOrder> _personalOrders;
+  var _localOrderSeq = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _personalOrders = List<PersonalOrder>.from(widget.data.personalOrders);
+  }
+
+  @override
+  void didUpdateWidget(covariant GameTradingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.data, widget.data)) {
+      _personalOrders = List<PersonalOrder>.from(widget.data.personalOrders);
+    }
+  }
+
+  String _allocateOrderId() {
+    _localOrderSeq++;
+    return 'local_${widget.data.currentPlayerId}_$_localOrderSeq';
+  }
+
+  void _removeOrder(String id) {
+    setState(() {
+      _personalOrders = _personalOrders.where((e) => e.id != id).toList();
+    });
+  }
+
+  Future<void> _openNewOrder(BuildContext context) async {
+    final created = await NewOrderModal.show(
+      context,
+      marketPrice: widget.data.marketPrice,
+    );
+    if (!mounted || created == null) return;
+    setState(() {
+      _personalOrders = [
+        ..._personalOrders,
+        created.copyWith(id: _allocateOrderId()),
+      ];
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
     return Scaffold(
       key: const ValueKey('game-trading-scaffold'),
       backgroundColor: AppColors.background,
+      bottomNavigationBar: Material(
+        color: AppColors.background,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: NeonButton(
+              key: const ValueKey('game-trading-new-order'),
+              label: 'Create new order',
+              onPressed: () => _openNewOrder(context),
+            ),
+          ),
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -44,8 +114,8 @@ class GameTradingScreen extends StatelessWidget {
             bottom: false,
             child: _TradingWindowHeader(
               isViewerAdmin: data.isViewerAdmin,
-              onShowLogs: onShowLogs,
-              onEndGameFromMenu: onEndGameFromMenu,
+              onShowLogs: widget.onShowLogs,
+              onEndGameFromMenu: widget.onEndGameFromMenu,
               onAccountTap: () => context.go(AppRoutes.profile),
             ),
           ),
@@ -92,7 +162,7 @@ class GameTradingScreen extends StatelessWidget {
                           ),
                           if (data.isViewerAdmin) ...[
                             const SizedBox(width: AppSpacing.md),
-                            _AddTimeButton(onPressed: onAddTime),
+                            _AddTimeButton(onPressed: widget.onAddTime),
                           ],
                         ],
                       ],
@@ -161,9 +231,10 @@ class GameTradingScreen extends StatelessWidget {
                       asks: data.orderBookAsks,
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    _SectionPlaceholder(
+                    ActiveOrdersWidget(
                       key: const ValueKey('trading-active-orders-section'),
-                      label: 'Active orders (coming in C6)',
+                      orders: _personalOrders,
+                      onCancel: _removeOrder,
                     ),
                     const SizedBox(height: AppSpacing.xxxxl),
                   ],
@@ -340,25 +411,3 @@ class _AddTimeButton extends StatelessWidget {
   }
 }
 
-class _SectionPlaceholder extends StatelessWidget {
-  const _SectionPlaceholder({super.key, required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: AppTypography.monoSmall.copyWith(color: AppColors.textTertiary),
-      ),
-    );
-  }
-}

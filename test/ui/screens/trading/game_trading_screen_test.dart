@@ -8,7 +8,7 @@ import 'package:uncertain_envelopes_2/ui/widgets/countdown_timer.dart';
 
 void main() {
   group('GameTradingScreen', () {
-    testWidgets('renders scaffold, title, and section placeholders',
+    testWidgets('renders scaffold, title, chart, book, and active orders',
         (tester) async {
       final s = mockTradingScenarioForGameId('g1');
       await tester.pumpWidget(
@@ -33,6 +33,12 @@ void main() {
       expect(find.text(r'$150.00'), findsNWidgets(2));
       expect(find.text('0'), findsWidgets);
       expect(find.text('Minutes since game start'), findsOneWidget);
+      expect(find.text('Active orders'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('active-order-po_g1_rest')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('game-trading-new-order')), findsOneWidget);
     });
 
     testWidgets('PnL is above chart; chart is above order book', (tester) async {
@@ -54,6 +60,48 @@ void main() {
       ).top;
       expect(pnlTop, lessThan(chartTop));
       expect(chartTop, lessThan(bookTop));
+    });
+
+    testWidgets('active orders section is below order book', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(data: s.data),
+        ),
+      );
+      final bookTop = tester.getRect(
+        find.byKey(const ValueKey('trading-orderbook-section')),
+      ).top;
+      final activeTop = tester.getRect(
+        find.byKey(const ValueKey('trading-active-orders-section')),
+      ).top;
+      expect(bookTop, lessThan(activeTop));
+    });
+
+    testWidgets('create new order appends a row', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
+        ),
+      );
+      final newOrder = find.byKey(const ValueKey('game-trading-new-order'));
+      await tester.ensureVisible(newOrder);
+      await tester.tap(newOrder);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('new-order-qty')), '1');
+      await tester.enterText(find.byKey(const ValueKey('new-order-limit')), '140');
+      await tester.tap(find.byKey(const ValueKey('new-order-submit')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('active-order-local_p_me_1')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('g1 shows live countdown when timed', (tester) async {
@@ -105,10 +153,10 @@ void main() {
         tradingTimeRemaining: null,
         deltaCash: 0,
         deltaEnvelopes: 0,
-        orderBookBids: const [],
-        orderBookAsks: const [],
+        orderBookBids: [],
+        orderBookAsks: [],
         marketPrice: 10,
-        priceHistory: const [],
+        priceHistory: [],
         chartSessionElapsed: Duration.zero,
       );
       await tester.pumpWidget(
