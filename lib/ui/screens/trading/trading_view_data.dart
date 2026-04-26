@@ -5,7 +5,12 @@ import '../../../core/trading/personal_order.dart';
 
 export '../../../core/chart/price_chart_point.dart' show PriceChartPoint;
 export '../../../core/trading/personal_order.dart'
-    show PersonalOrder, PersonalOrderSide, PersonalOrderStatus, PersonalOrderType;
+    show
+        PersonalOrder,
+        PersonalOrderSide,
+        PersonalOrderStatus,
+        PersonalOrderType,
+        personalOrderClearsCancellationPending;
 
 @immutable
 class OrderBookLevel {

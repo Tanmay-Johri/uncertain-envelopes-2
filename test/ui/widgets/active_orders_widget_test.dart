@@ -24,6 +24,28 @@ void main() {
     });
 
     testWidgets(
+        'in_queue order uses same cancel flow as resting',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const _OrdersHarness(),
+        ),
+      );
+
+      await tester.tap(find.text('2 Units'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('active-order-cancel-q')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      expect(find.text('Cancelling'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
         'Back dismisses dialog; resting confirm starts cancel then row becomes cancelled',
         (tester) async {
       await tester.pumpWidget(
@@ -42,7 +64,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tester.tap(find.text('BACK'));
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
       expect(
         find.text(
@@ -53,7 +75,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('CANCEL'));
+      await tester.tap(find.text('Cancel'));
       await tester.pump();
       expect(find.text('Cancelling'), findsOneWidget);
 

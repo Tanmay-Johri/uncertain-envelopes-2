@@ -50,8 +50,7 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
   );
 });
 
-/// Mix of statuses for **Active orders** (C6). Cancellation (PRD) only from
-/// [PersonalOrderStatus.resting]; [createdAt] → **Created:** line.
+/// Mix of statuses for **Active orders** (C6). [createdAt] → **Created:** line.
 final _g1PersonalOrders = <PersonalOrder>[
   PersonalOrder(
     id: 'po_g1_rest',

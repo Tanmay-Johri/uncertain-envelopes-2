@@ -49,16 +49,32 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   @override
   void initState() {
     super.initState();
-    _personalOrders = List<PersonalOrder>.from(widget.data.personalOrders);
+    _personalOrders = [];
+    _reconcilePersonalOrdersWithBackendSnapshot();
   }
 
   @override
   void didUpdateWidget(covariant GameTradingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.data, widget.data)) {
-      _personalOrders = List<PersonalOrder>.from(widget.data.personalOrders);
-      _pendingCancellationOrderIds.clear();
+      _reconcilePersonalOrdersWithBackendSnapshot();
     }
+  }
+
+  /// [widget.data.personalOrders] is authoritative: any id not in that list is
+  /// removed (except optimistic `local_*` rows not yet echoed by the server).
+  void _reconcilePersonalOrdersWithBackendSnapshot() {
+    final incoming = List<PersonalOrder>.from(widget.data.personalOrders);
+    final incomingIds = incoming.map((e) => e.id).toSet();
+    final optimisticLocal = _personalOrders
+        .where((o) => o.id.startsWith('local_') && !incomingIds.contains(o.id))
+        .toList();
+    _personalOrders = [...incoming, ...optimisticLocal];
+    _pendingCancellationOrderIds.removeWhere((id) {
+      final i = _personalOrders.indexWhere((o) => o.id == id);
+      if (i < 0) return true;
+      return personalOrderClearsCancellationPending(_personalOrders[i].status);
+    });
   }
 
   String _allocateOrderId() {
@@ -66,8 +82,14 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     return 'local_${widget.data.currentPlayerId}_$_localOrderSeq';
   }
 
-  /// PRD: player sends cancellation command; later `status` becomes `cancelled`.
-  /// Mock: delayed transition to [PersonalOrderStatus.cancelled] (Phase 2: stream).
+  /// PRD: player sends `cancel_order`; when the worker updates the row,
+  /// `status` becomes `cancelled`.
+  ///
+  /// **Mock:** pretends network + command processing with a fixed delay, then
+  /// applies the same order update we expect from a realtime snapshot. Phase 2:
+  /// remove the timer; keep [_pendingCancellationOrderIds] until the provider
+  /// pushes an order whose [PersonalOrder.status] is [cancelled] (also clears
+  /// pending in [didUpdateWidget] when that snapshot arrives).
   void _onCancellationRequested(String id) {
     setState(() => _pendingCancellationOrderIds.add(id));
     Future<void>.delayed(const Duration(milliseconds: 1800), () {

@@ -1,4 +1,8 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
+
+import '../theme/app_colors.dart';
 
 /// C6 mock-only: side of a personal order row (UI + tests).
 enum PersonalOrderSide { buy, sell }
@@ -13,6 +17,8 @@ enum PersonalOrderStatus {
   resting,
   filled,
   cancelled,
+  rejected,
+  gameEnded,
 }
 
 /// One row in the player’s “active orders” list (mock data until Phase 2).
@@ -73,8 +79,83 @@ class PersonalOrder {
   }
 }
 
-/// Whether the player may **send a cancellation request** (PRD: only while
-/// `order_resting`).
+/// Whether the player may **send a cancellation request** from the UI.
+///
+/// PRD: the `cancelled` status is defined for explicit player cancel while
+/// `order_resting`. We still expose the same cancel control for
+/// `in_queue` / `being_processed` so every non-terminal card behaves alike;
+/// Phase 2 workers may reject [cancel_order] if the order is no longer
+/// cancellable.
 bool personalOrderCanCancel(PersonalOrderStatus status) {
-  return status == PersonalOrderStatus.resting;
+  return switch (status) {
+    PersonalOrderStatus.inQueue ||
+    PersonalOrderStatus.beingProcessed ||
+    PersonalOrderStatus.resting =>
+      true,
+    PersonalOrderStatus.filled ||
+    PersonalOrderStatus.cancelled ||
+    PersonalOrderStatus.rejected ||
+    PersonalOrderStatus.gameEnded =>
+      false,
+  };
+}
+
+/// Backend snapshot resolved an in-flight cancel (or the order ended another way).
+bool personalOrderClearsCancellationPending(PersonalOrderStatus status) {
+  return switch (status) {
+    PersonalOrderStatus.filled ||
+    PersonalOrderStatus.cancelled ||
+    PersonalOrderStatus.rejected ||
+    PersonalOrderStatus.gameEnded =>
+      true,
+    PersonalOrderStatus.inQueue ||
+    PersonalOrderStatus.beingProcessed ||
+    PersonalOrderStatus.resting =>
+      false,
+  };
+}
+
+/// PRD `orders.status` chip colours: red / green / blue families.
+@immutable
+class PersonalOrderStatusChipStyle {
+  const PersonalOrderStatusChipStyle({
+    required this.foreground,
+    required this.border,
+    required this.background,
+  });
+
+  final Color foreground;
+  final Color border;
+  final Color background;
+}
+
+/// - `cancelled`, `rejected`, `game_ended` → red
+/// - `order_closed` ([PersonalOrderStatus.filled]) → green
+/// - otherwise → blue
+PersonalOrderStatusChipStyle personalOrderStatusChipStyle(
+  PersonalOrderStatus status,
+) {
+  return switch (status) {
+    PersonalOrderStatus.cancelled ||
+    PersonalOrderStatus.rejected ||
+    PersonalOrderStatus.gameEnded =>
+      PersonalOrderStatusChipStyle(
+        foreground: const Color(0xFFF87171),
+        border: AppColors.secondary.withValues(alpha: 0.35),
+        background: AppColors.secondary.withValues(alpha: 0.12),
+      ),
+    PersonalOrderStatus.filled => PersonalOrderStatusChipStyle(
+        foreground: AppColors.primary,
+        border: AppColors.primary.withValues(alpha: 0.35),
+        background: AppColors.primary.withValues(alpha: 0.12),
+      ),
+    PersonalOrderStatus.inQueue ||
+    PersonalOrderStatus.beingProcessed ||
+    PersonalOrderStatus.resting =>
+      const PersonalOrderStatusChipStyle(
+        foreground: Color(0xFF60A5FA),
+        border: Color(0x4D3B82F6),
+        background: Color(0x1A3B82F6),
+      ),
+  };
 }

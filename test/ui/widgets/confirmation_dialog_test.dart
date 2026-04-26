@@ -11,6 +11,7 @@ Future<bool?> _openAndTap(
   String confirmLabel = 'Confirm',
   String cancelLabel = 'Cancel',
   String? message,
+  bool uppercaseActionLabels = true,
 }) async {
   late Future<bool?> resultFuture;
   await tester.pumpWidget(
@@ -28,6 +29,7 @@ Future<bool?> _openAndTap(
                   confirmLabel: confirmLabel,
                   cancelLabel: cancelLabel,
                   destructive: destructive,
+                  uppercaseActionLabels: uppercaseActionLabels,
                 );
               },
               child: const Text('OPEN'),
@@ -41,8 +43,9 @@ Future<bool?> _openAndTap(
   await tester.tap(find.text('OPEN'));
   await tester.pumpAndSettle();
 
-  // The NeonButton uppercases its label internally.
-  await tester.tap(find.text(buttonLabel.toUpperCase()));
+  await tester.tap(
+    find.text(uppercaseActionLabels ? buttonLabel.toUpperCase() : buttonLabel),
+  );
   await tester.pumpAndSettle();
 
   return resultFuture;
@@ -106,6 +109,35 @@ void main() {
     testWidgets('cancel returns false', (tester) async {
       final result = await _openAndTap(tester, buttonLabel: 'Cancel');
       expect(await result, isFalse);
+    });
+
+    testWidgets('uppercaseActionLabels false preserves casing on buttons',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) => ElevatedButton(
+                onPressed: () => ConfirmationDialog.show(
+                  ctx,
+                  title: 't',
+                  confirmLabel: 'Go ahead',
+                  cancelLabel: 'Never mind',
+                  uppercaseActionLabels: false,
+                ),
+                child: const Text('OPEN'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('OPEN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Go ahead'), findsOneWidget);
+      expect(find.text('Never mind'), findsOneWidget);
+      expect(find.byType(NeonButton), findsNothing);
     });
 
     testWidgets('custom labels render', (tester) async {

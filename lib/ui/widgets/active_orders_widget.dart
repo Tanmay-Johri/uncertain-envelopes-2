@@ -15,10 +15,8 @@ final _usd2 = NumberFormat.currency(
 
 final _createdFmt = DateFormat.jm();
 
-/// Status chip: `border-blue-500/30 text-blue-400 bg-blue-500/10` (dashboard 7).
-const _statusChipFg = Color(0xFF60A5FA);
-const _statusChipBorder = Color(0x4D3B82F6);
-const _statusChipBg = Color(0x1A3B82F6);
+/// Side/type pill (`SELL MARKET` is the longest label at this typography).
+const _kSideTypePillWidth = 108.0;
 
 String _sideTypePill(PersonalOrderSide side, PersonalOrderType type) {
   final s = switch (side) {
@@ -40,6 +38,8 @@ String _statusChipText(PersonalOrderStatus s) {
     PersonalOrderStatus.resting => 'order_resting',
     PersonalOrderStatus.filled => 'order_closed',
     PersonalOrderStatus.cancelled => 'cancelled',
+    PersonalOrderStatus.rejected => 'rejected',
+    PersonalOrderStatus.gameEnded => 'game_ended',
   };
 }
 
@@ -167,6 +167,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
     final limitDetail = o.orderType == PersonalOrderType.market
         ? '—'
         : _usd2.format(o.limitPrice ?? 0);
+    final statusChip = personalOrderStatusChipStyle(o.status);
 
     return Container(
       key: ValueKey('active-order-${o.id}'),
@@ -196,12 +197,14 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Flexible(
+                              SizedBox(
+                                width: _kSideTypePillWidth,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 3,
                                   ),
+                                  alignment: Alignment.center,
                                   decoration: BoxDecoration(
                                     color: isBuy
                                         ? AppColors.primary
@@ -213,6 +216,9 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                                   ),
                                   child: Text(
                                     _sideTypePill(o.side, o.orderType),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.microLabel.copyWith(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -225,7 +231,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.sm),
-                              Flexible(
+                              Expanded(
                                 child: Text(
                                   '${o.quantityCurrent} Units',
                                   style: AppTypography.bodySmall.copyWith(
@@ -250,16 +256,17 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _statusChipBg,
+                                    color: statusChip.background,
                                     borderRadius:
                                         BorderRadius.circular(AppRadius.sm),
-                                    border: Border.all(color: _statusChipBorder),
+                                    border:
+                                        Border.all(color: statusChip.border),
                                   ),
                                   child: Text(
                                     _statusChipText(o.status),
                                     style: AppTypography.monoSmall.copyWith(
                                       fontSize: 10,
-                                      color: _statusChipFg,
+                                      color: statusChip.foreground,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -335,6 +342,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                                 confirmLabel: 'Cancel',
                                 cancelLabel: 'Back',
                                 destructive: true,
+                                uppercaseActionLabels: false,
                               );
                               if (ok == true && context.mounted) {
                                 widget.onCancellationRequested(o.id);

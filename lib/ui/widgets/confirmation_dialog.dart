@@ -30,6 +30,7 @@ class ConfirmationDialog extends StatelessWidget {
     this.confirmLabel = 'Confirm',
     this.cancelLabel = 'Cancel',
     this.destructive = false,
+    this.uppercaseActionLabels = true,
   });
 
   final String title;
@@ -37,6 +38,11 @@ class ConfirmationDialog extends StatelessWidget {
   final String confirmLabel;
   final String cancelLabel;
   final bool destructive;
+
+  /// When false, action labels are shown as given (e.g. "Back" / "Cancel").
+  /// [NeonButton] always uppercases; use false for product copy that must
+  /// match a spec exactly.
+  final bool uppercaseActionLabels;
 
   /// Show the dialog and resolve to the user's decision.
   static Future<bool?> show(
@@ -46,6 +52,7 @@ class ConfirmationDialog extends StatelessWidget {
     String confirmLabel = 'Confirm',
     String cancelLabel = 'Cancel',
     bool destructive = false,
+    bool uppercaseActionLabels = true,
   }) {
     return showDialog<bool>(
       context: context,
@@ -56,6 +63,7 @@ class ConfirmationDialog extends StatelessWidget {
         confirmLabel: confirmLabel,
         cancelLabel: cancelLabel,
         destructive: destructive,
+        uppercaseActionLabels: uppercaseActionLabels,
       ),
     );
   }
@@ -82,30 +90,86 @@ class ConfirmationDialog extends StatelessWidget {
               Text(message!, style: AppTypography.bodyMedium),
             ],
             const SizedBox(height: AppSpacing.xxl),
-            Row(
-              children: [
-                Expanded(
-                  child: NeonButton(
-                    label: cancelLabel,
-                    variant: NeonButtonVariant.outline,
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: NeonButton(
-                    label: confirmLabel,
-                    variant: destructive
-                        ? NeonButtonVariant.destructive
-                        : NeonButtonVariant.primary,
-                    onPressed: () => Navigator.of(context).pop(true),
-                  ),
-                ),
-              ],
-            ),
+            _actionRow(context),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _actionRow(BuildContext context) {
+    if (uppercaseActionLabels) {
+      return Row(
+        children: [
+          Expanded(
+            child: NeonButton(
+              label: cancelLabel,
+              variant: NeonButtonVariant.outline,
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: NeonButton(
+              label: confirmLabel,
+              variant: destructive
+                  ? NeonButtonVariant.destructive
+                  : NeonButtonVariant.primary,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final confirmBg =
+        destructive ? AppColors.secondary : AppColors.primary;
+    final confirmFg =
+        destructive ? AppColors.textPrimary : AppColors.background;
+    final confirmStyle = destructive
+        ? AppTypography.buttonSecondary.copyWith(color: confirmFg)
+        : AppTypography.buttonPrimary.copyWith(color: confirmFg);
+
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              side: const BorderSide(color: AppColors.outline, width: 1),
+              foregroundColor: AppColors.textPrimary,
+            ),
+            child: Text(
+              cancelLabel,
+              style: AppTypography.buttonSecondary.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              backgroundColor: confirmBg,
+              foregroundColor: confirmFg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              elevation: 0,
+            ),
+            child: Text(confirmLabel, style: confirmStyle),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';
@@ -200,5 +201,164 @@ void main() {
       await tester.pump();
       expect(ended, isTrue);
     });
+
+    testWidgets('drops orders omitted from latest backend snapshot',
+        (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      var data = s.data;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                children: [
+                  TextButton(
+                    key: const ValueKey('backend-trim'),
+                    onPressed: () {
+                      setState(() {
+                        data = GameTradingViewData(
+                          gameTitle: data.gameTitle,
+                          description: data.description,
+                          isViewerAdmin: data.isViewerAdmin,
+                          currentPlayerId: data.currentPlayerId,
+                          isTimed: data.isTimed,
+                          tradingTimeRemaining: data.tradingTimeRemaining,
+                          deltaCash: data.deltaCash,
+                          deltaEnvelopes: data.deltaEnvelopes,
+                          orderBookBids: data.orderBookBids,
+                          orderBookAsks: data.orderBookAsks,
+                          marketPrice: data.marketPrice,
+                          priceHistory: data.priceHistory,
+                          chartSessionElapsed: data.chartSessionElapsed,
+                          personalOrders: [data.personalOrders.first],
+                          gameStartedAtUtc: data.gameStartedAtUtc,
+                        );
+                      });
+                    },
+                    child: const Text('trim'),
+                  ),
+                  Expanded(
+                    child: TickerMode(
+                      enabled: false,
+                      child: GameTradingScreen(data: data),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('active-order-po_g1_q')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('backend-trim')));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('active-order-po_g1_q')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('active-order-po_g1_rest')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'Cancelling state survives new GameTradingViewData until order cancelled',
+      (tester) async {
+        final s = mockTradingScenarioForGameId('g1');
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAppTheme(),
+            home: TickerMode(
+              enabled: false,
+              child: _TradingCancelHarness(initialData: s.data),
+            ),
+          ),
+        );
+
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('active-order-po_g1_rest')),
+        );
+        await tester.tap(find.byKey(const ValueKey('active-order-po_g1_rest')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel'));
+        await tester.pump();
+        expect(find.text('Cancelling'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('game-trading-bump-data')));
+        await tester.pump();
+        expect(find.text('Cancelling'), findsOneWidget);
+
+        await tester.pump(const Duration(milliseconds: 1900));
+        await tester.pumpAndSettle();
+        expect(find.text('Cancelled'), findsOneWidget);
+      },
+    );
   });
+}
+
+GameTradingViewData _cloneTradingData(GameTradingViewData d) {
+  return GameTradingViewData(
+    gameTitle: d.gameTitle,
+    description: d.description,
+    isViewerAdmin: d.isViewerAdmin,
+    currentPlayerId: d.currentPlayerId,
+    isTimed: d.isTimed,
+    tradingTimeRemaining: d.tradingTimeRemaining,
+    deltaCash: d.deltaCash,
+    deltaEnvelopes: d.deltaEnvelopes,
+    orderBookBids: d.orderBookBids,
+    orderBookAsks: d.orderBookAsks,
+    marketPrice: d.marketPrice,
+    priceHistory: d.priceHistory,
+    chartSessionElapsed: d.chartSessionElapsed,
+    personalOrders: List<PersonalOrder>.from(d.personalOrders),
+    gameStartedAtUtc: d.gameStartedAtUtc,
+  );
+}
+
+class _TradingCancelHarness extends StatefulWidget {
+  const _TradingCancelHarness({required this.initialData});
+
+  final GameTradingViewData initialData;
+
+  @override
+  State<_TradingCancelHarness> createState() => _TradingCancelHarnessState();
+}
+
+class _TradingCancelHarnessState extends State<_TradingCancelHarness> {
+  late GameTradingViewData _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = _cloneTradingData(widget.initialData);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextButton(
+          key: const ValueKey('game-trading-bump-data'),
+          onPressed: () => setState(() => _data = _cloneTradingData(_data)),
+          child: const Text('bump'),
+        ),
+        Expanded(
+          child: GameTradingScreen(data: _data),
+        ),
+      ],
+    );
+  }
 }
