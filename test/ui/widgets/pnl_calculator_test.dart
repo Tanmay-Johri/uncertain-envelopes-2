@@ -69,7 +69,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // Default range for 150 is 70–230; 10 is outside → re-center on 10 → 5–15.
+      // Default range for 150 is 70–300; 10 is outside → re-center on 10 → 5–20.
       await tester.enterText(
         find.byKey(const ValueKey('trading-pnl-envelope-input')),
         '10',

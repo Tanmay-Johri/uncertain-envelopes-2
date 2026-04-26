@@ -2,21 +2,34 @@ import 'dart:math' as math;
 
 import 'envelope_value_parse.dart' show isCloseTo;
 
-/// “Nice” slider bounds for a **(raw lower, raw upper)** pair from the ±50% half
-/// range — no implied center. Use the **log-decade** map when *both* raws are
-/// `< 10` (typical for small-envelope raws, e.g. 0.325 / 0.975):
-/// - **Lower:** `10^floor(log10 L)` for `L > 0` (0 → 0)
-/// - **Upper:** `10^ceil(log10 U)` for `U > 0` (0 → 0)
-/// So 0.975 → **1**, 1.25 → **10**; 0.325 → **0.1** as the decade tick below.
-/// When **either** raw is `≥ 10`, use the **integer** half-range: truncate to
-/// int, `d = min(digits)`, `step = 10^(d-1)`, floor/ceil (same as large `v` case).
-/// Optional clamp: e.g. `[0,1]` or `[0,10]` for UI tiers, then the ≈1 display rules.
+/// “Nice” slider endpoints from a **(raw lower, raw upper)** half-range pair
+/// (no required center [v]).
+///
+/// **Math (per your examples):** treat each end separately.
+///
+/// - **(0, 1)**: the unit band before any 10, 100, … grid:
+///   - **lower** in `(0, 1) →` nice lower **`0`**
+///   - **upper** in `(0, 1) →` nice upper **`1`**
+///   (e.g. `0.65` → L\* `0`, U\* `1`.)
+/// - **\[1, 10)** (not a power of 10 yet for the *upper* in the 1.25 case):
+///   - **lower** `L → floor(L)` (e.g. `1.25 → 1`.)
+///   - **upper** `U →` **smallest power of ten** `≥ U` (e.g. `1.25 → 10`.)
+/// - **\[10, 100)**: **step 10** — `L → floor(L/10)·10`, `U → ceil(U/10)·10`
+///   (e.g. `19 →` `10` and `20` from lower vs upper. `75 → 70`.)
+/// - **\[100, 1000)`: **step 100** — `L → floor(L/100)·100`, `U → ceil(U/100)·100`
+///   (e.g. `225 → 300`.)
+/// - For **larger** [x] the same idea: one step `s = 10^k` from the bracket, round
+///   **down** the lower and **up** the upper on that step — except the `(0,1)`,
+///   `[1,10)` (upper) and `x≥1` (lower) rules above.
+/// Together: `75, 225 → 70, 300` (not `70, 230`).
+///
+/// [envelopeSliderBoundsForCenter] is only **convenience**:
+/// `L = 0.5v`, `U = 1.5v`, then optional UI clamp to `[0,1]` / `[0,10]`.
 ({double min, double max}) envelopeSliderBoundsFromRaws(
   double rawL,
   double rawU, {
   double? minCap,
   double? maxCap,
-  bool useIntegerPath = false,
 }) {
   if (rawL.isNaN || rawU.isNaN) return (min: 0, max: 0);
   if (rawL < 0) rawL = 0;
@@ -27,25 +40,8 @@ import 'envelope_value_parse.dart' show isCloseTo;
     rawU = t;
   }
 
-  late ({double min, double max}) pair;
-  if (useIntegerPath || rawL >= 10 || rawU >= 10) {
-    var iL = _stripToIntegerNoDecimals(rawL);
-    var iU = _stripToIntegerNoDecimals(rawU);
-    if (iU < iL) {
-      return _applyOneRules(
-        rawL,
-        rawU,
-        (min: iL.toDouble(), max: iL.toDouble()),
-      );
-    }
-    final r = _gridFromPositiveInts(iL, iU);
-    pair = (min: r.$1, max: r.$2);
-  } else {
-    pair = (min: _decadeLower(rawL), max: _decadeUpper(rawU));
-  }
-
-  var minB = pair.min;
-  var maxB = pair.max;
+  var minB = _niceLower(rawL);
+  var maxB = _niceUpper(rawU);
   if (minCap != null && minB < minCap) minB = minCap;
   if (maxCap != null && maxB > maxCap) maxB = maxCap;
   if (maxB < minB) maxB = minB;
@@ -53,8 +49,8 @@ import 'envelope_value_parse.dart' show isCloseTo;
   return _applyOneRules(rawL, rawU, (min: minB, max: maxB));
 }
 
-/// `envelopeSliderBoundsForCenter( v )` is **convenience only**: it sets
-/// `rawL = 0.5 v`, `rawU = 1.5 v` and passes the same rules + tier clamps.
+/// `rawL = 0.5 v`, `rawU = 1.5 v`, then the same [envelopeSliderBoundsFromRaws],
+/// with tier caps when [v] is in `(0,1)` or `[1,10)`.
 ({double min, double max}) envelopeSliderBoundsForCenter(double v) {
   if (v.isNaN || v.isInfinite) return (min: 0, max: 0);
   if (v < 0) v = 0;
@@ -64,66 +60,55 @@ import 'envelope_value_parse.dart' show isCloseTo;
   final rawU = 1.5 * v;
 
   if (v < 1) {
-    return envelopeSliderBoundsFromRaws(
-      rawL,
-      rawU,
-      minCap: 0,
-      maxCap: 1,
-    );
+    return envelopeSliderBoundsFromRaws(rawL, rawU, minCap: 0, maxCap: 1);
   }
   if (v < 10) {
-    return envelopeSliderBoundsFromRaws(
-      rawL,
-      rawU,
-      minCap: 0,
-      maxCap: 10,
-    );
+    return envelopeSliderBoundsFromRaws(rawL, rawU, minCap: 0, maxCap: 10);
   }
   return envelopeSliderBoundsFromRaws(rawL, rawU);
 }
 
-double _decadeLower(double x) {
+/// Nice **lower** tick for one raw (half-range) value.
+double _niceLower(double x) {
   if (x <= 0) return 0;
   if (x.isNaN) return 0;
-  if (x < 1e-10) return 0;
-  final l = math.log(x) / math.ln10;
-  return math.pow(10, l.floor()).toDouble();
-}
-
-/// Smallest `10^k` with `k` integer and `10^k >= x` (x > 0).
-double _decadeUpper(double x) {
-  if (x <= 0) return 0;
-  if (x.isNaN) return 0;
-  final l = math.log(x) / math.ln10;
-  return math.pow(10, l.ceil()).toDouble();
-}
-
-(double, double) _gridFromPositiveInts(int iL, int iU) {
-  if (iL < 0) iL = 0;
-  if (iU < iL) {
-    return (iL.toDouble(), iL.toDouble());
+  if (x < 1) {
+    return 0;
   }
-  final dL = _decimalDigitCountForPositiveInt(iL);
-  final dU = _decimalDigitCountForPositiveInt(iU);
-  final d = math.min(dL, dU);
-  final step = math.pow(10, d - 1).toDouble();
-  var minB = (iL / step).floor() * step;
-  var maxB = (iU / step).ceil() * step;
-  if (maxB < minB) maxB = minB;
-  return (minB.toDouble(), maxB.toDouble());
+  if (x < 10) {
+    return x.floorToDouble();
+  }
+  if (x < 100) {
+    return (x / 10).floor() * 10.0;
+  }
+  if (x < 1000) {
+    return (x / 100).floor() * 100.0;
+  }
+  final s = math.pow(10, (math.log(x) / math.ln10).floor()).toDouble();
+  return (x / s).floor() * s;
 }
 
-int _decimalDigitCountForPositiveInt(int n) {
-  var k = n;
-  if (k < 0) k = -k;
-  if (k == 0) return 1;
-  return k.toString().length;
-}
-
-int _stripToIntegerNoDecimals(double raw) {
-  if (raw.isNaN) return 0;
-  if (raw >= 0) return raw.truncate();
-  return raw.ceil();
+/// Nice **upper** tick for one raw (half-range) value.
+double _niceUpper(double x) {
+  if (x <= 0) return 0;
+  if (x.isNaN) return 0;
+  if (x < 1) {
+    return 1;
+  }
+  if (x < 10) {
+    if (x <= 1) {
+      return 1;
+    }
+    return math.pow(10, (math.log(x) / math.ln10).ceil()).toDouble();
+  }
+  if (x < 100) {
+    return (x / 10).ceil() * 10.0;
+  }
+  if (x < 1000) {
+    return (x / 100).ceil() * 100.0;
+  }
+  final s = math.pow(10, (math.log(x) / math.ln10).floor()).toDouble();
+  return (x / s).ceil() * s;
 }
 
 ({double min, double max}) _applyOneRules(
@@ -145,6 +130,7 @@ int _stripToIntegerNoDecimals(double raw) {
   return (min: min, max: max);
 }
 
+/// Whether [value] is inside **[min, max]** without recomputing bounds.
 bool valueFitsInBounds(
   double value,
   double min,
