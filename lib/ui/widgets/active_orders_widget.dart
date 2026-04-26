@@ -300,9 +300,11 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
           if (_expanded) ...[
             Divider(height: 1, thickness: 1, color: AppColors.outlineSubtle),
             Padding(
+              // Top inset so detail block + cancel control clear the divider
+              // (dashboard HTML uses ~`mb-3` after the rule).
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                0,
+                AppSpacing.md,
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
