@@ -22,6 +22,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text(r'+$5,750'), findsOneWidget);
+      expect(find.text(r'$150.00'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-pnl-projected')), findsOneWidget);
     });
 
@@ -50,7 +51,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('trading-pnl-reset')));
       await tester.pump();
-      expect(find.text(r'$100'), findsWidgets);
+      expect(find.text(r'$100.00'), findsOneWidget);
     });
 
     testWidgets('out-of-range typed value triggers new slider bounds', (
@@ -61,7 +62,7 @@ void main() {
           theme: buildAppTheme(),
           home: const Scaffold(
             body: PnlCalculator(
-              marketPrice: 150,
+              marketPrice: 50,
               deltaCash: 0,
               deltaEnvelopes: 0,
             ),
@@ -69,7 +70,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // Default range for 150 is 70–300; 10 is outside → re-center on 10 → 5–20.
+      // Default for 50 is 20–80 (v≥10 grid); 10 is below min → re-center on 10 → 0–20.
       await tester.enterText(
         find.byKey(const ValueKey('trading-pnl-envelope-input')),
         '10',
@@ -79,7 +80,7 @@ void main() {
       final minLabel = tester.widget<Text>(
         find.byKey(const ValueKey('trading-pnl-range-min')),
       );
-      expect(minLabel.data, r'$5');
+      expect(minLabel.data, r'$0');
     });
   });
 }

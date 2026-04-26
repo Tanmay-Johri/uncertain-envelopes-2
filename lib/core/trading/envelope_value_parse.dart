@@ -1,9 +1,11 @@
 const double _kNearOne = 1e-6;
 
-/// Treats [s] with trailing `.` (e.g. `1.`) as **1.0**; strips whitespace;
-/// returns `null` if not parseable.
+/// Treats [s] with trailing `.` (e.g. `1.`) as **1.0**; strips whitespace,
+/// optional leading `$`, and commas; returns `null` if not parseable.
 double? tryParseAssumptionValue(String s) {
   var t = s.trim();
+  if (t.startsWith(r'$')) t = t.substring(1).trim();
+  t = t.replaceAll(',', '');
   if (t.isEmpty) return null;
   if (t.endsWith('.')) t = t.substring(0, t.length - 1);
   t = t.trim();
@@ -27,6 +29,12 @@ String formatAssumptionInputNumber(double v) {
     return v.toStringAsFixed(2);
   }
   return ((v * 100).round() / 100).toStringAsFixed(2);
+}
+
+/// PnL envelope line: always **two** fraction digits, with `$` prefix.
+String formatEnvelopeUsdField(double v) {
+  if (v.isNaN) return r'$0.00';
+  return r'$' + v.toStringAsFixed(2);
 }
 
 String formatAssumptionText(double v) {

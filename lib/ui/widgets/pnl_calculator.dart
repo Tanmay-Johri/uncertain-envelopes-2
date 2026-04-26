@@ -27,6 +27,8 @@ class PnlCalculator extends StatefulWidget {
 }
 
 class _PnlCalculatorState extends State<PnlCalculator> {
+  final ExpansibleController _pnlExpansionController = ExpansibleController();
+
   late double _envelope;
   late double _minB;
   late double _maxB;
@@ -40,9 +42,8 @@ class _PnlCalculatorState extends State<PnlCalculator> {
     final b = envelopeSliderBoundsForCenter(_envelope);
     _minB = b.min;
     _maxB = b.max;
-    _assumptionField = TextEditingController(
-      text: formatAssumptionInputNumber(_envelope),
-    );
+    _assumptionField = TextEditingController();
+    _syncEnvelopeFieldDisplay();
     _assumptionFocus.addListener(_onAssumptionFocusChange);
   }
 
@@ -65,7 +66,16 @@ class _PnlCalculatorState extends State<PnlCalculator> {
     _assumptionFocus.removeListener(_onAssumptionFocusChange);
     _assumptionField.dispose();
     _assumptionFocus.dispose();
+    _pnlExpansionController.dispose();
     super.dispose();
+  }
+
+  void _syncEnvelopeFieldDisplay() {
+    final t = formatEnvelopeUsdField(_envelope);
+    _assumptionField.value = TextEditingValue(
+      text: t,
+      selection: TextSelection.collapsed(offset: t.length),
+    );
   }
 
   void _recenterToMarket() {
@@ -73,7 +83,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
     final b = envelopeSliderBoundsForCenter(_envelope);
     _minB = b.min;
     _maxB = b.max;
-    _assumptionField.text = formatAssumptionInputNumber(_envelope);
+    _syncEnvelopeFieldDisplay();
   }
 
   void _setBoundsForCenter(double center) {
@@ -94,7 +104,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
       if (!valueFitsInBounds(_envelope, _minB, _maxB)) {
         _setBoundsForCenter(_envelope);
       }
-      _assumptionField.text = formatAssumptionInputNumber(_envelope);
+      _syncEnvelopeFieldDisplay();
     });
   }
 
@@ -104,9 +114,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
     }
     final parsed = tryParseAssumptionValue(_assumptionField.text);
     if (parsed == null) {
-      setState(() {
-        _assumptionField.text = formatAssumptionInputNumber(_envelope);
-      });
+      setState(_syncEnvelopeFieldDisplay);
       return;
     }
     setState(() {
@@ -114,7 +122,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
       if (!valueFitsInBounds(parsed, _minB, _maxB)) {
         _setBoundsForCenter(parsed);
       }
-      _assumptionField.text = formatAssumptionInputNumber(_envelope);
+      _syncEnvelopeFieldDisplay();
     });
   }
 
@@ -129,12 +137,18 @@ class _PnlCalculatorState extends State<PnlCalculator> {
         ? AppColors.textTertiary
         : (pnl > 0 ? AppColors.primary : AppColors.secondary);
 
+    final headerFill = Color.lerp(
+      AppColors.background,
+      AppColors.surfaceContainer,
+      0.2,
+    )!;
+
     return Semantics(
       key: const ValueKey('trading-pnl-section'),
       container: true,
-      label: 'PnL calculator',
+      label: 'PnL Calculator',
       child: Material(
-        color: AppColors.surfaceContainer,
+        color: AppColors.background,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           side: const BorderSide(color: AppColors.outline),
@@ -143,187 +157,261 @@ class _PnlCalculatorState extends State<PnlCalculator> {
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
+            controller: _pnlExpansionController,
             initiallyExpanded: true,
-            tilePadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 2,
-            ),
-            childrenPadding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.lg,
-            ),
-            title: Text(
-              'PnL calculator',
-              style: AppTypography.bodySmall.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.0,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
+            showTrailingIcon: false,
+            tilePadding: EdgeInsets.zero,
+            collapsedBackgroundColor: Colors.transparent,
+            backgroundColor: Colors.transparent,
+            collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
+            shape: const RoundedRectangleBorder(side: BorderSide.none),
+            title: ListenableBuilder(
+              listenable: _pnlExpansionController,
+              builder: (context, _) {
+                return ColoredBox(
+                  color: headerFill,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 10,
+                    ),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Envelope Value',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textTertiary,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                              ),
+                        Expanded(
+                          child: Text(
+                            'PnL Calculator',
+                            style: AppTypography.bodySmall.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
                             ),
-                            Text(
-                              formatAssumptionText(_envelope),
-                              key: const ValueKey('trading-pnl-envelope-label'),
-                              style: AppTypography.monoSmall.copyWith(
-                                fontSize: 10,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            IconButton(
-                              key: const ValueKey('trading-pnl-reset'),
-                              onPressed: () {
-                                setState(_recenterToMarket);
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                              tooltip: 'Use market price',
-                              icon: Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            const Text(
-                              r'$',
-                              style: AppTypography.monoSmall,
-                            ),
-                            const SizedBox(width: 2),
-                            Expanded(
-                              child: TextField(
-                                key: const ValueKey('trading-pnl-envelope-input'),
-                                controller: _assumptionField,
-                                focusNode: _assumptionFocus,
-                                keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                  signed: true,
-                                ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[-0-9.]'),
-                                  ),
-                                ],
-                                onEditingComplete: _onAssumptionSubmitted,
-                                onSubmitted: (_) => _onAssumptionSubmitted,
-                                style: AppTypography.monoSmall,
-                                decoration: const InputDecoration(
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Slider(
-                          value: _clampedToSlider,
-                          min: _slMin,
-                          max: _slMax,
-                          onChanged: _onSliderChanged,
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formatAssumptionText(_slMin),
-                              key: const ValueKey('trading-pnl-range-min'),
-                              style: AppTypography.bodySmall.copyWith(
-                                fontSize: 10,
-                                color: AppColors.textTertiary,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                            Text(
-                              formatAssumptionText(_slMax),
-                              key: const ValueKey('trading-pnl-range-max'),
-                              style: AppTypography.bodySmall.copyWith(
-                                fontSize: 10,
-                                color: AppColors.textTertiary,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
+                        AnimatedRotation(
+                          turns: _pnlExpansionController.isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeIn,
+                          child: Icon(
+                            Icons.expand_more,
+                            size: 22,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Container(
-                    width: 1,
-                    height: 64,
-                    color: AppColors.outline,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'PROJECTED PNL',
-                          key: const ValueKey('trading-pnl-projection-label'),
-                          style: AppTypography.bodySmall.copyWith(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.2,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          formatProjectedPnl(pnl),
-                          key: const ValueKey('trading-pnl-projected'),
-                          style: AppTypography.monoLarge.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: pnlColor,
-                            height: 1.0,
-                            letterSpacing: -0.2,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
+                );
+              },
+            ),
+            childrenPadding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            children: [
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: AppColors.textDisabled.withValues(alpha: 0.55),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'ENVELOPE VALUE',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ),
+                                  ),
+                                  IntrinsicWidth(
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 56,
+                                      ),
+                                      child: TextField(
+                                        key: const ValueKey(
+                                          'trading-pnl-envelope-input',
+                                        ),
+                                        controller: _assumptionField,
+                                        focusNode: _assumptionFocus,
+                                        keyboardType:
+                                            const TextInputType.numberWithOptions(
+                                              decimal: true,
+                                              signed: true,
+                                            ),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                            RegExp(r'[\$\-0-9.,]'),
+                                          ),
+                                        ],
+                                        onEditingComplete:
+                                            _onAssumptionSubmitted,
+                                        onSubmitted: (_) =>
+                                            _onAssumptionSubmitted,
+                                        style: AppTypography.monoSmall.copyWith(
+                                          fontSize: 10,
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w700,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          isCollapsed: true,
+                                          contentPadding: EdgeInsets.zero,
+                                          border: InputBorder.none,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    key: const ValueKey('trading-pnl-reset'),
+                                    onPressed: () {
+                                      setState(_recenterToMarket);
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                    tooltip: 'Use market price',
+                                    icon: Icon(
+                                      Icons.refresh,
+                                      size: 18,
+                                      color: AppColors.textDisabled,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: AppColors.primary,
+                                  inactiveTrackColor: AppColors.textTertiary
+                                      .withValues(alpha: 0.45),
+                                  thumbColor: AppColors.primary,
+                                  trackHeight: 4,
+                                  // Full-width track so it lines up with the $min / $max row
+                                  // (default horizontal inset is half the thumb size).
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                ),
+                                child: Slider(
+                                  value: _clampedToSlider,
+                                  min: _slMin,
+                                  max: _slMax,
+                                  onChanged: _onSliderChanged,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    formatAssumptionText(_slMin),
+                                    key: const ValueKey(
+                                      'trading-pnl-range-min',
+                                    ),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      fontSize: 10,
+                                      color: AppColors.textTertiary,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  Text(
+                                    formatAssumptionText(_slMax),
+                                    key: const ValueKey(
+                                      'trading-pnl-range-max',
+                                    ),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      fontSize: 10,
+                                      color: AppColors.textTertiary,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: AppColors.textDisabled.withValues(
+                                  alpha: 0.55,
+                                ),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          padding: const EdgeInsets.only(left: AppSpacing.md),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'PROJECTED PNL',
+                                  key: const ValueKey(
+                                    'trading-pnl-projection-label',
+                                  ),
+                                  style: AppTypography.bodySmall.copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formatProjectedPnl(pnl),
+                                  key: const ValueKey('trading-pnl-projected'),
+                                  style: AppTypography.monoLarge.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: pnlColor,
+                                    height: 1.0,
+                                    letterSpacing: -0.2,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ],
           ),

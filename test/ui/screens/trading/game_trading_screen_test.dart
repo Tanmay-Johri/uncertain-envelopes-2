@@ -29,7 +29,8 @@ void main() {
       expect(find.text(r'+$5,750'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-chart-section')), findsOneWidget);
       expect(find.text('Market Price'), findsOneWidget);
-      expect(find.text(r'$150.00'), findsOneWidget);
+      // Market price line and PnL envelope default both use market (150.00).
+      expect(find.text(r'$150.00'), findsNWidgets(2));
       expect(find.text('0'), findsWidgets);
       expect(find.text('Minutes since game start'), findsOneWidget);
     });

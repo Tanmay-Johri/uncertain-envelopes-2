@@ -1,54 +1,66 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/trading/envelope_assumption_bounds.dart';
-import 'package:uncertain_envelopes_2/core/trading/envelope_value_parse.dart';
 
 void main() {
-  group('examples you gave (per-endpoint rules)', () {
-    test('75, 225 → 70, 300', () {
-      final b = envelopeSliderBoundsFromRaws(75, 225);
-      expect(b.min, 70);
+  group('envelopeSliderBoundsFromRaws', () {
+    test('150 → step 100; 75,225 → 0, 300', () {
+      final b = envelopeSliderBoundsFromRaws(
+        75,
+        225,
+        assumptionForStep: 150,
+      );
+      expect(b.min, 0);
       expect(b.max, 300);
     });
 
-    test('raw lower 0.65 → 0; raw upper 0.65 → 1', () {
-      expect(envelopeSliderBoundsFromRaws(0.65, 1).min, 0);
-      expect(envelopeSliderBoundsFromRaws(0, 0.65).max, 1);
+    test('anchor 75 ≥ 10: grids provided raws 75,225 with step 10 → 70, 230', () {
+      final b = envelopeSliderBoundsFromRaws(
+        75,
+        225,
+        assumptionForStep: 75,
+      );
+      expect(b.min, 70);
+      expect(b.max, 230);
     });
 
-    test('raw lower 1.25 → 1; raw upper 1.25 → 10', () {
-      expect(envelopeSliderBoundsFromRaws(1.25, 10).min, 1);
-      expect(envelopeSliderBoundsFromRaws(0, 1.25).max, 10);
+    test('anchor in [1,10): returns 0,10 regardless of raws', () {
+      final b = envelopeSliderBoundsFromRaws(
+        99,
+        999,
+        assumptionForStep: 5,
+      );
+      expect(b.min, 0);
+      expect(b.max, 10);
     });
 
-    test('raw lower 19 → 10; raw upper 19 → 20', () {
-      expect(envelopeSliderBoundsFromRaws(19, 100).min, 10);
-      expect(envelopeSliderBoundsFromRaws(0, 19).max, 20);
+    test('anchor in (0,1): returns 0,1 regardless of raws', () {
+      final b = envelopeSliderBoundsFromRaws(
+        99,
+        999,
+        assumptionForStep: 0.5,
+      );
+      expect(b.min, 0);
+      expect(b.max, 1);
     });
   });
 
   group('envelopeSliderBoundsForCenter', () {
-    test('0.65: (0, 1) tier', () {
+    test('150 → 0, 300', () {
+      final b = envelopeSliderBoundsForCenter(150);
+      expect(b.min, 0);
+      expect(b.max, 300);
+    });
+
+    test('0 < v < 1 → fixed 0, 1', () {
       final b = envelopeSliderBoundsForCenter(0.65);
       expect(b.min, 0);
-      expect(b.max, 1);
+      expect(b.max, 1.0);
     });
 
-    test('2.5: 1.25, 3.75 → 1, 10', () {
-      final b = envelopeSliderBoundsForCenter(2.5);
-      expect(b.min, 1);
-      expect(b.max, 10);
-    });
-
-    test('1: 0.5, 1.5 → 0, 10', () {
-      final b = envelopeSliderBoundsForCenter(1);
-      expect(b.min, 0);
-      expect(b.max, 10);
-    });
-
-    test('150 → 70, 300', () {
-      final b = envelopeSliderBoundsForCenter(150);
-      expect(b.min, 70);
-      expect(b.max, 300);
+    test('1 ≤ v < 10 → fixed 0, 10', () {
+      expect(envelopeSliderBoundsForCenter(2.5), (min: 0, max: 10));
+      expect(envelopeSliderBoundsForCenter(1), (min: 0, max: 10));
+      expect(envelopeSliderBoundsForCenter(9.99), (min: 0, max: 10));
     });
 
     test('v=0 → 0, 0', () {
@@ -57,41 +69,47 @@ void main() {
       expect(b.max, 0);
     });
 
-    test('v=10: 5, 15 → 5, 20', () {
+    test('v=10: step 10 → 0, 20', () {
       final b = envelopeSliderBoundsForCenter(10);
-      expect(b.min, 5);
+      expect(b.min, 0);
       expect(b.max, 20);
     });
 
-    test('v=2: rawL=1 → min 0', () {
+    test('v=2 in [1,10) tier → 0, 10 (not raw-based grid)', () {
       final b = envelopeSliderBoundsForCenter(2);
-      expect(isCloseTo(0.5 * 2, 1.0), isTrue);
       expect(b.min, 0);
       expect(b.max, 10);
     });
 
-    test('v=0.4: (0, 1)', () {
+    test('v=0.4 in (0,1) tier → 0, 1', () {
       final b = envelopeSliderBoundsForCenter(0.4);
       expect(b.min, 0);
-      expect(b.max, 1);
+      expect(b.max, 1.0);
     });
 
-    test('v=2/3: rawU=1, max=1', () {
+    test('v=2/3 in (0,1) tier → 0, 1', () {
       const v = 2.0 / 3.0;
       final b = envelopeSliderBoundsForCenter(v);
-      expect(b.max, 1);
+      expect(b.min, 0);
+      expect(b.max, 1.0);
     });
 
-    test('v=384: 100, 600', () {
+    test('v=384: step 100 → 100, 600', () {
       final b = envelopeSliderBoundsForCenter(384);
       expect(b.min, 100);
       expect(b.max, 600);
     });
 
-    test('v=40: 20, 60', () {
+    test('v=40: step 10 → 20, 60', () {
       final b = envelopeSliderBoundsForCenter(40);
       expect(b.min, 20);
       expect(b.max, 60);
+    });
+
+    test('v=19: step 10, raw 9.5 / 28.5 → 0, 30', () {
+      final b = envelopeSliderBoundsForCenter(19);
+      expect(b.min, 0);
+      expect(b.max, 30);
     });
   });
 
