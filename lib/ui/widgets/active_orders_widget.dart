@@ -43,19 +43,6 @@ String _statusChipText(PersonalOrderStatus s) {
   };
 }
 
-/// Short stable **#** id for the **ID:** row (mock).
-String _displayIdSuffix(String id) {
-  final digits = RegExp(r'\d+')
-      .allMatches(id)
-      .map((m) => m.group(0)!)
-      .join();
-  if (digits.length >= 6) {
-    return digits.substring(digits.length - 6);
-  }
-  final n = id.hashCode.abs() % 1000000;
-  return n.toString().padLeft(6, '0');
-}
-
 /// Active orders — layout from `admin_game_trading_dashboard_7/code.html`.
 class ActiveOrdersWidget extends StatelessWidget {
   const ActiveOrdersWidget({
@@ -163,7 +150,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
     final priceSuffix = o.orderType == PersonalOrderType.market
         ? 'Market'
         : _usd2.format(o.limitPrice ?? 0);
-    final canCancel = personalOrderCanCancel(o.status);
+    final canCancelAction = personalOrderCanCancel(o.status);
 
     return Container(
       key: ValueKey('active-order-${o.id}'),
@@ -308,66 +295,62 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'ID: #${_displayIdSuffix(o.id)}\n'
-                      'Created: ${o.createdAt != null ? _createdFmt.format(o.createdAt!.toLocal()) : '—'}\n'
-                      'Initial Qty: ${o.quantity}',
-                      style: AppTypography.monoSmall.copyWith(
-                        fontSize: 12,
-                        height: 1.45,
-                        color: AppColors.textTertiary,
-                      ),
+                  Text(
+                    'Created: ${o.createdAt != null ? _createdFmt.format(o.createdAt!.toLocal()) : '—'}\n'
+                    'Initial Qty: ${o.quantity}',
+                    style: AppTypography.monoSmall.copyWith(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: AppColors.textTertiary,
                     ),
                   ),
-                  if (canCancel) ...[
-                    const SizedBox(width: AppSpacing.md),
-                    OutlinedButton.icon(
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
                       key: ValueKey('active-order-cancel-${o.id}'),
-                      onPressed: () async {
-                        final ok = await ConfirmationDialog.show(
-                          context,
-                          title: 'Cancel order?',
-                          message:
-                              'This removes your resting order from the book.',
-                          confirmLabel: 'Cancel order',
-                          cancelLabel: 'Keep',
-                          destructive: true,
-                        );
-                        if (ok == true && context.mounted) {
-                          widget.onCancel(o.id);
-                        }
-                      },
+                      onPressed: canCancelAction
+                          ? () async {
+                              final ok = await ConfirmationDialog.show(
+                                context,
+                                title: 'Cancel order?',
+                                message:
+                                    'This removes your resting order from the book.',
+                                confirmLabel: 'Cancel order',
+                                cancelLabel: 'Keep',
+                                destructive: true,
+                              );
+                              if (ok == true && context.mounted) {
+                                widget.onCancel(o.id);
+                              }
+                            }
+                          : null,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.secondary,
+                        disabledForegroundColor:
+                            AppColors.textDisabled.withValues(alpha: 0.45),
                         side: BorderSide(
                           color: AppColors.secondary.withValues(alpha: 0.3),
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                          horizontal: AppSpacing.xl,
+                          vertical: AppSpacing.md,
                         ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        minimumSize: const Size.fromHeight(48),
                       ),
-                      icon: Icon(
-                        Icons.cancel_outlined,
-                        size: 16,
-                        color: AppColors.secondary,
-                      ),
+                      icon: const Icon(Icons.cancel_outlined, size: 18),
                       label: Text(
                         'Cancel Order',
                         style: AppTypography.bodySmall.copyWith(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.secondary,
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

@@ -22,7 +22,9 @@ void main() {
       expect(find.text('No active orders'), findsOneWidget);
     });
 
-    testWidgets('cancel only for resting; confirm removes row', (tester) async {
+    testWidgets(
+        'cancel button for all orders; only resting opens confirm and removes',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
@@ -31,7 +33,13 @@ void main() {
       );
 
       expect(find.byKey(const ValueKey('active-order-cancel-r')), findsOneWidget);
-      expect(find.byKey(const ValueKey('active-order-cancel-q')), findsNothing);
+      await tester.tap(find.text('2 Units'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('active-order-cancel-q')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('active-order-cancel-q')));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel order?'), findsNothing);
 
       final cancelBtn = find.byKey(const ValueKey('active-order-cancel-r'));
       await tester.ensureVisible(cancelBtn);
@@ -57,7 +65,7 @@ void main() {
       expect(find.text('Active Orders'), findsOneWidget);
       expect(find.text('BUY LIMIT'), findsOneWidget);
       expect(find.text('in_queue'), findsOneWidget);
-      expect(find.textContaining('ID: #'), findsOneWidget);
+      expect(find.textContaining('ID: #'), findsNothing);
       await tester.tap(find.text('2 Units'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Initial Qty:'), findsNWidgets(2));
