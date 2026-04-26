@@ -25,6 +25,10 @@ abstract final class AppConstants {
   static const staleClaimThresholdSeconds = 30;
   static const versionPollIntervalSeconds = 5;
 
+  /// Max wait for backend ack that a `cancel_order` **command row** was created.
+  /// If this elapses, UI reverts from **Cancelling** and shows a small banner.
+  static const cancelOrderCommandAckTimeout = Duration(seconds: 10);
+
   // App metadata
   static const appTitle = 'uncertain-envelopes-2';
 }

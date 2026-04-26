@@ -14,7 +14,7 @@ void main() {
             body: ActiveOrdersWidget(
               orders: const [],
               pendingCancellationOrderIds: const {},
-              onCancellationRequested: (_) {},
+              onCancellationRequested: (_, __) {},
             ),
           ),
         ),
@@ -33,8 +33,9 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('2 Units'));
-      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('active-order-cancel-q')),
+      );
       await tester.tap(find.byKey(const ValueKey('active-order-cancel-q')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
@@ -55,6 +56,8 @@ void main() {
         ),
       );
 
+      await tester.tap(find.textContaining('1 units @'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
@@ -98,14 +101,15 @@ void main() {
       expect(find.text('Active Orders'), findsOneWidget);
       expect(find.text('BUY LIMIT'), findsOneWidget);
       expect(find.text('order_resting'), findsOneWidget);
-      expect(find.text('1 Units'), findsOneWidget);
+      expect(find.textContaining('1 units @'), findsOneWidget);
+      expect(find.textContaining('2 units @'), findsOneWidget);
+      expect(find.textContaining('ID: #'), findsNothing);
+      expect(find.text('in_queue'), findsOneWidget);
+      await tester.tap(find.textContaining('1 units @'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('Current Qty: 1'), findsOneWidget);
       expect(find.textContaining('Initial Qty: 1'), findsOneWidget);
       expect(find.textContaining('Limit price:'), findsWidgets);
-      expect(find.textContaining('ID: #'), findsNothing);
-      expect(find.text('in_queue'), findsOneWidget);
-      await tester.tap(find.text('2 Units'));
-      await tester.pumpAndSettle();
       expect(find.textContaining('Initial Qty:'), findsNWidgets(2));
     });
   });
@@ -120,7 +124,7 @@ class _OrdersHarness extends StatefulWidget {
 
 class _OrdersHarnessState extends State<_OrdersHarness> {
   var _orders = [
-    const PersonalOrder(
+    PersonalOrder(
       id: 'r',
       side: PersonalOrderSide.buy,
       orderType: PersonalOrderType.limit,
@@ -128,8 +132,9 @@ class _OrdersHarnessState extends State<_OrdersHarness> {
       quantityCurrent: 1,
       limitPrice: 10,
       status: PersonalOrderStatus.resting,
+      createdAt: DateTime.utc(2026, 4, 26, 16, 5),
     ),
-    const PersonalOrder(
+    PersonalOrder(
       id: 'q',
       side: PersonalOrderSide.sell,
       orderType: PersonalOrderType.market,
@@ -137,12 +142,13 @@ class _OrdersHarnessState extends State<_OrdersHarness> {
       quantityCurrent: 2,
       limitPrice: null,
       status: PersonalOrderStatus.inQueue,
+      createdAt: DateTime.utc(2026, 4, 26, 18, 33),
     ),
   ];
 
   final Set<String> _pending = {};
 
-  void _onCancellationRequested(String id) {
+  void _onCancellationRequested(BuildContext context, String id) {
     setState(() => _pending.add(id));
     Future<void>.delayed(const Duration(milliseconds: 50), () {
       if (!mounted) return;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
@@ -95,14 +97,114 @@ void main() {
       await tester.ensureVisible(newOrder);
       await tester.tap(newOrder);
       await tester.pumpAndSettle();
+      expect(find.text('Last Traded Price \$150.00'), findsOneWidget);
+      expect(find.text('Bid Ask Midpoint \$150.00'), findsOneWidget);
       await tester.enterText(find.byKey(const ValueKey('new-order-qty')), '1');
       await tester.enterText(find.byKey(const ValueKey('new-order-limit')), '140');
-      await tester.tap(find.byKey(const ValueKey('new-order-submit')));
+      final submit = find.byKey(const ValueKey('new-order-submit'));
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('active-order-local_p_me_1')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('new order dialog shows bid ask midpoint hyphen when book empty',
+        (tester) async {
+      const data = GameTradingViewData(
+        gameTitle: 'T',
+        description: 'd',
+        isViewerAdmin: false,
+        currentPlayerId: 'p1',
+        isTimed: false,
+        tradingTimeRemaining: null,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+        orderBookBids: [],
+        orderBookAsks: [],
+        marketPrice: 10,
+        priceHistory: [],
+        chartSessionElapsed: Duration.zero,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-new-order')));
+      await tester.pumpAndSettle();
+      expect(find.text('Last Traded Price \$10.00'), findsOneWidget);
+      expect(find.text('Bid Ask Midpoint -'), findsOneWidget);
+    });
+
+    testWidgets(
+        'bid ask midpoint notifier tracks order book when trading data updates',
+        (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      late GameTradingViewData data;
+      data = s.data;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                children: [
+                  TextButton(
+                    key: const ValueKey('midpoint-refresh'),
+                    onPressed: () {
+                      setState(() {
+                        data = GameTradingViewData(
+                          gameTitle: data.gameTitle,
+                          description: data.description,
+                          isViewerAdmin: data.isViewerAdmin,
+                          currentPlayerId: data.currentPlayerId,
+                          isTimed: data.isTimed,
+                          tradingTimeRemaining: data.tradingTimeRemaining,
+                          deltaCash: data.deltaCash,
+                          deltaEnvelopes: data.deltaEnvelopes,
+                          orderBookBids: const [],
+                          orderBookAsks: const [],
+                          marketPrice: data.marketPrice,
+                          priceHistory: data.priceHistory,
+                          chartSessionElapsed: data.chartSessionElapsed,
+                          gameStartedAtUtc: data.gameStartedAtUtc,
+                          personalOrders: data.personalOrders,
+                        );
+                      });
+                    },
+                    child: const Text('refresh'),
+                  ),
+                  Expanded(
+                    child: TickerMode(
+                      enabled: false,
+                      child: GameTradingScreen(data: data),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-new-order')));
+      await tester.pumpAndSettle();
+      expect(find.text('Bid Ask Midpoint \$150.00'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('new-order-close')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('midpoint-refresh')));
+      await tester.tap(find.byKey(const ValueKey('midpoint-refresh')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('game-trading-new-order')));
+      await tester.pumpAndSettle();
+      expect(find.text('Bid Ask Midpoint -'), findsOneWidget);
     });
 
     testWidgets('g1 shows live countdown when timed', (tester) async {
@@ -263,6 +365,47 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey('active-order-po_g1_rest')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'cancel command ack timeout reverts button and shows snackbar',
+      (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(
+              data: s.data,
+              submitCancelOrderCommand: (_) => Completer<void>().future,
+            ),
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('active-order-po_g1_rest')),
+      );
+      await tester.tap(find.byKey(const ValueKey('active-order-po_g1_rest')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      expect(find.text('Cancelling'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+
+      expect(find.text('Cancelling'), findsNothing);
+      expect(find.text('Cancel Order'), findsWidgets);
+      expect(
+        find.text('Could not create cancellation request'),
         findsOneWidget,
       );
     });

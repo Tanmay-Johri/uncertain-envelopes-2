@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/trading/cancel_order_command.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -28,12 +31,17 @@ class GameTradingScreen extends StatefulWidget {
     this.onShowLogs,
     this.onEndGameFromMenu,
     this.onAddTime,
+    this.submitCancelOrderCommand,
   });
 
   final GameTradingViewData data;
   final VoidCallback? onShowLogs;
   final VoidCallback? onEndGameFromMenu;
   final VoidCallback? onAddTime;
+
+  /// Completes when the backend acks that the `cancel_order` command **row**
+  /// was created. Defaults to [defaultSubmitCancelOrderCommandAck] in state.
+  final Future<void> Function(String orderId)? submitCancelOrderCommand;
 
   @override
   State<GameTradingScreen> createState() => _GameTradingScreenState();
@@ -43,12 +51,25 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   late List<PersonalOrder> _personalOrders;
   var _localOrderSeq = 0;
 
+  /// Keeps [NewOrderModal]’s Last Traded Price line in sync while the dialog is open.
+  late final ValueNotifier<double> _marketPriceNotifier;
+
+  /// Live bid–ask midpoint for [NewOrderModal] (`null` → hyphen in the UI).
+  late final ValueNotifier<double?> _bidAskMidpointNotifier;
+
   /// Mock: after user sends cancel, until backend reports [PersonalOrderStatus.cancelled].
   final Set<String> _pendingCancellationOrderIds = <String>{};
 
   @override
   void initState() {
     super.initState();
+    _marketPriceNotifier = ValueNotifier(widget.data.marketPrice);
+    _bidAskMidpointNotifier = ValueNotifier(
+      computeBidAskMidpoint(
+        widget.data.orderBookBids,
+        widget.data.orderBookAsks,
+      ),
+    );
     _personalOrders = [];
     _reconcilePersonalOrdersWithBackendSnapshot();
   }
@@ -56,9 +77,26 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   @override
   void didUpdateWidget(covariant GameTradingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.data.marketPrice != _marketPriceNotifier.value) {
+      _marketPriceNotifier.value = widget.data.marketPrice;
+    }
+    final nextMid = computeBidAskMidpoint(
+      widget.data.orderBookBids,
+      widget.data.orderBookAsks,
+    );
+    if (nextMid != _bidAskMidpointNotifier.value) {
+      _bidAskMidpointNotifier.value = nextMid;
+    }
     if (!identical(oldWidget.data, widget.data)) {
       _reconcilePersonalOrdersWithBackendSnapshot();
     }
+  }
+
+  @override
+  void dispose() {
+    _marketPriceNotifier.dispose();
+    _bidAskMidpointNotifier.dispose();
+    super.dispose();
   }
 
   /// [widget.data.personalOrders] is authoritative: any id not in that list is
@@ -82,16 +120,53 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     return 'local_${widget.data.currentPlayerId}_$_localOrderSeq';
   }
 
-  /// PRD: player sends `cancel_order`; when the worker updates the row,
-  /// `status` becomes `cancelled`.
-  ///
-  /// **Mock:** pretends network + command processing with a fixed delay, then
-  /// applies the same order update we expect from a realtime snapshot. Phase 2:
-  /// remove the timer; keep [_pendingCancellationOrderIds] until the provider
-  /// pushes an order whose [PersonalOrder.status] is [cancelled] (also clears
-  /// pending in [didUpdateWidget] when that snapshot arrives).
-  void _onCancellationRequested(String id) {
-    setState(() => _pendingCancellationOrderIds.add(id));
+  /// Optimistic **Cancelling** → await command-row ack (with timeout) → keep
+  /// **Cancelling** until mock/worker sets order to [PersonalOrderStatus.cancelled].
+  void _onCancellationRequested(BuildContext context, String orderId) {
+    setState(() => _pendingCancellationOrderIds.add(orderId));
+    unawaited(_runCancelOrderCommandFlow(context, orderId));
+  }
+
+  Future<void> _runCancelOrderCommandFlow(
+    BuildContext context,
+    String orderId,
+  ) async {
+    final submit = widget.submitCancelOrderCommand ??
+        defaultSubmitCancelOrderCommandAck;
+    try {
+      await submit(orderId).timeout(AppConstants.cancelOrderCommandAckTimeout);
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() => _pendingCancellationOrderIds.remove(orderId));
+      if (context.mounted) {
+        _showCancelCommandAckFailedBanner(context);
+      }
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _pendingCancellationOrderIds.remove(orderId));
+      if (context.mounted) {
+        _showCancelCommandAckFailedBanner(context);
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    _scheduleMockWorkerOrderCancelled(orderId);
+  }
+
+  void _showCancelCommandAckFailedBanner(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(kCancelOrderCommandAckFailedMessage),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// After command row exists: mock worker delay, then same local update as a
+  /// snapshot with `cancelled`. Phase 2: remove; rely on backend orders feed.
+  void _scheduleMockWorkerOrderCancelled(String id) {
     Future<void>.delayed(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
       setState(() {
@@ -111,6 +186,8 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     final created = await NewOrderModal.show(
       context,
       marketPrice: widget.data.marketPrice,
+      marketPriceListenable: _marketPriceNotifier,
+      bidAskMidpointListenable: _bidAskMidpointNotifier,
     );
     if (!mounted || created == null) return;
     setState(() {

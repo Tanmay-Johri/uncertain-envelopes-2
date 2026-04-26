@@ -5,13 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/trading/personal_order.dart';
+import '../../core/trading/usd_limit_price_display.dart';
 import 'confirmation_dialog.dart';
-
-final _usd2 = NumberFormat.currency(
-  locale: 'en_US',
-  symbol: r'$',
-  decimalDigits: 2,
-);
 
 final _createdFmt = DateFormat.jm();
 
@@ -58,11 +53,13 @@ class ActiveOrdersWidget extends StatelessWidget {
   /// Client-side: cancellation command sent; waiting for `cancelled` from backend.
   final Set<String> pendingCancellationOrderIds;
 
-  /// User confirmed the dialog; parent sends command / updates mock pipeline.
-  final void Function(String orderId) onCancellationRequested;
+  /// User confirmed the dialog; parent sends `cancel_order` and owns ack / timeout UX.
+  final void Function(BuildContext context, String orderId)
+      onCancellationRequested;
 
   @override
   Widget build(BuildContext context) {
+    final displayOrders = personalOrdersSortedNewestFirst(orders);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -85,7 +82,7 @@ class ActiveOrdersWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        if (orders.isEmpty)
+        if (displayOrders.isEmpty)
           Container(
             key: const ValueKey('active-orders-empty'),
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -103,7 +100,7 @@ class ActiveOrdersWidget extends StatelessWidget {
             ),
           )
         else
-          ...orders.asMap().entries.map(
+          ...displayOrders.asMap().entries.map(
                 (e) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: _ActiveOrderCard(
@@ -130,7 +127,8 @@ class _ActiveOrderCard extends StatefulWidget {
   final PersonalOrder order;
   final bool initiallyExpanded;
   final Set<String> pendingCancellationOrderIds;
-  final void Function(String orderId) onCancellationRequested;
+  final void Function(BuildContext context, String orderId)
+      onCancellationRequested;
 
   @override
   State<_ActiveOrderCard> createState() => _ActiveOrderCardState();
@@ -159,14 +157,14 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
     final isBuy = o.side == PersonalOrderSide.buy;
     final priceSuffix = o.orderType == PersonalOrderType.market
         ? 'Market'
-        : _usd2.format(o.limitPrice ?? 0);
+        : formatUsdLimitForActiveOrder(o.limitPrice ?? 0);
     final isCancelled = o.status == PersonalOrderStatus.cancelled;
     final isPending = widget.pendingCancellationOrderIds.contains(o.id);
     final canSendCancel = personalOrderCanCancel(o.status);
 
     final limitDetail = o.orderType == PersonalOrderType.market
         ? '—'
-        : _usd2.format(o.limitPrice ?? 0);
+        : formatUsdLimitForActiveOrder(o.limitPrice ?? 0);
     final statusChip = personalOrderStatusChipStyle(o.status);
 
     return Container(
@@ -194,54 +192,41 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: _kSideTypePillWidth,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: SizedBox(
+                              width: _kSideTypePillWidth,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isBuy
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.1)
+                                      : AppColors.secondary
+                                          .withValues(alpha: 0.1),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: Text(
+                                  _sideTypePill(o.side, o.orderType),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.microLabel.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.4,
                                     color: isBuy
                                         ? AppColors.primary
-                                            .withValues(alpha: 0.1)
-                                        : AppColors.secondary
-                                            .withValues(alpha: 0.1),
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.sm),
-                                  ),
-                                  child: Text(
-                                    _sideTypePill(o.side, o.orderType),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.microLabel.copyWith(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.4,
-                                      color: isBuy
-                                          ? AppColors.primary
-                                          : AppColors.secondary,
-                                    ),
+                                        : AppColors.secondary,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Text(
-                                  '${o.quantityCurrent} Units',
-                                  style: AppTypography.bodySmall.copyWith(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                         Column(
@@ -289,7 +274,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '@ $priceSuffix',
+                      '${o.quantityCurrent} units @ $priceSuffix',
                       style: AppTypography.monoSmall.copyWith(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -345,7 +330,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                                 uppercaseActionLabels: false,
                               );
                               if (ok == true && context.mounted) {
-                                widget.onCancellationRequested(o.id);
+                                widget.onCancellationRequested(context, o.id);
                               }
                             }
                           : null,

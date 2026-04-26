@@ -67,6 +67,77 @@ void main() {
     });
   });
 
+  group('personalOrdersSortedNewestFirst', () {
+    test('orders by createdAt descending; nulls last', () {
+      final t1 = DateTime.utc(2026, 1, 1, 10);
+      final t2 = DateTime.utc(2026, 1, 1, 12);
+      final orders = [
+        PersonalOrder(
+          id: 'old',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: 1,
+          status: PersonalOrderStatus.resting,
+          createdAt: t1,
+        ),
+        PersonalOrder(
+          id: 'new',
+          side: PersonalOrderSide.sell,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: 2,
+          status: PersonalOrderStatus.inQueue,
+          createdAt: t2,
+        ),
+        PersonalOrder(
+          id: 'non',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.market,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: null,
+          status: PersonalOrderStatus.inQueue,
+          createdAt: null,
+        ),
+      ];
+      final sorted = personalOrdersSortedNewestFirst(orders);
+      expect(sorted.map((e) => e.id), ['new', 'old', 'non']);
+    });
+
+    test('tie-break by id when same instant', () {
+      final t = DateTime.utc(2026, 1, 1);
+      final orders = [
+        PersonalOrder(
+          id: 'b',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: 1,
+          status: PersonalOrderStatus.resting,
+          createdAt: t,
+        ),
+        PersonalOrder(
+          id: 'a',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: 1,
+          status: PersonalOrderStatus.resting,
+          createdAt: t,
+        ),
+      ];
+      expect(
+        personalOrdersSortedNewestFirst(orders).map((e) => e.id),
+        ['a', 'b'],
+      );
+    });
+  });
+
   group('PersonalOrder.copyWith', () {
     test('replaces id only; keeps null limitPrice', () {
       const o = PersonalOrder(

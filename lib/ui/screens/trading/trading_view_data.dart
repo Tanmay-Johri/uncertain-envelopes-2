@@ -20,6 +20,21 @@ class OrderBookLevel {
   final int quantity;
 }
 
+/// Midpoint `(best bid + best ask) / 2` when both sides have at least one
+/// level; otherwise `null`.
+///
+/// Best bid is the **maximum** bid price; best ask is the **minimum** ask price
+/// (robust even if lists are not sorted).
+double? computeBidAskMidpoint(
+  List<OrderBookLevel> bids,
+  List<OrderBookLevel> asks,
+) {
+  if (bids.isEmpty || asks.isEmpty) return null;
+  final bestBid = bids.map((e) => e.price).reduce((a, b) => a > b ? a : b);
+  final bestAsk = asks.map((e) => e.price).reduce((a, b) => a < b ? a : b);
+  return (bestBid + bestAsk) / 2;
+}
+
 /// Immutable snapshot for the trading dashboard (mock UI; Phase 2 replaces
 /// with provider-driven state).
 @immutable

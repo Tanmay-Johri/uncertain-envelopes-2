@@ -79,6 +79,23 @@ class PersonalOrder {
   }
 }
 
+/// Active-orders panel: **newest** [PersonalOrder.createdAt] at the top.
+/// Missing [createdAt] sorts **last** (stable tie-break: [PersonalOrder.id]).
+List<PersonalOrder> personalOrdersSortedNewestFirst(List<PersonalOrder> orders) {
+  final copy = List<PersonalOrder>.from(orders);
+  copy.sort((a, b) {
+    final ta = a.createdAt;
+    final tb = b.createdAt;
+    if (ta == null && tb == null) return a.id.compareTo(b.id);
+    if (ta == null) return 1;
+    if (tb == null) return -1;
+    final cmp = tb.compareTo(ta);
+    if (cmp != 0) return cmp;
+    return a.id.compareTo(b.id);
+  });
+  return copy;
+}
+
 /// Whether the player may **send a cancellation request** from the UI.
 ///
 /// PRD: the `cancelled` status is defined for explicit player cancel while
