@@ -53,11 +53,16 @@ void main() {
       expect(b.max, 1);
     });
 
-    test('v=384 (wide raw range) → 190, 580', () {
-      // Raw 192–576; p=10 → floor/ceil in spec.
+    test('v=384: raw 192,576 (3 digits each) → step 10² → 100, 600', () {
       final b = envelopeSliderBoundsForCenter(384);
-      expect(b.min, 190.0);
-      expect(b.max, 580.0);
+      expect(b.min, 100.0);
+      expect(b.max, 600.0);
+    });
+
+    test('v=40: raw 20,60 (2 digits) → step 10¹ → 20, 60', () {
+      final b = envelopeSliderBoundsForCenter(40);
+      expect(b.min, 20.0);
+      expect(b.max, 60.0);
     });
   });
 
