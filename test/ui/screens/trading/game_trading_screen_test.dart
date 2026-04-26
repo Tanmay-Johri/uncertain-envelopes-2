@@ -33,7 +33,7 @@ void main() {
       expect(find.text(r'$150.00'), findsNWidgets(2));
       expect(find.text('0'), findsWidgets);
       expect(find.text('Minutes since game start'), findsOneWidget);
-      expect(find.text('Active orders'), findsOneWidget);
+      expect(find.text('Active Orders'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('active-order-po_g1_rest')),
         findsOneWidget,

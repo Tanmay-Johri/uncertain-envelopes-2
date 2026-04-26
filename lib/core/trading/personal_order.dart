@@ -28,6 +28,7 @@ class PersonalOrder {
     required this.quantity,
     this.limitPrice,
     required this.status,
+    this.createdAt,
   });
 
   final String id;
@@ -37,6 +38,9 @@ class PersonalOrder {
   final double? limitPrice;
   final PersonalOrderStatus status;
 
+  /// Mock / Phase 2: wall time when the order was created (dashboard **Created:** line).
+  final DateTime? createdAt;
+
   PersonalOrder copyWith({
     String? id,
     PersonalOrderSide? side,
@@ -44,6 +48,7 @@ class PersonalOrder {
     int? quantity,
     double? limitPrice,
     PersonalOrderStatus? status,
+    DateTime? createdAt,
   }) {
     return PersonalOrder(
       id: id ?? this.id,
@@ -52,6 +57,7 @@ class PersonalOrder {
       quantity: quantity ?? this.quantity,
       limitPrice: limitPrice ?? this.limitPrice,
       status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

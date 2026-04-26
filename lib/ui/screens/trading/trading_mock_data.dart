@@ -51,7 +51,8 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
 });
 
 /// Mix of statuses for **Active orders** (C6): cancel only on [PersonalOrderStatus.resting].
-const _g1PersonalOrders = <PersonalOrder>[
+/// [createdAt] supports the dashboard **Created:** line (`admin_game_trading_dashboard_7`).
+final _g1PersonalOrders = <PersonalOrder>[
   PersonalOrder(
     id: 'po_g1_rest',
     side: PersonalOrderSide.buy,
@@ -59,6 +60,7 @@ const _g1PersonalOrders = <PersonalOrder>[
     quantity: 10,
     limitPrice: 149.5,
     status: PersonalOrderStatus.resting,
+    createdAt: DateTime.utc(2026, 4, 26, 10, 42),
   ),
   PersonalOrder(
     id: 'po_g1_q',
@@ -67,6 +69,7 @@ const _g1PersonalOrders = <PersonalOrder>[
     quantity: 5,
     limitPrice: null,
     status: PersonalOrderStatus.inQueue,
+    createdAt: DateTime.utc(2026, 4, 26, 10, 38),
   ),
   PersonalOrder(
     id: 'po_g1_proc',
@@ -75,10 +78,11 @@ const _g1PersonalOrders = <PersonalOrder>[
     quantity: 3,
     limitPrice: 151,
     status: PersonalOrderStatus.beingProcessed,
+    createdAt: DateTime.utc(2026, 4, 26, 10, 35),
   ),
 ];
 
-const _g2PersonalOrders = <PersonalOrder>[
+final _g2PersonalOrders = <PersonalOrder>[
   PersonalOrder(
     id: 'po_g2_rest',
     side: PersonalOrderSide.sell,
@@ -86,6 +90,7 @@ const _g2PersonalOrders = <PersonalOrder>[
     quantity: 8,
     limitPrice: 150.8,
     status: PersonalOrderStatus.resting,
+    createdAt: DateTime.utc(2026, 4, 26, 9, 15),
   ),
   PersonalOrder(
     id: 'po_g2_fill',
@@ -94,6 +99,7 @@ const _g2PersonalOrders = <PersonalOrder>[
     quantity: 2,
     limitPrice: 148,
     status: PersonalOrderStatus.filled,
+    createdAt: DateTime.utc(2026, 4, 26, 9, 0),
   ),
 ];
 

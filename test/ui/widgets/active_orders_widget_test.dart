@@ -46,6 +46,22 @@ void main() {
       expect(find.byKey(const ValueKey('active-order-q')), findsOneWidget);
     });
 
+    testWidgets('dashboard-style: pills, blue chip, first row expanded by default',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const _OrdersHarness(),
+        ),
+      );
+      expect(find.text('Active Orders'), findsOneWidget);
+      expect(find.text('BUY LIMIT'), findsOneWidget);
+      expect(find.text('in_queue'), findsOneWidget);
+      expect(find.textContaining('ID: #'), findsOneWidget);
+      await tester.tap(find.text('2 Units'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Initial Qty:'), findsNWidgets(2));
+    });
   });
 }
 
