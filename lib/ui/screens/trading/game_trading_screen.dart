@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/chart/chart_axis.dart';
 import '../../widgets/countdown_timer.dart';
+import '../../widgets/pnl_calculator.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/stat_tile.dart';
 import 'order_book_widget.dart';
@@ -137,6 +138,12 @@ class GameTradingScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    PnlCalculator(
+                      marketPrice: data.marketPrice,
+                      deltaCash: data.deltaCash,
+                      deltaEnvelopes: data.deltaEnvelopes,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     PriceChart(
                       key: const ValueKey('trading-chart-section'),
                       marketPrice: data.marketPrice,
@@ -152,11 +159,6 @@ class GameTradingScreen extends StatelessWidget {
                       key: const ValueKey('trading-orderbook-section'),
                       bids: data.orderBookBids,
                       asks: data.orderBookAsks,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _SectionPlaceholder(
-                      key: const ValueKey('trading-pnl-section'),
-                      label: 'PnL calculator (coming in C6)',
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _SectionPlaceholder(

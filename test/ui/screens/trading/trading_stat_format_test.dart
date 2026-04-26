@@ -29,4 +29,11 @@ void main() {
       expect(formatTradingDeltaEnvelopes(0), '0');
     });
   });
+
+  group('formatProjectedPnl', () {
+    test('matches whole-dollar cash convention', () {
+      expect(formatProjectedPnl(5750), r'+$5,750');
+      expect(formatProjectedPnl(0), r'$0');
+    });
+  });
 }

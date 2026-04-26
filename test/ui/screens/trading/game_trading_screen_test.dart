@@ -25,6 +25,8 @@ void main() {
       expect(find.byKey(const ValueKey('trading-orderbook-section')), findsOneWidget);
       expect(find.text('Order Book'), findsOneWidget);
       expect(find.text(r'$149.50'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trading-pnl-section')), findsOneWidget);
+      expect(find.text(r'+$5,750'), findsOneWidget);
       expect(find.byKey(const ValueKey('trading-chart-section')), findsOneWidget);
       expect(find.text('Market Price'), findsOneWidget);
       expect(find.text(r'$150.00'), findsOneWidget);
@@ -32,7 +34,7 @@ void main() {
       expect(find.text('Minutes since game start'), findsOneWidget);
     });
 
-    testWidgets('market price chart is above order book', (tester) async {
+    testWidgets('PnL is above chart; chart is above order book', (tester) async {
       final s = mockTradingScenarioForGameId('g1');
       await tester.pumpWidget(
         MaterialApp(
@@ -40,12 +42,16 @@ void main() {
           home: GameTradingScreen(data: s.data),
         ),
       );
+      final pnlTop = tester.getRect(
+        find.byKey(const ValueKey('trading-pnl-section')),
+      ).top;
       final chartTop = tester.getRect(
         find.byKey(const ValueKey('trading-chart-section')),
       ).top;
       final bookTop = tester.getRect(
         find.byKey(const ValueKey('trading-orderbook-section')),
       ).top;
+      expect(pnlTop, lessThan(chartTop));
       expect(chartTop, lessThan(bookTop));
     });
 

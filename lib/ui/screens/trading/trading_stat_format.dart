@@ -20,3 +20,8 @@ String formatTradingDeltaEnvelopes(double v) {
   if (n > 0) return '+$n';
   return '$n';
 }
+
+/// Whole-dollar display for the PnL line (tinted separately in the widget).
+String formatProjectedPnl(double pnl) {
+  return formatTradingDeltaCash(pnl);
+}
