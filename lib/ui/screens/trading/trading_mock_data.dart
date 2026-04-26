@@ -50,14 +50,15 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
   );
 });
 
-/// Mix of statuses for **Active orders** (C6): cancel only on [PersonalOrderStatus.resting].
-/// [createdAt] supports the dashboard **Created:** line (`admin_game_trading_dashboard_7`).
+/// Mix of statuses for **Active orders** (C6). Cancellation (PRD) only from
+/// [PersonalOrderStatus.resting]; [createdAt] → **Created:** line.
 final _g1PersonalOrders = <PersonalOrder>[
   PersonalOrder(
     id: 'po_g1_rest',
     side: PersonalOrderSide.buy,
     orderType: PersonalOrderType.limit,
-    quantity: 10,
+    quantityInitial: 10,
+    quantityCurrent: 7,
     limitPrice: 149.5,
     status: PersonalOrderStatus.resting,
     createdAt: DateTime.utc(2026, 4, 26, 10, 42),
@@ -66,7 +67,8 @@ final _g1PersonalOrders = <PersonalOrder>[
     id: 'po_g1_q',
     side: PersonalOrderSide.sell,
     orderType: PersonalOrderType.market,
-    quantity: 5,
+    quantityInitial: 5,
+    quantityCurrent: 5,
     limitPrice: null,
     status: PersonalOrderStatus.inQueue,
     createdAt: DateTime.utc(2026, 4, 26, 10, 38),
@@ -75,7 +77,8 @@ final _g1PersonalOrders = <PersonalOrder>[
     id: 'po_g1_proc',
     side: PersonalOrderSide.sell,
     orderType: PersonalOrderType.limit,
-    quantity: 3,
+    quantityInitial: 3,
+    quantityCurrent: 3,
     limitPrice: 151,
     status: PersonalOrderStatus.beingProcessed,
     createdAt: DateTime.utc(2026, 4, 26, 10, 35),
@@ -87,7 +90,8 @@ final _g2PersonalOrders = <PersonalOrder>[
     id: 'po_g2_rest',
     side: PersonalOrderSide.sell,
     orderType: PersonalOrderType.limit,
-    quantity: 8,
+    quantityInitial: 8,
+    quantityCurrent: 8,
     limitPrice: 150.8,
     status: PersonalOrderStatus.resting,
     createdAt: DateTime.utc(2026, 4, 26, 9, 15),
@@ -96,7 +100,8 @@ final _g2PersonalOrders = <PersonalOrder>[
     id: 'po_g2_fill',
     side: PersonalOrderSide.buy,
     orderType: PersonalOrderType.limit,
-    quantity: 2,
+    quantityInitial: 2,
+    quantityCurrent: 0,
     limitPrice: 148,
     status: PersonalOrderStatus.filled,
     createdAt: DateTime.utc(2026, 4, 26, 9, 0),

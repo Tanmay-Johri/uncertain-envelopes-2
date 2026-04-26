@@ -62,9 +62,11 @@ class _NewOrderModalState extends State<NewOrderModal> {
         id: 'new',
         side: _side,
         orderType: _type,
-        quantity: qty,
+        quantityInitial: qty,
+        quantityCurrent: qty,
         limitPrice: limit,
         status: status,
+        createdAt: DateTime.now().toUtc(),
       ),
     );
   }

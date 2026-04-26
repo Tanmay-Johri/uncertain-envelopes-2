@@ -21,7 +21,8 @@ void main() {
         id: 'a',
         side: PersonalOrderSide.sell,
         orderType: PersonalOrderType.market,
-        quantity: 2,
+        quantityInitial: 2,
+        quantityCurrent: 2,
         limitPrice: null,
         status: PersonalOrderStatus.inQueue,
       );

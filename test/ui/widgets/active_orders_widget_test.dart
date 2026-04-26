@@ -13,7 +13,8 @@ void main() {
           home: Scaffold(
             body: ActiveOrdersWidget(
               orders: const [],
-              onCancel: (_) {},
+              pendingCancellationOrderIds: const {},
+              onCancellationRequested: (_) {},
             ),
           ),
         ),
@@ -23,7 +24,7 @@ void main() {
     });
 
     testWidgets(
-        'cancel button for all orders; only resting opens confirm and removes',
+        'Back dismisses dialog; resting confirm starts cancel then row becomes cancelled',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -32,30 +33,40 @@ void main() {
         ),
       );
 
-      expect(find.byKey(const ValueKey('active-order-cancel-r')), findsOneWidget);
-      await tester.tap(find.text('2 Units'));
+      await tester.ensureVisible(find.byKey(const ValueKey('active-order-cancel-r')));
+      await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('active-order-cancel-q')), findsOneWidget);
+      expect(
+        find.text(
+          'Are you sure you want to send a cancellation request?',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('BACK'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Are you sure you want to send a cancellation request?',
+        ),
+        findsNothing,
+      );
 
-      await tester.tap(find.byKey(const ValueKey('active-order-cancel-q')));
+      await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
-      expect(find.text('Cancel order?'), findsNothing);
+      await tester.tap(find.text('CANCEL'));
+      await tester.pump();
+      expect(find.text('Cancelling'), findsOneWidget);
 
-      final cancelBtn = find.byKey(const ValueKey('active-order-cancel-r'));
-      await tester.ensureVisible(cancelBtn);
-      await tester.tap(cancelBtn);
-      await tester.pumpAndSettle();
-      expect(find.text('Cancel order?'), findsOneWidget);
-      // [NeonButton] displays labels uppercased.
-      await tester.tap(find.text('CANCEL ORDER'));
+      await tester.pump(const Duration(milliseconds: 1900));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey('active-order-r')), findsNothing);
+      expect(find.text('Cancelled'), findsOneWidget);
+      expect(find.text('order_resting'), findsNothing);
+      expect(find.byKey(const ValueKey('active-order-r')), findsOneWidget);
       expect(find.byKey(const ValueKey('active-order-q')), findsOneWidget);
     });
 
-    testWidgets('dashboard-style: pills, blue chip, first row expanded by default',
-        (tester) async {
+    testWidgets('dashboard-style: pills, chip, PRD detail lines', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
@@ -64,8 +75,13 @@ void main() {
       );
       expect(find.text('Active Orders'), findsOneWidget);
       expect(find.text('BUY LIMIT'), findsOneWidget);
-      expect(find.text('in_queue'), findsOneWidget);
+      expect(find.text('order_resting'), findsOneWidget);
+      expect(find.text('1 Units'), findsOneWidget);
+      expect(find.textContaining('Current Qty: 1'), findsOneWidget);
+      expect(find.textContaining('Initial Qty: 1'), findsOneWidget);
+      expect(find.textContaining('Limit price:'), findsWidgets);
       expect(find.textContaining('ID: #'), findsNothing);
+      expect(find.text('in_queue'), findsOneWidget);
       await tester.tap(find.text('2 Units'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Initial Qty:'), findsNWidgets(2));
@@ -81,24 +97,45 @@ class _OrdersHarness extends StatefulWidget {
 }
 
 class _OrdersHarnessState extends State<_OrdersHarness> {
-  var _orders = const [
-    PersonalOrder(
+  var _orders = [
+    const PersonalOrder(
       id: 'r',
       side: PersonalOrderSide.buy,
       orderType: PersonalOrderType.limit,
-      quantity: 1,
+      quantityInitial: 1,
+      quantityCurrent: 1,
       limitPrice: 10,
       status: PersonalOrderStatus.resting,
     ),
-    PersonalOrder(
+    const PersonalOrder(
       id: 'q',
       side: PersonalOrderSide.sell,
       orderType: PersonalOrderType.market,
-      quantity: 2,
+      quantityInitial: 2,
+      quantityCurrent: 2,
       limitPrice: null,
       status: PersonalOrderStatus.inQueue,
     ),
   ];
+
+  final Set<String> _pending = {};
+
+  void _onCancellationRequested(String id) {
+    setState(() => _pending.add(id));
+    Future<void>.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      setState(() {
+        _pending.remove(id);
+        _orders = [
+          for (final o in _orders)
+            if (o.id == id)
+              o.copyWith(status: PersonalOrderStatus.cancelled)
+            else
+              o,
+        ];
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +145,8 @@ class _OrdersHarnessState extends State<_OrdersHarness> {
           constraints: const BoxConstraints(maxWidth: 420),
           child: ActiveOrdersWidget(
             orders: _orders,
-            onCancel: (id) => setState(() {
-              _orders = _orders.where((e) => e.id != id).toList();
-            }),
+            pendingCancellationOrderIds: _pending,
+            onCancellationRequested: _onCancellationRequested,
           ),
         ),
       ),

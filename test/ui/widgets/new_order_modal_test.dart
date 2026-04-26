@@ -39,7 +39,8 @@ void main() {
       final r = result!;
       expect(r.side, PersonalOrderSide.sell);
       expect(r.orderType, PersonalOrderType.limit);
-      expect(r.quantity, 4);
+      expect(r.quantityInitial, 4);
+      expect(r.quantityCurrent, 4);
       expect(r.limitPrice, 149.25);
       expect(r.status, PersonalOrderStatus.resting);
     });
@@ -79,7 +80,8 @@ void main() {
       expect(r.orderType, PersonalOrderType.market);
       expect(r.limitPrice, isNull);
       expect(r.status, PersonalOrderStatus.inQueue);
-      expect(r.quantity, 7);
+      expect(r.quantityInitial, 7);
+      expect(r.quantityCurrent, 7);
     });
 
     testWidgets('invalid qty does not pop', (tester) async {

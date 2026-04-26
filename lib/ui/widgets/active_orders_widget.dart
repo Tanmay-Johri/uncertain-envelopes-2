@@ -32,27 +32,34 @@ String _sideTypePill(PersonalOrderSide side, PersonalOrderType type) {
   return '$s $t';
 }
 
-/// Lowercase snake_case chip label to match `code.html` (`in_queue`, `open`, …).
+/// PRD `orders.status` snake_case for the chip.
 String _statusChipText(PersonalOrderStatus s) {
   return switch (s) {
     PersonalOrderStatus.inQueue => 'in_queue',
     PersonalOrderStatus.beingProcessed => 'being_processed',
-    PersonalOrderStatus.resting => 'open',
-    PersonalOrderStatus.filled => 'filled',
+    PersonalOrderStatus.resting => 'order_resting',
+    PersonalOrderStatus.filled => 'order_closed',
     PersonalOrderStatus.cancelled => 'cancelled',
   };
 }
 
-/// Active orders — layout from `admin_game_trading_dashboard_7/code.html`.
+/// Active orders — layout from `admin_game_trading_dashboard_7/code.html`,
+/// details from PRD `orders` (no **order_id** in UI).
 class ActiveOrdersWidget extends StatelessWidget {
   const ActiveOrdersWidget({
     super.key,
     required this.orders,
-    required this.onCancel,
+    required this.pendingCancellationOrderIds,
+    required this.onCancellationRequested,
   });
 
   final List<PersonalOrder> orders;
-  final void Function(String orderId) onCancel;
+
+  /// Client-side: cancellation command sent; waiting for `cancelled` from backend.
+  final Set<String> pendingCancellationOrderIds;
+
+  /// User confirmed the dialog; parent sends command / updates mock pipeline.
+  final void Function(String orderId) onCancellationRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +109,8 @@ class ActiveOrdersWidget extends StatelessWidget {
                   child: _ActiveOrderCard(
                     order: e.value,
                     initiallyExpanded: e.key == 0,
-                    onCancel: onCancel,
+                    pendingCancellationOrderIds: pendingCancellationOrderIds,
+                    onCancellationRequested: onCancellationRequested,
                   ),
                 ),
               ),
@@ -115,12 +123,14 @@ class _ActiveOrderCard extends StatefulWidget {
   const _ActiveOrderCard({
     required this.order,
     required this.initiallyExpanded,
-    required this.onCancel,
+    required this.pendingCancellationOrderIds,
+    required this.onCancellationRequested,
   });
 
   final PersonalOrder order;
   final bool initiallyExpanded;
-  final void Function(String orderId) onCancel;
+  final Set<String> pendingCancellationOrderIds;
+  final void Function(String orderId) onCancellationRequested;
 
   @override
   State<_ActiveOrderCard> createState() => _ActiveOrderCardState();
@@ -150,7 +160,13 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
     final priceSuffix = o.orderType == PersonalOrderType.market
         ? 'Market'
         : _usd2.format(o.limitPrice ?? 0);
-    final canCancelAction = personalOrderCanCancel(o.status);
+    final isCancelled = o.status == PersonalOrderStatus.cancelled;
+    final isPending = widget.pendingCancellationOrderIds.contains(o.id);
+    final canSendCancel = personalOrderCanCancel(o.status);
+
+    final limitDetail = o.orderType == PersonalOrderType.market
+        ? '—'
+        : _usd2.format(o.limitPrice ?? 0);
 
     return Container(
       key: ValueKey('active-order-${o.id}'),
@@ -158,13 +174,6 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
         color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.outlineSubtle),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -218,7 +227,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                               const SizedBox(width: AppSpacing.sm),
                               Flexible(
                                 child: Text(
-                                  '${o.quantity} Units',
+                                  '${o.quantityCurrent} Units',
                                   style: AppTypography.bodySmall.copyWith(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -287,8 +296,6 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
           if (_expanded) ...[
             Divider(height: 1, thickness: 1, color: AppColors.outlineSubtle),
             Padding(
-              // Top inset so detail block + cancel control clear the divider
-              // (dashboard HTML uses ~`mb-3` after the rule).
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 AppSpacing.md,
@@ -300,7 +307,9 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                 children: [
                   Text(
                     'Created: ${o.createdAt != null ? _createdFmt.format(o.createdAt!.toLocal()) : '—'}\n'
-                    'Initial Qty: ${o.quantity}',
+                    'Initial Qty: ${o.quantityInitial}\n'
+                    'Current Qty: ${o.quantityCurrent}\n'
+                    'Limit price: $limitDetail',
                     style: AppTypography.monoSmall.copyWith(
                       fontSize: 12,
                       height: 1.45,
@@ -312,26 +321,30 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       key: ValueKey('active-order-cancel-${o.id}'),
-                      onPressed: canCancelAction
+                      onPressed: _cancelButtonEnabled(
+                        isCancelled: isCancelled,
+                        isPending: isPending,
+                        canSendCancel: canSendCancel,
+                      )
                           ? () async {
                               final ok = await ConfirmationDialog.show(
                                 context,
-                                title: 'Cancel order?',
+                                title: '',
                                 message:
-                                    'This removes your resting order from the book.',
-                                confirmLabel: 'Cancel order',
-                                cancelLabel: 'Keep',
+                                    'Are you sure you want to send a cancellation request?',
+                                confirmLabel: 'Cancel',
+                                cancelLabel: 'Back',
                                 destructive: true,
                               );
                               if (ok == true && context.mounted) {
-                                widget.onCancel(o.id);
+                                widget.onCancellationRequested(o.id);
                               }
                             }
                           : null,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.secondary,
                         disabledForegroundColor:
-                            AppColors.textDisabled.withValues(alpha: 0.45),
+                            AppColors.textDisabled.withValues(alpha: 0.55),
                         side: BorderSide(
                           color: AppColors.secondary.withValues(alpha: 0.3),
                         ),
@@ -341,9 +354,12 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                         ),
                         minimumSize: const Size.fromHeight(48),
                       ),
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
+                      icon: Icon(Icons.cancel_outlined, size: 18),
                       label: Text(
-                        'Cancel Order',
+                        _cancelButtonLabel(
+                          isCancelled: isCancelled,
+                          isPending: isPending,
+                        ),
                         style: AppTypography.bodySmall.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -358,5 +374,23 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
         ],
       ),
     );
+  }
+
+  static String _cancelButtonLabel({
+    required bool isCancelled,
+    required bool isPending,
+  }) {
+    if (isCancelled) return 'Cancelled';
+    if (isPending) return 'Cancelling';
+    return 'Cancel Order';
+  }
+
+  static bool _cancelButtonEnabled({
+    required bool isCancelled,
+    required bool isPending,
+    required bool canSendCancel,
+  }) {
+    if (isCancelled || isPending) return false;
+    return canSendCancel;
   }
 }

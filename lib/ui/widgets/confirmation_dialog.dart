@@ -74,9 +74,11 @@ class ConfirmationDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: AppTypography.screenTitle),
+            if (title.trim().isNotEmpty) ...[
+              Text(title, style: AppTypography.screenTitle),
+            ],
             if (message != null) ...[
-              const SizedBox(height: AppSpacing.md),
+              if (title.trim().isNotEmpty) const SizedBox(height: AppSpacing.md),
               Text(message!, style: AppTypography.bodyMedium),
             ],
             const SizedBox(height: AppSpacing.xxl),

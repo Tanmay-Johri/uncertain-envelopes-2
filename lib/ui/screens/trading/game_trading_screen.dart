@@ -43,6 +43,9 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   late List<PersonalOrder> _personalOrders;
   var _localOrderSeq = 0;
 
+  /// Mock: after user sends cancel, until backend reports [PersonalOrderStatus.cancelled].
+  final Set<String> _pendingCancellationOrderIds = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +57,7 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.data, widget.data)) {
       _personalOrders = List<PersonalOrder>.from(widget.data.personalOrders);
+      _pendingCancellationOrderIds.clear();
     }
   }
 
@@ -62,9 +66,22 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     return 'local_${widget.data.currentPlayerId}_$_localOrderSeq';
   }
 
-  void _removeOrder(String id) {
-    setState(() {
-      _personalOrders = _personalOrders.where((e) => e.id != id).toList();
+  /// PRD: player sends cancellation command; later `status` becomes `cancelled`.
+  /// Mock: delayed transition to [PersonalOrderStatus.cancelled] (Phase 2: stream).
+  void _onCancellationRequested(String id) {
+    setState(() => _pendingCancellationOrderIds.add(id));
+    Future<void>.delayed(const Duration(milliseconds: 1800), () {
+      if (!mounted) return;
+      setState(() {
+        _pendingCancellationOrderIds.remove(id);
+        _personalOrders = [
+          for (final o in _personalOrders)
+            if (o.id == id)
+              o.copyWith(status: PersonalOrderStatus.cancelled)
+            else
+              o,
+        ];
+      });
     });
   }
 
@@ -234,7 +251,8 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                     ActiveOrdersWidget(
                       key: const ValueKey('trading-active-orders-section'),
                       orders: _personalOrders,
-                      onCancel: _removeOrder,
+                      pendingCancellationOrderIds: _pendingCancellationOrderIds,
+                      onCancellationRequested: _onCancellationRequested,
                     ),
                     const SizedBox(height: AppSpacing.xxxxl),
                   ],
