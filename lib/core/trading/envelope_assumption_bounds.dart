@@ -2,17 +2,59 @@ import 'dart:math' as math;
 
 import 'envelope_value_parse.dart' show isCloseTo;
 
-/// **±50%** of [v] as raw min/max, then “nice” bounds.
-///
-/// For **v < 1** and **1 ≤ v < 10**: find the smallest [p] (0…8) such that
-/// [rawL] and [rawU] (±50% of [v]) round cleanly at scale `10^p`, build
-/// integer grid `iL`/`iU`, take `d = min(digits(iL), digits(iU))`, `step` =
-/// `10^(d-1)`, floor/ceil on that step, then scale back. Clamp the result to
-/// `[0, 1]` or `[0, 10]`. Re-check [_applyOneRules] for the **≈1** special cases
-/// (e.g. where raw hits **1.0** or **0.975**-style / **1.25**-style raw inputs).
-///
-/// For **v ≥ 10** (after the strict `<10` test): “remove decimals” = truncate to
-/// integers, same digit grid, no tier clamp.
+/// “Nice” slider bounds for a **(raw lower, raw upper)** pair from the ±50% half
+/// range — no implied center. Use the **log-decade** map when *both* raws are
+/// `< 10` (typical for small-envelope raws, e.g. 0.325 / 0.975):
+/// - **Lower:** `10^floor(log10 L)` for `L > 0` (0 → 0)
+/// - **Upper:** `10^ceil(log10 U)` for `U > 0` (0 → 0)
+/// So 0.975 → **1**, 1.25 → **10**; 0.325 → **0.1** as the decade tick below.
+/// When **either** raw is `≥ 10`, use the **integer** half-range: truncate to
+/// int, `d = min(digits)`, `step = 10^(d-1)`, floor/ceil (same as large `v` case).
+/// Optional clamp: e.g. `[0,1]` or `[0,10]` for UI tiers, then the ≈1 display rules.
+({double min, double max}) envelopeSliderBoundsFromRaws(
+  double rawL,
+  double rawU, {
+  double? minCap,
+  double? maxCap,
+  bool useIntegerPath = false,
+}) {
+  if (rawL.isNaN || rawU.isNaN) return (min: 0, max: 0);
+  if (rawL < 0) rawL = 0;
+  if (rawU < 0) rawU = 0;
+  if (rawU < rawL) {
+    final t = rawL;
+    rawL = rawU;
+    rawU = t;
+  }
+
+  late ({double min, double max}) pair;
+  if (useIntegerPath || rawL >= 10 || rawU >= 10) {
+    var iL = _stripToIntegerNoDecimals(rawL);
+    var iU = _stripToIntegerNoDecimals(rawU);
+    if (iU < iL) {
+      return _applyOneRules(
+        rawL,
+        rawU,
+        (min: iL.toDouble(), max: iL.toDouble()),
+      );
+    }
+    final r = _gridFromPositiveInts(iL, iU);
+    pair = (min: r.$1, max: r.$2);
+  } else {
+    pair = (min: _decadeLower(rawL), max: _decadeUpper(rawU));
+  }
+
+  var minB = pair.min;
+  var maxB = pair.max;
+  if (minCap != null && minB < minCap) minB = minCap;
+  if (maxCap != null && maxB > maxCap) maxB = maxCap;
+  if (maxB < minB) maxB = minB;
+
+  return _applyOneRules(rawL, rawU, (min: minB, max: maxB));
+}
+
+/// `envelopeSliderBoundsForCenter( v )` is **convenience only**: it sets
+/// `rawL = 0.5 v`, `rawU = 1.5 v` and passes the same rules + tier clamps.
 ({double min, double max}) envelopeSliderBoundsForCenter(double v) {
   if (v.isNaN || v.isInfinite) return (min: 0, max: 0);
   if (v < 0) v = 0;
@@ -22,88 +64,40 @@ import 'envelope_value_parse.dart' show isCloseTo;
   final rawU = 1.5 * v;
 
   if (v < 1) {
-    return _applyOneRules(
+    return envelopeSliderBoundsFromRaws(
       rawL,
       rawU,
-      _clampedGridFromRaws(
-        rawL,
-        rawU,
-        minCap: 0,
-        maxCap: 1,
-      ),
+      minCap: 0,
+      maxCap: 1,
     );
   }
   if (v < 10) {
-    return _applyOneRules(
+    return envelopeSliderBoundsFromRaws(
       rawL,
       rawU,
-      _clampedGridFromRaws(
-        rawL,
-        rawU,
-        minCap: 0,
-        maxCap: 10,
-      ),
+      minCap: 0,
+      maxCap: 10,
     );
   }
-  // v >= 10
-  final iL = _stripToIntegerNoDecimals(rawL);
-  final iU = _stripToIntegerNoDecimals(rawU);
-  if (iU < iL) {
-    return _applyOneRules(
-      rawL,
-      rawU,
-      (min: iL.toDouble(), max: iL.toDouble()),
-    );
-  }
-  final r = _gridFromPositiveInts(iL, iU);
-  return _applyOneRules(rawL, rawU, (min: r.$1, max: r.$2));
+  return envelopeSliderBoundsFromRaws(rawL, rawU);
 }
 
-/// Raw pair → (min, max) in original units, then clamped to
-/// [ [minCap, maxCap] ].
-({double min, double max}) _clampedGridFromRaws(
-  double rawL,
-  double rawU, {
-  required double minCap,
-  required double maxCap,
-}) {
-  final p = _smallestScaleP(rawL, rawU);
-  final s = math.pow(10, p).toDouble();
-  var iL = (rawL * s).round();
-  var iU = (rawU * s).round();
-  if (iU < iL) {
-    final t = iL;
-    iL = iU;
-    iU = t;
-  }
-  final r = _gridFromPositiveInts(iL, iU);
-  var minB = r.$1 / s;
-  var maxB = r.$2 / s;
-  if (minB < minCap) minB = minCap;
-  if (maxB > maxCap) maxB = maxCap;
-  if (maxB < minB) maxB = minB;
-  return (min: minB, max: maxB);
+double _decadeLower(double x) {
+  if (x <= 0) return 0;
+  if (x.isNaN) return 0;
+  if (x < 1e-10) return 0;
+  final l = math.log(x) / math.ln10;
+  return math.pow(10, l.floor()).toDouble();
 }
 
-/// Smallest [p] in 0…8 with round-trip error under `1e-3` in raw units
-/// (after scaling) for both ends.
-int _smallestScaleP(double rawL, double rawU) {
-  for (var p = 0; p <= 8; p++) {
-    final s = math.pow(10, p).toDouble();
-    final iL = (rawL * s).round();
-    final iU = (rawU * s).round();
-    if ((iL / s - rawL).abs() > 1e-3) {
-      continue;
-    }
-    if ((iU / s - rawU).abs() > 1e-3) {
-      continue;
-    }
-    return p;
-  }
-  return 6;
+/// Smallest `10^k` with `k` integer and `10^k >= x` (x > 0).
+double _decadeUpper(double x) {
+  if (x <= 0) return 0;
+  if (x.isNaN) return 0;
+  final l = math.log(x) / math.ln10;
+  return math.pow(10, l.ceil()).toDouble();
 }
 
-/// [iL], [iU] positive integers; returns `(minB, maxB double)` as the grid.
 (double, double) _gridFromPositiveInts(int iL, int iU) {
   if (iL < 0) iL = 0;
   if (iU < iL) {
@@ -119,7 +113,6 @@ int _smallestScaleP(double rawL, double rawU) {
   return (minB.toDouble(), maxB.toDouble());
 }
 
-/// Count decimal digits in a non-negative int (0→1, 7→1, 64→2).
 int _decimalDigitCountForPositiveInt(int n) {
   var k = n;
   if (k < 0) k = -k;
@@ -133,8 +126,6 @@ int _stripToIntegerNoDecimals(double raw) {
   return raw.ceil();
 }
 
-/// If raw **lower** is **exactly** 1, the displayed min is 0. If raw **upper** is
-/// **exactly** 1, the cap is 1 (even inside the 0–10 tier). See C6 PnL spec.
 ({double min, double max}) _applyOneRules(
   double rawL,
   double rawU,
@@ -154,7 +145,6 @@ int _stripToIntegerNoDecimals(double raw) {
   return (min: min, max: max);
 }
 
-/// Whether [value] is inside **[min, max]** without recomputing bounds.
 bool valueFitsInBounds(
   double value,
   double min,
