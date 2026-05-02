@@ -194,7 +194,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
             Divider(
               height: 1,
               thickness: 1,
-              color: AppColors.outline.withValues(alpha: 0.35),
+              color: AppColors.outline.withValues(alpha: 0.18),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
