@@ -84,6 +84,39 @@ void main() {
         ),
       ];
 
+  /// Source list ordered **oldest first** (`older` then `later`); `later` has
+  /// the newer `createdAt` so the screen should show it **above** `older`.
+  List<PendingOrderListItem> _twoCreatedAtOlderFirst(DateTime earlier) => [
+        PendingOrderListItem(
+          gameTitle: 'Game Older',
+          gameDescription: '',
+          order: PersonalOrder(
+            id: 'older',
+            side: PersonalOrderSide.buy,
+            orderType: PersonalOrderType.limit,
+            quantityInitial: 1,
+            quantityCurrent: 1,
+            limitPrice: 1,
+            status: PersonalOrderStatus.resting,
+            createdAt: earlier,
+          ),
+        ),
+        PendingOrderListItem(
+          gameTitle: 'Game Later',
+          gameDescription: '',
+          order: PersonalOrder(
+            id: 'later',
+            side: PersonalOrderSide.sell,
+            orderType: PersonalOrderType.limit,
+            quantityInitial: 2,
+            quantityCurrent: 2,
+            limitPrice: 2,
+            status: PersonalOrderStatus.resting,
+            createdAt: earlier.add(const Duration(hours: 1)),
+          ),
+        ),
+      ];
+
   Future<void> tapApply(WidgetTester tester) async {
     await tester.tap(
       find.byKey(const ValueKey('pending-orders-filter-apply')),
@@ -114,6 +147,37 @@ void main() {
     expect(find.byKey(const ValueKey('pending-orders-filter-game-Game_B')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-apply')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-reset')), findsOneWidget);
+  });
+
+  testWidgets('newest createdAt renders above older regardless of source order',
+      (tester) async {
+    final pair = _twoCreatedAtOlderFirst(t0);
+    for (final items in [pair, pair.reversed.toList()]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: PendingOrdersScreen(
+            items: items,
+            now: () => t0,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final olderFinder = find.byKey(
+        const ValueKey('pending-order-card-older'),
+      );
+      final laterFinder = find.byKey(
+        const ValueKey('pending-order-card-later'),
+      );
+
+      expect(olderFinder, findsOneWidget);
+      expect(laterFinder, findsOneWidget);
+
+      final laterTop = tester.getTopLeft(laterFinder).dy;
+      final olderTop = tester.getTopLeft(olderFinder).dy;
+      expect(laterTop, lessThan(olderTop));
+    }
   });
 
   testWidgets('apply buy-only hides sell card', (tester) async {

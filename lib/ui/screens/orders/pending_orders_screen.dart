@@ -10,6 +10,9 @@ import 'pending_orders_mock_data.dart';
 import 'pending_orders_view_data.dart';
 
 /// Global pending orders (**C9**). Shell provides header + bottom nav.
+///
+/// Rows render **newest** [PersonalOrder.createdAt] **first** (`null` times
+/// sort last). The order of [items] is ignored for display.
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({
     super.key,
@@ -62,6 +65,8 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     return s;
   }
 
+  /// Filtered rows, sorted by **`order.createdAt` descending** (latest first).
+  /// Input `items` order is ignored for display ordering.
   List<PendingOrderListItem> get _visible {
     final filtered = applyPendingOrdersFilters(_source, _filter);
     return pendingOrderListItemsSortedNewestFirst(filtered);
