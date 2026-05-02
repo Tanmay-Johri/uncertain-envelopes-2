@@ -1,11 +1,20 @@
 import 'package:intl/intl.dart';
 
-final _shortDateFmt = DateFormat.yMMMd('en_US');
+final _localClockFmt = DateFormat.jm('en_US');
+
+/// Calendar date + localized time (“May 3, 2026 at 10:07 AM”).
+final _calendarWithTimeFmt = DateFormat("yMMMd 'at' jm", 'en_US');
+
+String _clauseWithClock(String clause, DateTime createdAt) {
+  final local = createdAt.toLocal();
+  final clock = _localClockFmt.format(local);
+  return '$clause · $clock';
+}
 
 /// Relative-ish label for the **Placed:** line (`admin_game_trading_dashboard_4`).
 ///
-/// Pure function so tests can pin [now] (Stream C; Phase 2 may switch to device
-/// locale rules).
+/// Appends wall-clock (**`· h:mm AM`** in en_US skeleton) relative to each case.
+/// Pure function so tests pin [now]; the clock mirrors [DateTime.toLocal].
 String pendingOrderPlacedLabel({
   required DateTime? createdAt,
   required DateTime now,
@@ -14,12 +23,17 @@ String pendingOrderPlacedLabel({
   final createdUtc = createdAt.toUtc();
   final nowUtc = now.toUtc();
   final d = nowUtc.difference(createdUtc);
-  if (d.isNegative) {
-    return _shortDateFmt.format(createdAt.toLocal());
+  if (d.isNegative || d.inDays >= 14) {
+    return _calendarWithTimeFmt.format(createdAt.toLocal());
   }
-  if (d.inSeconds < 45) return 'just now';
-  if (d.inMinutes < 60) return '${d.inMinutes}m ago';
-  if (d.inHours < 24) return '${d.inHours}h ago';
-  if (d.inDays < 14) return '${d.inDays}d ago';
-  return _shortDateFmt.format(createdAt.toLocal());
+  if (d.inSeconds < 45) {
+    return _clauseWithClock('just now', createdAt);
+  }
+  if (d.inMinutes < 60) {
+    return _clauseWithClock('${d.inMinutes}m ago', createdAt);
+  }
+  if (d.inHours < 24) {
+    return _clauseWithClock('${d.inHours}h ago', createdAt);
+  }
+  return _clauseWithClock('${d.inDays}d ago', createdAt);
 }

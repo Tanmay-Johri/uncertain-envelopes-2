@@ -219,6 +219,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Placed: ${pendingOrderPlacedLabel(createdAt: o.createdAt, now: widget.now())}',
+                      textAlign: TextAlign.left,
                       style: AppTypography.monoSmall.copyWith(
                         fontSize: 11,
                         color: AppColors.textTertiary,
