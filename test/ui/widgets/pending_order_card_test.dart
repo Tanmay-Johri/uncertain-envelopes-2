@@ -13,7 +13,6 @@ void main() {
     WidgetTester tester,
     PendingOrderListItem item, {
     ValueChanged<String>? onCancel,
-    DateTime Function()? now,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -24,7 +23,6 @@ void main() {
               gameTitle: item.gameTitle,
               gameDescription: item.gameDescription,
               order: item.order,
-              now: now ?? () => fixedNow,
               onCancelRequested: onCancel,
             ),
           ),
@@ -51,23 +49,28 @@ void main() {
       );
 
   testWidgets(
-    'expand shows description placed line and cancel affordance',
+    'expanded body shows description, trading-style detail rows, cancel',
     (tester) async {
-    await pumpCard(tester, restingSell());
-    expect(find.textContaining('Qty:'), findsOneWidget);
+      await pumpCard(tester, restingSell());
+      expect(find.textContaining('Qty:'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('pending-order-card-88293-A')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pending-order-card-88293-A')));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'Beginner simulation. Market volatility is currently high.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.textContaining('Placed:'), findsOneWidget);
-    expect(find.text('Cancel Order'), findsOneWidget);
-  });
+      expect(
+        find.text(
+          'Beginner simulation. Market volatility is currently high.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Created:'), findsOneWidget);
+      expect(find.textContaining('Initial Qty: 500'), findsOneWidget);
+      expect(find.textContaining('Current Qty: 500'), findsOneWidget);
+      expect(find.textContaining(r'Limit price: $0.45'), findsOneWidget);
+      expect(find.textContaining('Order status: order_resting'), findsOneWidget);
+      expect(find.textContaining('Type: sell limit'), findsOneWidget);
+      expect(find.text('Cancel Order'), findsOneWidget);
+    });
 
   testWidgets(
     'sell headline price uses red secondary; buy uses primary green',
@@ -114,6 +117,31 @@ void main() {
     );
     await pumpCard(tester, m);
     expect(find.text('—'), findsWidgets);
+  });
+
+  testWidgets(
+      'expanded market order shows dash limit row and buy market type',
+      (tester) async {
+    final m = PendingOrderListItem(
+      gameTitle: 'MKT',
+      gameDescription: 'Desc',
+      order: PersonalOrder(
+        id: 'mkt1',
+        side: PersonalOrderSide.buy,
+        orderType: PersonalOrderType.market,
+        quantityInitial: 5,
+        quantityCurrent: 5,
+        limitPrice: null,
+        status: PersonalOrderStatus.inQueue,
+        createdAt: fixedNow,
+      ),
+    );
+    await pumpCard(tester, m);
+    await tester.tap(find.byKey(const ValueKey('pending-order-card-mkt1')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Limit price: —'), findsOneWidget);
+    expect(find.textContaining('Type: buy market'), findsOneWidget);
+    expect(find.textContaining('Order status: in_queue'), findsOneWidget);
   });
 
   testWidgets('cancel confirm calls callback once', (tester) async {

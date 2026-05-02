@@ -2,6 +2,21 @@ import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 
 import 'trading_view_data.dart';
 
+/// Bid–ask midpoint for mock trading books where [gameTitle] matches a
+/// dashboard that uses [_kMockOrderBookBids] / [_kMockOrderBookAsks].
+///
+/// Pending-orders stream C mirrors these titles loosely; titles with no mocked
+/// book return `null` (hyphen in [NewOrderModal]).
+double? mockBidAskMidpointForGameTitle(String gameTitle) {
+  const withSampleBook = {
+    'Forex Masters',
+    'Crypto Basics 101',
+    'Crypto Sim 2024',
+  };
+  if (!withSampleBook.contains(gameTitle)) return null;
+  return computeBidAskMidpoint(_kMockOrderBookBids, _kMockOrderBookAsks);
+}
+
 /// Sample book from `admin_game_trading_dashboard_7` (prices / qty).
 const _kMockOrderBookBids = <OrderBookLevel>[
   OrderBookLevel(price: 149.5, quantity: 50),

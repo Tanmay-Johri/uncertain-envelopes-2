@@ -502,5 +502,139 @@ void main() {
       expect(result, isNull);
       expect(find.byKey(const ValueKey('new-order-dialog')), findsOneWidget);
     });
+
+    testWidgets('showChoosingGame with empty titles never opens dialog',
+        (tester) async {
+      late BuildContext navigatorContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) {
+                navigatorContext = ctx;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+      final future = NewOrderModal.showChoosingGame(
+        navigatorContext,
+        gameTitles: const [],
+      );
+      await tester.pumpAndSettle();
+      expect(await future, isNull);
+      expect(find.byKey(const ValueKey('new-order-dialog')), findsNothing);
+    });
+
+    testWidgets(
+        'showChoosingGame sorts games and seeds limit from first title',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return TextButton(
+                  onPressed: () {
+                    NewOrderModal.showChoosingGame(
+                      context,
+                      gameTitles: const ['Zebra', 'Alpha'],
+                      marketPriceForGameTitle: (g) =>
+                          g == 'Alpha' ? 12.25 : 99.0,
+                    );
+                  },
+                  child: const Text('open'),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('new-order-game')), findsOneWidget);
+      final limitFinder = find.byKey(const ValueKey('new-order-limit'));
+      expect(
+        tester.widget<TextField>(limitFinder).controller!.text,
+        '12.25',
+      );
+    });
+
+    testWidgets(
+        'showChoosingGame renders bid–ask midpoint from resolver',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return TextButton(
+                  onPressed: () {
+                    NewOrderModal.showChoosingGame(
+                      context,
+                      gameTitles: const ['OnlyGame'],
+                      marketPriceForGameTitle: (_) => 5,
+                      bidAskMidpointForGameTitle: (_) => 7.25,
+                    );
+                  },
+                  child: const Text('open'),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Bid Ask Midpoint \$7.25'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('showChoosingGame submit pops GameScopedNewOrder',
+        (tester) async {
+      GameScopedNewOrder? popped;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return TextButton(
+                  onPressed: () async {
+                    popped = await NewOrderModal.showChoosingGame(
+                      context,
+                      gameTitles: const ['OnlyGame'],
+                      marketPriceForGameTitle: (_) => 5,
+                    );
+                  },
+                  child: const Text('open'),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('new-order-submit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('new-order-submit')));
+      await tester.pumpAndSettle();
+
+      expect(popped, isNotNull);
+      expect(popped!.gameTitle, 'OnlyGame');
+      expect(popped!.order.id, 'new');
+      expect(popped!.order.quantityInitial, 1);
+    });
   });
 }

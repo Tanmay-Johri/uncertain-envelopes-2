@@ -5,9 +5,10 @@ import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_view_data.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/neon_button.dart';
 
 void main() {
-  final t0 = DateTime.utc(2026, 5, 3, 12, 0);
+  final t0 = DateTime.utc(2018, 7, 10, 12, 0);
 
   List<PendingOrderListItem> _twoGamesTwoSides() => [
         PendingOrderListItem(
@@ -133,7 +134,6 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: _twoGamesTwoSides(),
-          now: () => t0,
         ),
       ),
     );
@@ -149,7 +149,7 @@ void main() {
     expect(find.byKey(const ValueKey('pending-orders-filter-apply')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-reset')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-games-select-all')), findsOneWidget);
-    expect(find.text('Select All'), findsOneWidget);
+    expect(find.text('(Select All)'), findsOneWidget);
   });
 
   testWidgets('newest createdAt renders above older regardless of source order',
@@ -161,7 +161,6 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: items,
-            now: () => t0,
           ),
         ),
       );
@@ -189,7 +188,6 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: _twoGamesTwoSides(),
-          now: () => t0,
         ),
       ),
     );
@@ -213,7 +211,6 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: _multiRowSameGame(),
-          now: () => t0,
         ),
       ),
     );
@@ -243,7 +240,6 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: _multiRowSameGame(),
-            now: () => t0,
           ),
         ),
       );
@@ -282,7 +278,6 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: _twoGamesTwoSides(),
-            now: () => t0,
           ),
         ),
       );
@@ -305,7 +300,6 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: _twoGamesTwoSides(),
-            now: () => t0,
           ),
         ),
       );
@@ -335,7 +329,6 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: _twoGamesTwoSides(),
-          now: () => t0,
         ),
       ),
     );
@@ -363,7 +356,6 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: const [],
-          now: () => t0,
         ),
       ),
     );
@@ -399,7 +391,6 @@ void main() {
               ),
             ),
           ],
-          now: () => t0,
           onCancelOrder: cancelled.add,
         ),
       ),
@@ -430,7 +421,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: PendingOrdersScreen(now: () => DateTime.utc(2026, 5, 3, 15, 0)),
+          home: PendingOrdersScreen(),
         ),
       );
       await tester.pump();
@@ -441,14 +432,13 @@ void main() {
   );
 
   testWidgets(
-    'pending orders header row typography matches section muted style',
+    'pending orders title is slightly emphasized; Filter stays muted',
     (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: const [],
-          now: () => t0,
         ),
       ),
     );
@@ -456,8 +446,8 @@ void main() {
     final title = tester.widget<Text>(
       find.byKey(const ValueKey('pending-orders-title')),
     );
-    expect(title.style?.fontSize, 12);
-    expect(title.style?.color, AppColors.textTertiary);
+    expect(title.style?.fontSize, 14);
+    expect(title.style?.color, AppColors.textSecondary);
 
     final filterText = tester.widget<Text>(
       find.descendant(
@@ -467,5 +457,98 @@ void main() {
     );
     expect(filterText.style?.fontSize, 12);
     expect(filterText.style?.color, AppColors.textTertiary);
+  });
+
+  testWidgets('create new order is disabled when source has no game titles',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: PendingOrdersScreen(
+          items: const [],
+        ),
+      ),
+    );
+    await tester.pump();
+    final btn = tester.widget<NeonButton>(
+      find.byKey(const ValueKey('pending-orders-create-new-order')),
+    );
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('create new order opens modal and prepends pending-xg row',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: PendingOrdersScreen(
+          items: _twoGamesTwoSides(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('pending-orders-create-new-order')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('new-order-dialog')), findsOneWidget);
+    expect(find.byKey(const ValueKey('new-order-game')), findsOneWidget);
+    expect(find.byKey(const ValueKey('new-order-bid-ask-mid')), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('new-order-submit')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('new-order-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('pending-order-card-pending-xg-1')), findsOneWidget);
+    expect(find.textContaining('Game A'), findsWidgets);
+
+    final newRowTop = tester.getTopLeft(
+      find.byKey(const ValueKey('pending-order-card-pending-xg-1')),
+    ).dy;
+    final olderTop = tester.getTopLeft(
+      find.byKey(const ValueKey('pending-order-card-buy-1')),
+    ).dy;
+    expect(newRowTop, lessThan(olderTop));
+  });
+
+  testWidgets(
+      'create new order shows numeric bid–ask midpoint for mocked book title',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: PendingOrdersScreen(
+          items: [
+            PendingOrderListItem(
+              gameTitle: 'Forex Masters',
+              gameDescription: '',
+              order: PersonalOrder(
+                id: 'fx-1',
+                side: PersonalOrderSide.buy,
+                orderType: PersonalOrderType.limit,
+                quantityInitial: 1,
+                quantityCurrent: 1,
+                limitPrice: 150,
+                status: PersonalOrderStatus.resting,
+                createdAt: t0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('pending-orders-create-new-order')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bid Ask Midpoint \$150.00'), findsOneWidget);
   });
 }

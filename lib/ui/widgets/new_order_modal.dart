@@ -9,6 +9,18 @@ import '../../core/trading/order_quantity_input.dart';
 import '../../core/trading/personal_order.dart';
 import 'neon_button.dart';
 
+/// Populated only from [NewOrderModal.showChoosingGame].
+@immutable
+class GameScopedNewOrder {
+  const GameScopedNewOrder({
+    required this.gameTitle,
+    required this.order,
+  });
+
+  final String gameTitle;
+  final PersonalOrder order;
+}
+
 /// Same palette as status chip `order_closed` / `cancelled` (transparent fill + border).
 final PersonalOrderStatusChipStyle _kNewOrderChipGreen =
     personalOrderStatusChipStyle(PersonalOrderStatus.filled);
@@ -31,6 +43,9 @@ class NewOrderModal extends StatefulWidget {
     required this.marketPrice,
     this.marketPriceListenable,
     this.bidAskMidpointListenable,
+    this.gameTitles,
+    this.marketPriceForGameTitle,
+    this.bidAskMidpointForGameTitle,
   });
 
   final double marketPrice;
@@ -43,6 +58,18 @@ class NewOrderModal extends StatefulWidget {
   /// model an order book.
   final ValueListenable<double?>? bidAskMidpointListenable;
 
+  /// When non-null and non-empty, shows a single-select game dropdown before
+  /// price copy. Submit pops [GameScopedNewOrder] ([showChoosingGame] only).
+  final List<String>? gameTitles;
+
+  /// Per-game hint for Last Traded / limit defaults when [gameTitles] is used.
+  final double Function(String gameTitle)? marketPriceForGameTitle;
+
+  /// When [gameTitles] is used: bid–ask midpoint per title (`null` → hyphen).
+  /// Prefer this over [bidAskMidpointListenable] when the picker changes game.
+  final double? Function(String gameTitle)? bidAskMidpointForGameTitle;
+
+  /// Trading route: unchanged return type ([gameTitles] omitted).
   static Future<PersonalOrder?> show(
     BuildContext context, {
     required double marketPrice,
@@ -60,6 +87,35 @@ class NewOrderModal extends StatefulWidget {
     );
   }
 
+  /// Pending-orders shell: same dialog body plus **exactly one** game pick.
+  static Future<GameScopedNewOrder?> showChoosingGame(
+    BuildContext context, {
+    required List<String> gameTitles,
+    double fallbackMarketPrice = 150,
+    double Function(String gameTitle)? marketPriceForGameTitle,
+    double? Function(String gameTitle)? bidAskMidpointForGameTitle,
+    ValueListenable<double>? marketPriceListenable,
+    ValueListenable<double?>? bidAskMidpointListenable,
+  }) {
+    final titles = List<String>.of(gameTitles)..sort();
+    if (titles.isEmpty) {
+      return Future.value(null);
+    }
+    return showDialog<GameScopedNewOrder>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => NewOrderModal(
+        marketPrice: fallbackMarketPrice,
+        marketPriceListenable: marketPriceListenable,
+        bidAskMidpointListenable: bidAskMidpointListenable,
+        gameTitles: titles,
+        marketPriceForGameTitle:
+            marketPriceForGameTitle ?? ((_) => fallbackMarketPrice),
+        bidAskMidpointForGameTitle: bidAskMidpointForGameTitle,
+      ),
+    );
+  }
+
   @override
   State<NewOrderModal> createState() => _NewOrderModalState();
 }
@@ -67,23 +123,40 @@ class NewOrderModal extends StatefulWidget {
 class _NewOrderModalState extends State<NewOrderModal> {
   late PersonalOrderSide _side;
   late PersonalOrderType _type;
+  late String _selectedGame;
   final _qtyCtrl = TextEditingController();
   final _limitCtrl = TextEditingController();
   final _qtyFocus = FocusNode();
   final _limitFocus = FocusNode();
+
+  bool get _gamesMode =>
+      widget.gameTitles != null && widget.gameTitles!.isNotEmpty;
+
+  double _baseMarketForSelectedGame() {
+    if (_gamesMode) {
+      return widget.marketPriceForGameTitle?.call(_selectedGame) ??
+          widget.marketPrice;
+    }
+    return widget.marketPrice;
+  }
+
+  double _seedMarketSnapshot() =>
+      widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
 
   @override
   void initState() {
     super.initState();
     _side = PersonalOrderSide.buy;
     _type = PersonalOrderType.limit;
+    _selectedGame = _gamesMode ? widget.gameTitles!.first : '';
     _qtyCtrl.value = const TextEditingValue(
       text: '1',
       selection: TextSelection.collapsed(offset: 1),
     );
+    final seedMarket = _seedMarketSnapshot();
     final initialLimit = normalizeLimitPriceFieldText(
-      widget.marketPrice.toString(),
-      widget.marketPrice,
+      seedMarket.toString(),
+      seedMarket,
     );
     _limitCtrl.value = TextEditingValue(
       text: initialLimit,
@@ -142,7 +215,24 @@ class _NewOrderModalState extends State<NewOrderModal> {
   }
 
   double _effectiveMarketPrice() {
-    return widget.marketPriceListenable?.value ?? widget.marketPrice;
+    return widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
+  }
+
+  void _onGameChanged(String? next) {
+    if (next == null) return;
+    setState(() {
+      _selectedGame = next;
+      final mp =
+          widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
+      final normalized = normalizeLimitPriceFieldText(
+        mp.toString(),
+        mp,
+      );
+      _limitCtrl.value = TextEditingValue(
+        text: normalized,
+        selection: TextSelection.collapsed(offset: normalized.length),
+      );
+    });
   }
 
   void _commitLimitText(String next) {
@@ -235,18 +325,23 @@ class _NewOrderModalState extends State<NewOrderModal> {
         return;
       }
     }
-    // Limit and market orders both enter `in_queue` first (worker → resting, etc.).
-    Navigator.of(context).pop(
-      PersonalOrder(
-        id: 'new',
-        side: _side,
-        orderType: _type,
-        quantityInitial: qty,
-        quantityCurrent: qty,
-        limitPrice: limit,
-        status: PersonalOrderStatus.inQueue,
-        createdAt: DateTime.now().toUtc(),
-      ),
+    final order = PersonalOrder(
+      id: 'new',
+      side: _side,
+      orderType: _type,
+      quantityInitial: qty,
+      quantityCurrent: qty,
+      limitPrice: limit,
+      status: PersonalOrderStatus.inQueue,
+      createdAt: DateTime.now().toUtc(),
+    );
+    final nav = Navigator.of(context);
+    if (!_gamesMode) {
+      nav.pop(order);
+      return;
+    }
+    nav.pop(
+      GameScopedNewOrder(gameTitle: _selectedGame, order: order),
     );
   }
 
@@ -286,14 +381,53 @@ class _NewOrderModalState extends State<NewOrderModal> {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
+            if (_gamesMode) ...[
+              Text('Game', style: AppTypography.label),
+              const SizedBox(height: AppSpacing.sm),
+              DropdownButtonFormField<String>(
+                key: const ValueKey('new-order-game'),
+                initialValue: _selectedGame,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                ),
+                items: widget.gameTitles!
+                    .map(
+                      (g) => DropdownMenuItem<String>(
+                        value: g,
+                        child: Text(
+                          g,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.bodyMedium,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _onGameChanged,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             _LastTradedPriceLine(
-              marketPrice: widget.marketPrice,
+              marketPrice: _effectiveMarketPrice(),
               marketPriceListenable: widget.marketPriceListenable,
             ),
             if (widget.bidAskMidpointListenable != null) ...[
               const SizedBox(height: AppSpacing.sm),
               _BidAskMidpointLine(
                 listenable: widget.bidAskMidpointListenable!,
+              ),
+            ] else if (_gamesMode &&
+                widget.bidAskMidpointForGameTitle != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _ResolvedBidAskMidpointLine(
+                gameTitle: _selectedGame,
+                resolve: widget.bidAskMidpointForGameTitle!,
               ),
             ],
             const SizedBox(height: AppSpacing.sm),
@@ -551,18 +685,36 @@ class _BidAskMidpointLine extends StatelessWidget {
     return ListenableBuilder(
       listenable: listenable,
       builder: (context, _) {
-        final v = listenable.value;
-        final valueText = v == null ? '-' : '\$${v.toStringAsFixed(2)}';
-        return Text(
-          'Bid Ask Midpoint $valueText',
-          key: const ValueKey('new-order-bid-ask-mid'),
-          style: AppTypography.monoSmall.copyWith(
-            color: AppColors.textTertiary,
-          ),
-        );
+        return _bidAskMidpointLabelText(listenable.value);
       },
     );
   }
+}
+
+class _ResolvedBidAskMidpointLine extends StatelessWidget {
+  const _ResolvedBidAskMidpointLine({
+    required this.gameTitle,
+    required this.resolve,
+  });
+
+  final String gameTitle;
+  final double? Function(String gameTitle) resolve;
+
+  @override
+  Widget build(BuildContext context) {
+    return _bidAskMidpointLabelText(resolve(gameTitle));
+  }
+}
+
+Widget _bidAskMidpointLabelText(double? v) {
+  final valueText = v == null ? '-' : '\$${v.toStringAsFixed(2)}';
+  return Text(
+    'Bid Ask Midpoint $valueText',
+    key: const ValueKey('new-order-bid-ask-mid'),
+    style: AppTypography.monoSmall.copyWith(
+      color: AppColors.textTertiary,
+    ),
+  );
 }
 
 /// Segmented control cell matching [personalOrderStatusChipStyle] (outline + tint).

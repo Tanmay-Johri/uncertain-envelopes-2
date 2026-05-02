@@ -168,15 +168,19 @@ void main() {
   });
 
   group('kMockPendingOrders', () {
-    test('non-empty and all orders are cancellable statuses', () {
+    test('non-empty, cancellable statuses, sample times before now', () {
       final list = kMockPendingOrders();
       expect(list, isNotEmpty);
+      final now = DateTime.now().toUtc();
       for (final e in list) {
         expect(
           personalOrderCanCancel(e.order.status),
           isTrue,
           reason: e.order.id,
         );
+        final c = e.order.createdAt;
+        expect(c, isNotNull, reason: e.order.id);
+        expect(c!.isBefore(now), isTrue, reason: e.order.id);
       }
     });
   });

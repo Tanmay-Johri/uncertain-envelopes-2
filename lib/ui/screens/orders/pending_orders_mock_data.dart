@@ -1,9 +1,10 @@
 import '../../../core/trading/personal_order.dart';
 import 'pending_orders_view_data.dart';
 
-/// Reference times for **relative** “Placed:” copy in manual QA; tests inject
-/// their own clock on [PendingOrdersScreen].
-final _t0 = DateTime.utc(2026, 5, 3, 10, 0);
+/// Sample rows only: fixed UTC instants in the **past** so any order with
+/// [DateTime.now].toUtc always sorts **above** these under
+/// [pendingOrderListItemsSortedNewestFirst].
+final _sampleRowsBaseUtc = DateTime.utc(2018, 6, 1, 14, 0);
 
 /// Default mock list aligned with
 /// `design-uncertain-envelopes-2/admin_game_trading_dashboard_4/code.html`.
@@ -20,7 +21,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
           quantityCurrent: 10,
           limitPrice: 150,
           status: PersonalOrderStatus.resting,
-          createdAt: _t0.add(const Duration(minutes: 5)),
+          createdAt: _sampleRowsBaseUtc.add(const Duration(minutes: 5)),
         ),
       ),
       PendingOrderListItem(
@@ -35,7 +36,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
           quantityCurrent: 500,
           limitPrice: 0.45,
           status: PersonalOrderStatus.resting,
-          createdAt: _t0.add(const Duration(minutes: 2)),
+          createdAt: _sampleRowsBaseUtc.add(const Duration(minutes: 2)),
         ),
       ),
       PendingOrderListItem(
@@ -50,7 +51,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
           quantityCurrent: 5,
           limitPrice: 1200,
           status: PersonalOrderStatus.inQueue,
-          createdAt: _t0.add(const Duration(seconds: 30)),
+          createdAt: _sampleRowsBaseUtc.add(const Duration(seconds: 30)),
         ),
       ),
       PendingOrderListItem(
@@ -64,7 +65,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
           quantityCurrent: 25,
           limitPrice: 42.50,
           status: PersonalOrderStatus.beingProcessed,
-          createdAt: _t0,
+          createdAt: _sampleRowsBaseUtc,
         ),
       ),
     ]);

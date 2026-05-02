@@ -1,12 +1,41 @@
 import 'package:flutter/material.dart';
 
+import '../../core/formatting/order_created_at_display.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/trading/personal_order.dart';
 import '../../core/trading/usd_limit_price_display.dart';
-import '../screens/orders/pending_orders_placed_label.dart';
 import 'confirmation_dialog.dart';
+
+/// PRD `orders.status` snake_case (matches active-order chip vocabulary).
+String _pendingOrderStatusLine(PersonalOrderStatus s) {
+  return switch (s) {
+    PersonalOrderStatus.inQueue => 'in_queue',
+    PersonalOrderStatus.beingProcessed => 'being_processed',
+    PersonalOrderStatus.resting => 'order_resting',
+    PersonalOrderStatus.filled => 'order_closed',
+    PersonalOrderStatus.cancelled => 'cancelled',
+    PersonalOrderStatus.rejected => 'rejected',
+    PersonalOrderStatus.gameEnded => 'game_ended',
+  };
+}
+
+/// e.g. `buy limit`, `sell market` (matches requested copy).
+String _pendingOrderSideTypePhrase(
+  PersonalOrderSide side,
+  PersonalOrderType type,
+) {
+  final s = switch (side) {
+    PersonalOrderSide.buy => 'buy',
+    PersonalOrderSide.sell => 'sell',
+  };
+  final t = switch (type) {
+    PersonalOrderType.limit => 'limit',
+    PersonalOrderType.market => 'market',
+  };
+  return '$s $t';
+}
 
 /// One expandable row on the **Pending Orders** screen (plan **C9**).
 class PendingOrderCard extends StatefulWidget {
@@ -15,16 +44,12 @@ class PendingOrderCard extends StatefulWidget {
     required this.gameTitle,
     required this.gameDescription,
     required this.order,
-    required this.now,
     this.onCancelRequested,
   });
 
   final String gameTitle;
   final String gameDescription;
   final PersonalOrder order;
-
-  /// Frozen clock for deterministic “Placed:” copy in tests.
-  final DateTime Function() now;
 
   /// Stream C stub; only called after confirm dialog when cancel is allowed.
   final void Function(String orderId)? onCancelRequested;
@@ -215,15 +240,17 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Placed: ${pendingOrderPlacedLabel(createdAt: o.createdAt, now: widget.now())}',
-                      textAlign: TextAlign.left,
-                      style: AppTypography.monoSmall.copyWith(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
+                  Text(
+                    'Created: ${o.createdAt != null ? formatOrderCreatedUtcForUi(context, o.createdAt!) : '—'}\n'
+                    'Initial Qty: ${o.quantityInitial}\n'
+                    'Current Qty: ${o.quantityCurrent}\n'
+                    'Limit price: ${o.orderType == PersonalOrderType.market ? '—' : formatUsdLimitForActiveOrder(o.limitPrice ?? 0)}\n'
+                    'Order status: ${_pendingOrderStatusLine(o.status)}\n'
+                    'Type: ${_pendingOrderSideTypePhrase(o.side, o.orderType)}',
+                    style: AppTypography.monoSmall.copyWith(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: AppColors.textTertiary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),

@@ -5,27 +5,26 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/trading/personal_order.dart';
 import '../../widgets/neon_button.dart';
+import '../../widgets/new_order_modal.dart';
 import '../../widgets/pending_order_card.dart';
+import '../trading/trading_mock_data.dart';
 import 'pending_orders_mock_data.dart';
 import 'pending_orders_view_data.dart';
 
 /// Global pending orders (**C9**). Shell provides header + bottom nav.
 ///
-/// Rows render **newest** [PersonalOrder.createdAt] **first** (`null` times
-/// sort last). The order of [items] is ignored for display.
+/// Rows render **newest [PersonalOrder.createdAt] first** (`null` times sort
+/// last). The order of [items] is ignored for display. Default mocks use historic
+/// [createdAt] so live inserts naturally sort above them.
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({
     super.key,
     this.items,
-    this.now,
     this.onCancelOrder,
   });
 
   /// When `null`, uses [kMockPendingOrders].
   final List<PendingOrderListItem>? items;
-
-  /// Deterministic clock in tests (`DateTime.now` in routes).
-  final DateTime Function()? now;
 
   /// Stream C stub after user confirms cancellation in [PendingOrderCard].
   final ValueChanged<String>? onCancelOrder;
@@ -37,6 +36,7 @@ class PendingOrdersScreen extends StatefulWidget {
 class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   late List<PendingOrderListItem> _source;
   PendingOrdersFilterState _filter = PendingOrdersFilterState.initial;
+  var _crossGameOrderSeq = 0;
 
   @override
   void initState() {
@@ -56,17 +56,13 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     }
   }
 
-  DateTime Function() get _effectiveNow =>
-      widget.now ?? DateTime.now;
-
   List<String> get _distinctSortedGameTitles {
     final s = _source.map((e) => e.gameTitle).toSet().toList()
       ..sort();
     return s;
   }
 
-  /// Filtered rows, sorted by **`order.createdAt` descending** (latest first).
-  /// Input `items` order is ignored for display ordering.
+  /// Filtered rows, sorted **`createdAt` descending** (latest first).
   List<PendingOrderListItem> get _visible {
     final filtered = applyPendingOrdersFilters(_source, _filter);
     return pendingOrderListItemsSortedNewestFirst(filtered);
@@ -91,6 +87,52 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     setState(() => _filter = chosen);
   }
 
+  String _allocateCrossGameOrderId() {
+    _crossGameOrderSeq += 1;
+    return 'pending-xg-$_crossGameOrderSeq';
+  }
+
+  double _referencePriceForGameTitle(String title) {
+    for (final e in _source) {
+      if (e.gameTitle == title) {
+        return e.order.limitPrice ?? 150.0;
+      }
+    }
+    return 150.0;
+  }
+
+  String _descriptionForGameTitle(String title) {
+    for (final e in _source) {
+      if (e.gameTitle == title) {
+        return e.gameDescription;
+      }
+    }
+    return '';
+  }
+
+  Future<void> _openNewOrder() async {
+    final games = _distinctSortedGameTitles;
+    if (games.isEmpty) return;
+    final created = await NewOrderModal.showChoosingGame(
+      context,
+      gameTitles: games,
+      marketPriceForGameTitle: _referencePriceForGameTitle,
+      bidAskMidpointForGameTitle: mockBidAskMidpointForGameTitle,
+    );
+    if (!mounted || created == null) return;
+    final id = _allocateCrossGameOrderId();
+    setState(() {
+      _source = [
+        PendingOrderListItem(
+          gameTitle: created.gameTitle,
+          gameDescription: _descriptionForGameTitle(created.gameTitle),
+          order: created.order.copyWith(id: id),
+        ),
+        ..._source,
+      ];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final visible = _visible;
@@ -98,67 +140,94 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     return Scaffold(
       key: const ValueKey('pending-orders-scaffold'),
       backgroundColor: AppColors.background,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.sm,
-          AppSpacing.lg,
-          AppSpacing.sectionGap + 80,
-        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                key: const ValueKey('pending-orders-title'),
-                'Pending Orders',
-                style: AppTypography.monoSmall.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.9,
-                  color: AppColors.textTertiary,
-                ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.md,
               ),
-              TextButton(
-                key: const ValueKey('pending-orders-filter-btn'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textTertiary,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      key: const ValueKey('pending-orders-title'),
+                      'Pending Orders',
+                      style: AppTypography.monoSmall.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.9,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    TextButton(
+                      key: const ValueKey('pending-orders-filter-btn'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textTertiary,
+                      ),
+                      onPressed: () => _openFilterSheet(),
+                      child: Text(
+                        'Filter',
+                        style: AppTypography.monoSmall.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                onPressed: () => _openFilterSheet(),
-                child: Text(
-                  'Filter',
-                  style: AppTypography.monoSmall.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.6,
-                    color: AppColors.textTertiary,
+                const SizedBox(height: AppSpacing.md),
+                if (visible.isEmpty)
+                  _EmptyBanner(
+                    key: const ValueKey('pending-orders-empty'),
+                    anySourceItems: _source.isNotEmpty,
+                  )
+                else
+                  ...visible.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: PendingOrderCard(
+                        gameTitle: e.gameTitle,
+                        gameDescription: e.gameDescription,
+                        order: e.order,
+                        onCancelRequested:
+                            widget.onCancelOrder != null
+                                ? (id) => widget.onCancelOrder!(id)
+                                : null,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          if (visible.isEmpty)
-            _EmptyBanner(
-              key: const ValueKey('pending-orders-empty'),
-              anySourceItems: _source.isNotEmpty,
-            )
-          else
-            ...visible.map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: PendingOrderCard(
-                  gameTitle: e.gameTitle,
-                  gameDescription: e.gameDescription,
-                  order: e.order,
-                  now: _effectiveNow,
-                  onCancelRequested:
-                      widget.onCancelOrder != null
-                          ? (id) => widget.onCancelOrder!(id)
-                          : null,
+          Material(
+            color: AppColors.background,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: NeonButton(
+                  key: const ValueKey('pending-orders-create-new-order'),
+                  label: 'Create new order',
+                  onPressed: _distinctSortedGameTitles.isEmpty
+                      ? null
+                      : _openNewOrder,
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
@@ -366,7 +435,7 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
                     title: Text(
-                      'Select All',
+                      '(Select All)',
                       style: AppTypography.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../core/formatting/order_created_at_display.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/trading/personal_order.dart';
 import '../../core/trading/usd_limit_price_display.dart';
 import 'confirmation_dialog.dart';
-
-final _createdFmt = DateFormat.jm();
 
 /// Side/type pill (`SELL MARKET` is the longest label at this typography).
 const _kSideTypePillWidth = 108.0;
@@ -298,7 +296,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Created: ${o.createdAt != null ? _createdFmt.format(o.createdAt!.toLocal()) : '—'}\n'
+                    'Created: ${o.createdAt != null ? formatOrderCreatedUtcForUi(context, o.createdAt!) : '—'}\n'
                     'Initial Qty: ${o.quantityInitial}\n'
                     'Current Qty: ${o.quantityCurrent}\n'
                     'Limit price: $limitDetail',
