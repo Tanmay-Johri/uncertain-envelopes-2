@@ -362,40 +362,75 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                   ),
                 )
               else
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: widget.gameTitles
-                      .map(
-                        (t) => FilterChip(
-                          key: ValueKey(
-                            'pending-orders-filter-game-${_sanitizeKey(t)}',
-                          ),
-                          label: Text(
-                            t,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodySmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          selected: _gameSelection.contains(t),
-                          onSelected: (v) {
-                            setState(() {
-                              if (v) {
-                                _gameSelection.add(t);
-                              } else {
-                                _gameSelection.remove(t);
-                              }
-                            });
-                          },
-                          selectedColor:
-                              AppColors.primary.withValues(alpha: 0.12),
-                          checkmarkColor: AppColors.primary,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        key: const ValueKey(
+                          'pending-orders-filter-games-select-all',
                         ),
-                      )
-                      .toList(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textTertiary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _gameSelection =
+                                Set<String>.from(widget.gameTitles);
+                          });
+                        },
+                        child: Text(
+                          'Select All',
+                          style: AppTypography.monoSmall.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: widget.gameTitles
+                          .map(
+                            (t) => FilterChip(
+                              key: ValueKey(
+                                'pending-orders-filter-game-${_sanitizeKey(t)}',
+                              ),
+                              label: Text(
+                                t,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              selected: _gameSelection.contains(t),
+                              onSelected: (v) {
+                                setState(() {
+                                  if (v) {
+                                    _gameSelection.add(t);
+                                  } else {
+                                    _gameSelection.remove(t);
+                                  }
+                                });
+                              },
+                              selectedColor:
+                                  AppColors.primary.withValues(alpha: 0.12),
+                              checkmarkColor: AppColors.primary,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                 ),
               const SizedBox(height: AppSpacing.xxl),
               Row(

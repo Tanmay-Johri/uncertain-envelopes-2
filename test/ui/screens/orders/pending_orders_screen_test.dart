@@ -148,6 +148,7 @@ void main() {
     expect(find.byKey(const ValueKey('pending-orders-filter-game-Game_B')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-apply')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-reset')), findsOneWidget);
+    expect(find.byKey(const ValueKey('pending-orders-filter-games-select-all')), findsOneWidget);
   });
 
   testWidgets('newest createdAt renders above older regardless of source order',
@@ -232,6 +233,45 @@ void main() {
     expect(find.byKey(const ValueKey('pending-order-card-a-sell')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-order-card-b-buy')), findsNothing);
   });
+
+  testWidgets(
+    'games select all selects every title then apply shows all game rows',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: PendingOrdersScreen(
+            items: _multiRowSameGame(),
+            now: () => t0,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('pending-orders-filter-game-Game_A')),
+      );
+      await tester.pumpAndSettle();
+      await tapApply(tester);
+      expect(
+        find.byKey(const ValueKey('pending-order-card-b-buy')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('pending-orders-filter-games-select-all')),
+      );
+      await tester.pumpAndSettle();
+      await tapApply(tester);
+
+      expect(find.byKey(const ValueKey('pending-order-card-a-buy')), findsOneWidget);
+      expect(find.byKey(const ValueKey('pending-order-card-b-buy')), findsOneWidget);
+    },
+  );
 
   testWidgets('no direction selected shows empty filter message', (tester) async {
     await tester.pumpWidget(
