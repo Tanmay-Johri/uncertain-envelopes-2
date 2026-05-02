@@ -121,6 +121,9 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
               ),
               TextButton(
                 key: const ValueKey('pending-orders-filter-btn'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textTertiary,
+                ),
                 onPressed: () => _openFilterSheet(),
                 child: Text(
                   'Filter',
@@ -128,7 +131,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.6,
-                    color: AppColors.primary,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ),

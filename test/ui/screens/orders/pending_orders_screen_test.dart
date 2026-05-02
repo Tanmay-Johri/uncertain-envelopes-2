@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uncertain_envelopes_2/core/theme/app_colors.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_screen.dart';
@@ -369,8 +370,9 @@ void main() {
     },
   );
 
-  testWidgets('pending orders screen title uses bumped section font size',
-      (tester) async {
+  testWidgets(
+    'pending orders header row typography matches section muted style',
+    (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAppTheme(),
@@ -385,5 +387,15 @@ void main() {
       find.byKey(const ValueKey('pending-orders-title')),
     );
     expect(title.style?.fontSize, 12);
+    expect(title.style?.color, AppColors.textTertiary);
+
+    final filterText = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('pending-orders-filter-btn')),
+        matching: find.text('Filter'),
+      ),
+    );
+    expect(filterText.style?.fontSize, 12);
+    expect(filterText.style?.color, AppColors.textTertiary);
   });
 }
