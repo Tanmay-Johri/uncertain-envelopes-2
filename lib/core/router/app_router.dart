@@ -72,6 +72,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
           data: mockProfileViewDataDefault(),
           onGameHistoryTap: () => context.go(AppRoutes.history),
           onSignOut: () {},
+          onDeleteAccount: () {},
           onUsernameCommit: (lowercaseUsername) async {
             if (lowercaseUsername == 'taken') {
               return ProfileUsernameSubmitResult.taken;

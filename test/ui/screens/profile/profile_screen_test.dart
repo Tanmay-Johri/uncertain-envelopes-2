@@ -272,4 +272,159 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('at-home'), findsOneWidget);
   });
+
+  testWidgets('shows verified badge only when email is verified', (
+    tester,
+  ) async {
+    await _pumpProfile(
+      tester,
+      ProfileScreen(
+        data: mockProfileViewDataDefault().copyWith(emailVerified: true),
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-email-verified-badge')),
+      findsOneWidget,
+    );
+
+    await _pumpProfile(
+      tester,
+      ProfileScreen(
+        data: mockProfileViewDataDefault().copyWith(emailVerified: false),
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-email-verified-badge')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows performance stats from view data', (tester) async {
+    await _pumpProfile(
+      tester,
+      ProfileScreen(
+        data: mockProfileViewDataDefault().copyWith(
+          winRatePct: 72,
+          gamesPlayed: 9,
+        ),
+      ),
+    );
+    expect(find.text('WIN RATE'), findsOneWidget);
+    expect(find.text('GAMES PLAYED'), findsOneWidget);
+    expect(find.text('72%'), findsOneWidget);
+    expect(find.text('9'), findsOneWidget);
+  });
+
+  testWidgets(
+    'single username TextField — email displayed as locked text only',
+    (tester) async {
+      await _pumpProfile(
+        tester,
+        ProfileScreen(data: mockProfileViewDataDefault()),
+      );
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('EMAIL ADDRESS'), findsOneWidget);
+      expect(find.textContaining('example.com'), findsOneWidget);
+    },
+  );
+
+  testWidgets('sign out invokes callback once', (tester) async {
+    var clicks = 0;
+    await _pumpProfile(
+      tester,
+      ProfileScreen(
+        data: mockProfileViewDataDefault(),
+        onSignOut: () => clicks++,
+      ),
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('profile-sign-out-btn')),
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-sign-out-btn')));
+    await tester.pump();
+    expect(clicks, 1);
+  });
+
+  testWidgets(
+    'invalid username submit shows snackbar instead of crashing',
+    (tester) async {
+      await _pumpProfile(
+        tester,
+        ProfileScreen(
+          data: mockProfileViewDataDefault().copyWith(username: 'ok_name'),
+          onUsernameCommit: (_) async =>
+              ProfileUsernameSubmitResult.success,
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('profile-username-edit-btn')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('profile-username-field')),
+        'x',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('profile-username-submit-btn')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(SnackBar), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'delete account shows confirmation; Back dismisses without callback',
+    (tester) async {
+      var deletes = 0;
+      await _pumpProfile(
+        tester,
+        ProfileScreen(
+          data: mockProfileViewDataDefault(),
+          onDeleteAccount: () => deletes++,
+        ),
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('profile-delete-account-btn')),
+      );
+      await tester.tap(find.byKey(const ValueKey('profile-delete-account-btn')));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.text('Back'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      expect(deletes, 0);
+    },
+  );
+
+  testWidgets(
+    'delete account confirms and invokes callback exactly once',
+    (tester) async {
+      var deletes = 0;
+      await _pumpProfile(
+        tester,
+        ProfileScreen(
+          data: mockProfileViewDataDefault(),
+          onDeleteAccount: () => deletes++,
+        ),
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('profile-delete-account-btn')),
+      );
+      await tester.tap(find.byKey(const ValueKey('profile-delete-account-btn')));
+      await tester.pumpAndSettle();
+
+      final confirmInDialog = find.descendant(
+        of: find.byType(Dialog),
+        matching: find.widgetWithText(FilledButton, 'Delete account'),
+      );
+      await tester.tap(confirmInDialog);
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      expect(deletes, 1);
+    },
+  );
 }
