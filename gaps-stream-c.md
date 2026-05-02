@@ -54,6 +54,18 @@ Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `des
 
 ---
 
+## Plan mapping — C7 Game Results (`stream-c-results`)
+
+Narrative **C7** in `prd-uncertain-envelopes-2.md` (trading ended → admin sets `envelope_price`, end game, discarded vs finalised). Design direction: single results dashboard; admin vs non-admin.
+
+| Id | Scope | Tests (minimum) | Browser MCP target |
+|----|--------|-----------------|---------------------|
+| **C7** | `GameResultsScreen`, `GameResultsMockRouteHost`, `results_view_data` + `results_mock_data`, `GameResultPlayerCard`, `AppBottomNavigationBar` (extracted from shell); `/game/:id/results` → mock host. **Admin:** editable envelope (parse 2–5 dp rules), **UPDATE FOR EVERYONE** + iteration-bounded reconcile + revert snackbar; **END GAME** + `gameEnded` read-only state (grey **UPDATE** / **GAME ENDED**). **Non-admin:** read-only hero. **PnL:** PRD `delta_cash + envelope_price * delta_envelopes` in `game_results_pnl.dart`; rows sorted descending; `null` envelope ⇒ `kUnsetUsdLine` (`$—`) on hero and PnL column. **Header:** centered title, back → `AppRoutes.gameLobby(gameId)`, no profile. Mock ids: **`gResults`** (admin), **`gResultsPlayer`** (player), **`gResultsNoPrice`** (alias). | `game_results_envelope_edit_test`, `game_results_pnl_test`, `results_view_data_test`, `game_results_screen_test`, `game_result_player_card_test`, `app_router_test` deep link. | `http://127.0.0.1:<port>/game/gResults/results` (admin), `/game/gResultsPlayer/results` (non-admin). Flutter web: wait for first frame; use **Enable accessibility** if the tree is empty; second tab for player route. |
+
+**Follow-ups (not in this slice):** replace `GameResultsMockRouteHost` with a repository/provider that loads `GameResultsViewData` from the API; wire **trading ended** / **game_finalised** / **discarded** transitions from real `game_state`; implement `set_envelope_price` and `end_game` RPCs and drive UI only from server snapshots; optional **Browser MCP** sign-off per slice when CI cannot.
+
+---
+
 ## Progress log (Stream C)
 
 | Date | Slice | Commit | Notes |
@@ -66,6 +78,7 @@ Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `des
 | 2026-04-23 | **C4f** submit + DTO + **C4g** sweep | `feat(create-game): C4f CreateGameDraft onSubmit + C4g verify` | `CreateGameDraft` + `toJson()`; `CreateGameScreen(onSubmit?)` wires `NeonButton` to validate, commit blur fields, then callback; router keeps `const CreateGameScreen()`. Tests: invalid → no callback; valid trimmed payload; Endless → `durationMinutes` null in JSON; rapid double submit → two calls. C4f widget tests use a **tall surface** (`physicalSize` 2000px) + `ensureVisible` so submit is hit-testable (default ~600px viewport put the button under absorbing/offstage layers). C4g: full `flutter test` green; `dart analyze` still reports **8 info** issues elsewhere (`app_router` unnecessary underscores, `main` depend_on_referenced_packages, `auth_tab_switcher_test` / `confirmation_dialog_test` lints) — not introduced here. Browser MCP `/create` not re-run in this session; use `flutter run -d web-server` + snapshot when needed. |
 | 2026-04-23 | **C5** Game Lobby (mock) | `feat(lobby): C5 game lobby mock UI, routes, and tests` | `GameLobbyScreen`, `CountdownTimer`, `PlayerListTile`, `lobby_view_data`, `lobby_mock_data`; router `/game/:id/lobby` with no-op callbacks for all actions. Mocks: **g1** trading, **g1pre** non-admin pre-start (same roster as g1), **g2** admin pre-start; other ids from `kMockHomeGames` default to **trading** + `currentPlayerId: 'viewer'` (e.g. **g4** → Join Game). Joined vs not: `lobbyViewerIsInPlayerList`. `CountdownTimer`: **1s `Timer.periodic`** (not per-frame ticker) for `pumpAndSettle`. `NeonButton` **outlineDanger** + red splash/highlight for End. **Browser MCP:** Flutter web often needs **Enable accessibility** before the tree fills; blank white can appear briefly; use a fresh `flutter run` port if bundle stale. Full `flutter test` green before commit. |
 | 2026-04-23 | **C6** PnL calculator (trading) | `feat(trading): C6 PnL calculator with dynamic envelope bounds` | `projectedPnl`, `envelopeSliderBoundsForCenter` / `valueFitsInBounds`, input parsing, `PnlCalculator` (ExpansionTile, slider + typed + reset, dynamic bounds), `formatProjectedPnl`, `GameTradingScreen` order **stats → PnL → chart → order book**; full `flutter test` green, `dart analyze` unchanged warnings elsewhere. **Bounds (C6):** raw = ±50% of center; for **v < 1** and **1 ≤ v < 10** use a common decimal scale [p] (0…8) so both raws match after `round(·×10^p)/10^p`, then same min-digit + step grid, **clamp** to [0,1] or [0,10], then “≈1” rules. For **v ≥ 10** use truncated int raws. **Browser MCP** `/game/g1/trading` not run. |
+| 2026-04-23 | **C7** Game Results (mock envelope + leaderboard) | `736c473` — `feat(results): C7 game results screen with envelope admin flow` | Results route + mock host; admin UPDATE / reconcile / END GAME + `gameEnded` UI; PRD PnL in core + sorted rows; `$—` unset line (`kUnsetUsdLine`); blurred empty draft does not mirror committed price until UPDATE; caret collapsed on focus (`TextSelection.collapsed`). **Gaps:** no real backend; trading screen does not auto-route here on phase change; MCP canvas sometimes blank until delay or accessibility. Full `flutter test` green before commit. |
 
 ---
 
@@ -86,6 +99,9 @@ Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `des
 | **`onEnterGame` not wired from router** | Shell builds `HomeScreen()` with no callback; join is a no-op in production. | Router or parent provides `onEnterGame`: validate code, call API, navigate to lobby or show error via `SnackBar` / dialog. |
 | **Admin filter is client-only** | “You are admin” toggles local filter only; not persisted or server-authoritative. | Drive from profile/session claims or game payload; optional local persistence only if product agrees. |
 | **Active orders: `Cancelling` vs backend** | Stream-c **mock** uses `defaultSubmitCancelOrderCommandAck` (short delay) + a worker delay before local `cancelled`; **10s** `AppConstants.cancelOrderCommandAckTimeout` on command-row ack via `.timeout`; on timeout/error the UI reverts from **Cancelling** and shows **“Could not create cancellation request”** (`kCancelOrderCommandAckFailedMessage`). Reconciles orders from `GameTradingViewData`; clears pending on terminal status (`personalOrderClearsCancellationPending`). | **Production:** optimistic **Cancelling** on confirm; `submitCancelOrderCommand` completes only when the **`cancel_order` command row** is ack’d; if ack does not arrive within **10s** (or RPC errors), revert + banner; after ack, stay **Cancelling** until the **orders** snapshot shows **`cancelled`**. Replace mock worker timer with realtime/polling. Inject `GameTradingScreen.submitCancelOrderCommand` in tests (e.g. non-completing `Future` for timeout coverage). |
+| **`GameResultsMockRouteHost` is mock-only** | Envelope commits, polls, `gameEnded`, and PnLs are simulated in-widget state—not server truth. | Add `GameResultsRepository` (or Supabase/REST) returning `GameResultsViewData` + streams; **admin** calls `set_envelope_price` / `end_game`; **reconcile** uses real poll or subscription; delete or shrink mock host behind `kDebugMode` / tests only. |
+| **Final PnL only as server snapshot** | UI applies PRD formula in `withEnvelopeUsd` for mock coherence; production must trust backend rows (cheating resistance). | Ensure API returns per-player **`pnl`** (or deltas + authoritative `envelope_price`) and Flutter **displays** only—no recomputing leaderboard PnL from deltas in release unless product explicitly dual-verifies. |
+| **`envelope_price` typing / optional game rows** | Create-game and lobby do not surface results-phase rules; discarded vs finalised is UI-only confirmation today. | Align with PRD § game lifecycle; persist `discarded` / `game_finalised` on server; gate routes (e.g. block trading after end). |
 
 ---
 
@@ -96,6 +112,8 @@ Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `des
 | **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router → `GameLobbyScreen` (mock data by id). | Phase 2: replace mocks with `GameRepository` snapshot; ensure API `id` shape matches route param. |
 | **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen` scaffold (plan **C4a**). **ORDERS:** still `PlaceholderScreen`. | Finish C4b–f on create; build pending orders screen (C9) or Phase 2. |
 | **Profile / history** | Top-level placeholders; account icon goes to `/profile`. | Merge with Stream A/B auth and profile work; single source of routes. |
+| **Trading → Results navigation** | User can deep-link `/game/:id/results`; **no** automatic `go` from `GameTradingScreen` when phase becomes *trading ended*. | Subscribe to game phase (WS/poll); when server reports trading ended, navigate or show CTA to results; keep deep link as fallback. |
+| **Results bottom nav** | Same Home / Create / Orders shell destinations; **no** “current game” persistence from results. | Optional: pass `gameId` query or restore last game from session when returning from shell. |
 
 ---
 
@@ -138,7 +156,9 @@ Narrative **C5** in `uncertain_envelopes_v2_0644749c.plan.md`. Design refs: `des
 
 ## What’s next on Stream C (before or right after merge)
 
-1. **Execute C4** using the table and **mandatory workflow** above (then C5 lobby, etc., same ritual).
-2. **Wire `HomeScreen` to real data and `onEnterGame`** once API contracts exist (or stub with Riverpod + fake repo behind the same interface).
-3. **Navigate from `GameCard` to the correct game route** with real IDs (partially addressed when router + `onOpenGame` land; keep row until verified).
-4. **Triage this file + `gaps-stream-a.md` + `gaps-stream-b.md`** on `main` and turn rows into issues or PRs.
+1. **C7 → production seam:** implement `GameResultsRepository` + authz (admin vs player), `set_envelope_price` and `end_game` commands, and replace `GameResultsMockRouteHost` with a provider that maps API DTOs → `GameResultsViewData` (keep mock for tests / dev flag).
+2. **Phase-driven navigation:** when `game_state` enters *trading ended*, route from `GameTradingScreen` (or show explicit “View results”) to `/game/:id/results`; handle *discarded* / *game_finalised* redirects if the user deep-links stale URLs.
+3. **Lobby / menu integration:** wire **End game** on trading and lobby to the same backend semantics as results **END GAME**; ensure a single source of truth for “game ended” so admin cannot double-submit.
+4. **ORDERS / profile / history:** build or merge pending shell routes (C9 or cross-stream); reconcile with Stream A/B auth entry and session.
+5. **Browser MCP hygiene:** document Flutter web **Enable accessibility** + ~5–8s first paint for results URLs; add a short **contributor** note if not already in README.
+6. **Merge prep:** triage **this file** + `gaps-stream-a.md` + `gaps-stream-b.md` on `main`; resolve route table and game model conflicts; turn open rows into issues with owners.
