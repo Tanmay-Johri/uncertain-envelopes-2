@@ -278,15 +278,6 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                   color: AppColors.textTertiary,
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Select buy, sell, or both. Pick both sides to see every order.',
-                style: AppTypography.bodySmall.copyWith(
-                  fontSize: 11,
-                  height: 1.35,
-                  color: AppColors.textTertiary,
-                ),
-              ),
               const SizedBox(height: AppSpacing.md),
               Wrap(
                 spacing: AppSpacing.sm,
@@ -355,15 +346,6 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Multi-select games. Leave all unchecked to include every game.',
-                style: AppTypography.bodySmall.copyWith(
-                  fontSize: 11,
-                  height: 1.35,
                   color: AppColors.textTertiary,
                 ),
               ),
