@@ -125,52 +125,59 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          _headlinePriceText(),
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: _headlinePriceColor(),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isBuy
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : AppColors.secondary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            border: Border.all(
-                              color: isBuy
-                                  ? AppColors.primary.withValues(alpha: 0.2)
-                                  : AppColors.secondary.withValues(alpha: 0.2),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _headlinePriceText(),
+                              style: AppTypography.bodyMedium.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: _headlinePriceColor(),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            isBuy ? 'Buy' : 'Sell',
-                            style: AppTypography.microLabel.copyWith(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.35,
-                              color: isBuy
-                                  ? AppColors.primary
-                                  : AppColors.secondary,
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isBuy
+                                    ? AppColors.primary.withValues(alpha: 0.1)
+                                    : AppColors.secondary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                border: Border.all(
+                                  color: isBuy
+                                      ? AppColors.primary.withValues(alpha: 0.2)
+                                      : AppColors.secondary.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Text(
+                                isBuy ? 'Buy' : 'Sell',
+                                style: AppTypography.microLabel.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.35,
+                                  color: isBuy
+                                      ? AppColors.primary
+                                      : AppColors.secondary,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(width: AppSpacing.sm),
                         AnimatedRotation(
                           turns: _expanded ? 0.5 : 0,
                           duration: const Duration(milliseconds: 200),
                           child: Icon(
                             Icons.expand_more,
+                            size: 22,
                             color: _expanded
                                 ? AppColors.primary
                                 : AppColors.textTertiary,
