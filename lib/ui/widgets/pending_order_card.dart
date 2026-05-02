@@ -70,9 +70,9 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(
           color: _expanded
-              ? AppColors.primary.withValues(alpha: 0.35)
-              : AppColors.outline.withValues(alpha: 0.55),
-          width: _expanded ? 1.5 : 1,
+              ? AppColors.primary.withValues(alpha: 0.22)
+              : AppColors.outline,
+          width: 1,
         ),
         boxShadow: _expanded
             ? [
