@@ -51,7 +51,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.close), findsOneWidget);
-      expect(find.byIcon(Icons.check), findsNothing);
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('profile-username-submit-btn')),
+            )
+            .onPressed,
+        isNull,
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey('profile-username-field')),
@@ -75,7 +83,15 @@ void main() {
       );
 
       expect(find.byIcon(Icons.check), findsOneWidget);
-      expect(find.byIcon(Icons.close), findsNothing);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('profile-username-submit-btn')),
+            )
+            .onPressed,
+        isNotNull,
+      );
 
       await tester.ensureVisible(
         find.byKey(const ValueKey('profile-username-submit-btn')),
@@ -86,6 +102,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('cancel editing restores committed username', (tester) async {
+    final data = mockProfileViewDataDefault().copyWith(username: 'keep_me');
+    await _pumpProfile(tester, ProfileScreen(data: data));
+
+    await tester.tap(find.byKey(const ValueKey('profile-username-edit-btn')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-username-field')),
+      '',
+    );
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-username-field')),
+      'gone',
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('profile-username-cancel-edit-btn')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextField>(
+            find.byKey(const ValueKey('profile-username-field')),
+          )
+          .controller
+          ?.text,
+      'keep_me',
+    );
+    expect(
+      find.byKey(const ValueKey('profile-username-edit-btn')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('taken username greys tick and shows banner until text changes', (
     tester,

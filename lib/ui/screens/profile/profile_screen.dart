@@ -241,41 +241,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    /// Pencil is only shown when idle. While editing without edits vs committed:
-    /// show **close** — not another pencil (**spec**: pencil morphs into tick once dirty).
-    if (!_dirtyForSubmit) {
-      return IconButton(
-        key: const ValueKey('profile-username-cancel-edit-btn'),
-        icon: Icon(Icons.close, color: AppColors.textSecondary),
-        tooltip: 'Cancel editing',
-        onPressed: () {
-          _cancelUsernameEditPreserveCommitted();
-          FocusScope.of(context).unfocus();
-        },
-      );
-    }
+    final submitDisabled =
+        !_dirtyForSubmit || _greyTakenTick || _submittingUsername;
 
-    final disabled = _greyTakenTick || _submittingUsername;
-
-    return IconButton(
-      key: const ValueKey('profile-username-submit-btn'),
-      icon: _submittingUsername
-          ? SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: disabled ? AppColors.textDisabled : AppColors.primary,
-              ),
-            )
-          : Icon(
-              Icons.check,
-              color: disabled ? AppColors.textDisabled : AppColors.primary,
-            ),
-      tooltip: disabled && _greyTakenTick
-          ? 'Username already taken — change text to retry'
-          : 'Save username',
-      onPressed: disabled ? null : _submitUsernameRename,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          key: const ValueKey('profile-username-cancel-edit-btn'),
+          icon: Icon(Icons.close, color: AppColors.textSecondary),
+          tooltip: 'Cancel editing',
+          onPressed: () {
+            _cancelUsernameEditPreserveCommitted();
+            FocusScope.of(context).unfocus();
+          },
+        ),
+        IconButton(
+          key: const ValueKey('profile-username-submit-btn'),
+          icon: _submittingUsername
+              ? SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: submitDisabled
+                        ? AppColors.textDisabled
+                        : AppColors.primary,
+                  ),
+                )
+              : Icon(
+                  Icons.check,
+                  color: submitDisabled
+                      ? AppColors.textDisabled
+                      : AppColors.primary,
+                ),
+          tooltip: switch ((_greyTakenTick, _dirtyForSubmit)) {
+            (true, _) => 'Username taken — change text to retry',
+            (_, false) => 'Change username before saving',
+            _ => 'Confirm username',
+          },
+          onPressed: submitDisabled ? null : _submitUsernameRename,
+        ),
+      ],
     );
   }
 
@@ -394,9 +401,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (_usernameTakenBanner) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Username is already taken.',
+                        'Username taken',
                         key: const ValueKey('profile-username-taken-msg'),
                         style: AppTypography.bodySmall.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.textTertiary,
                         ),
                       ),
