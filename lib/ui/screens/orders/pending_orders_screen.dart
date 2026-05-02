@@ -113,7 +113,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                 key: const ValueKey('pending-orders-title'),
                 'Pending Orders',
                 style: AppTypography.monoSmall.copyWith(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.9,
                   color: AppColors.textTertiary,
@@ -125,7 +125,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                 child: Text(
                   'Filter',
                   style: AppTypography.monoSmall.copyWith(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.6,
                     color: AppColors.primary,

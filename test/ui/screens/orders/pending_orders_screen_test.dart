@@ -368,4 +368,22 @@ void main() {
       expect(find.text('Crypto Sim 2024'), findsOneWidget);
     },
   );
+
+  testWidgets('pending orders screen title uses bumped section font size',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: PendingOrdersScreen(
+          items: const [],
+          now: () => t0,
+        ),
+      ),
+    );
+    await tester.pump();
+    final title = tester.widget<Text>(
+      find.byKey(const ValueKey('pending-orders-title')),
+    );
+    expect(title.style?.fontSize, 12);
+  });
 }
