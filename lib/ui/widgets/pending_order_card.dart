@@ -239,7 +239,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                                 title: '',
                                 message:
                                     'Cancel this order for ${widget.gameTitle}?',
-                                confirmLabel: 'Cancel Order',
+                                confirmLabel: 'Cancel',
                                 cancelLabel: 'Back',
                                 destructive: true,
                                 uppercaseActionLabels: false,

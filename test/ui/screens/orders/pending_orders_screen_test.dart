@@ -413,7 +413,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(Dialog),
-        matching: find.widgetWithText(FilledButton, 'Cancel Order'),
+        matching: find.widgetWithText(FilledButton, 'Cancel'),
       ),
     );
     await tester.pumpAndSettle();
