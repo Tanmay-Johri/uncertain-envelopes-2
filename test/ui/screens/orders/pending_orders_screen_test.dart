@@ -125,7 +125,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('filter sheet shows direction + game chips and apply', (
+  testWidgets('filter sheet lists direction and game checkboxes', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -198,7 +198,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-sell')));
+    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-buy')));
     await tester.pumpAndSettle();
     await tapApply(tester);
 
@@ -273,31 +273,60 @@ void main() {
     },
   );
 
-  testWidgets('no direction selected shows empty filter message', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildAppTheme(),
-        home: PendingOrdersScreen(
-          items: _twoGamesTwoSides(),
-          now: () => t0,
+  testWidgets(
+    'all directions unchecked still shows buys and sells after apply',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: PendingOrdersScreen(
+            items: _twoGamesTwoSides(),
+            now: () => t0,
+          ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-buy')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-sell')));
-    await tester.pumpAndSettle();
-    await tapApply(tester);
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
+      await tester.pumpAndSettle();
+      await tapApply(tester);
 
-    expect(
-      find.byKey(const ValueKey('pending-orders-empty-msg-filter')),
-      findsOneWidget,
-    );
-  });
+      expect(find.byKey(const ValueKey('pending-order-card-buy-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('pending-order-card-sell-1')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'uncheck buy after buy-only filter restores sell rows',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: PendingOrdersScreen(
+            items: _twoGamesTwoSides(),
+            now: () => t0,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-buy')));
+      await tester.pumpAndSettle();
+      await tapApply(tester);
+      expect(find.byKey(const ValueKey('pending-order-card-sell-1')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-buy')));
+      await tester.pumpAndSettle();
+      await tapApply(tester);
+
+      expect(find.byKey(const ValueKey('pending-order-card-buy-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('pending-order-card-sell-1')), findsOneWidget);
+    },
+  );
 
   testWidgets('reset restores both cards', (tester) async {
     await tester.pumpWidget(
@@ -313,7 +342,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('pending-orders-filter-btn')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-sell')));
+    await tester.tap(find.byKey(const ValueKey('pending-orders-filter-dir-buy')));
     await tester.pumpAndSettle();
     await tapApply(tester);
     expect(find.byKey(const ValueKey('pending-order-card-sell-1')), findsNothing);

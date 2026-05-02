@@ -279,65 +279,61 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  FilterChip(
-                    key: const ValueKey('pending-orders-filter-dir-buy'),
-                    label: Text(
-                      'Buy',
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    selected: _directions.contains(PersonalOrderSide.buy),
-                    onSelected: (v) {
-                      setState(() {
-                        if (v) {
-                          _directions.add(PersonalOrderSide.buy);
-                        } else {
-                          _directions.remove(PersonalOrderSide.buy);
-                        }
-                      });
-                    },
-                    selectedColor:
-                        AppColors.primary.withValues(alpha: 0.18),
-                    checkmarkColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: _directions.contains(PersonalOrderSide.buy)
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                    ),
+              CheckboxListTile(
+                key: const ValueKey('pending-orders-filter-dir-buy'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(
+                  'Buy',
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
-                  FilterChip(
-                    key: const ValueKey('pending-orders-filter-dir-sell'),
-                    label: Text(
-                      'Sell',
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    selected: _directions.contains(PersonalOrderSide.sell),
-                    onSelected: (v) {
-                      setState(() {
-                        if (v) {
-                          _directions.add(PersonalOrderSide.sell);
-                        } else {
-                          _directions.remove(PersonalOrderSide.sell);
-                        }
-                      });
-                    },
-                    selectedColor:
-                        AppColors.secondary.withValues(alpha: 0.15),
-                    checkmarkColor: AppColors.secondary,
-                    labelStyle: TextStyle(
-                      color: _directions.contains(PersonalOrderSide.sell)
-                          ? AppColors.secondary
-                          : AppColors.textSecondary,
-                    ),
+                ),
+                value: _directions.contains(PersonalOrderSide.buy),
+                onChanged: (v) {
+                  setState(() {
+                    if (v == true) {
+                      _directions.add(PersonalOrderSide.buy);
+                    } else {
+                      _directions.remove(PersonalOrderSide.buy);
+                    }
+                  });
+                },
+                activeColor: AppColors.primary,
+                checkColor: AppColors.background,
+                side: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.5),
+                ),
+              ),
+              CheckboxListTile(
+                key: const ValueKey('pending-orders-filter-dir-sell'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(
+                  'Sell',
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
-                ],
+                ),
+                value: _directions.contains(PersonalOrderSide.sell),
+                onChanged: (v) {
+                  setState(() {
+                    if (v == true) {
+                      _directions.add(PersonalOrderSide.sell);
+                    } else {
+                      _directions.remove(PersonalOrderSide.sell);
+                    }
+                  });
+                },
+                activeColor: AppColors.secondary,
+                checkColor: AppColors.background,
+                side: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.5),
+                ),
               ),
               const SizedBox(height: AppSpacing.xxl),
               Text(
@@ -361,77 +357,79 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                     ),
                   ),
                 )
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        key: const ValueKey(
-                          'pending-orders-filter-games-select-all',
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textTertiary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
+              else ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Semantics(
+                        label: 'Select all games',
+                        child: Checkbox(
+                          key: const ValueKey(
+                            'pending-orders-filter-games-select-all',
                           ),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _gameSelection =
-                                Set<String>.from(widget.gameTitles);
-                          });
-                        },
-                        child: Text(
-                          'Select All',
-                          style: AppTypography.monoSmall.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                          value: widget.gameTitles.isNotEmpty &&
+                              _gameSelection.length ==
+                                  widget.gameTitles.length &&
+                              widget.gameTitles.every(_gameSelection.contains),
+                          tristate: false,
+                          onChanged: widget.gameTitles.isEmpty
+                              ? null
+                              : (v) {
+                                  setState(() {
+                                    if (v == true) {
+                                      _gameSelection = Set<String>.from(
+                                        widget.gameTitles,
+                                      );
+                                    } else {
+                                      _gameSelection.clear();
+                                    }
+                                  });
+                                },
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          side: BorderSide(
+                            color:
+                                AppColors.outline.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: widget.gameTitles
-                          .map(
-                            (t) => FilterChip(
-                              key: ValueKey(
-                                'pending-orders-filter-game-${_sanitizeKey(t)}',
-                              ),
-                              label: Text(
-                                t,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              selected: _gameSelection.contains(t),
-                              onSelected: (v) {
-                                setState(() {
-                                  if (v) {
-                                    _gameSelection.add(t);
-                                  } else {
-                                    _gameSelection.remove(t);
-                                  }
-                                });
-                              },
-                              selectedColor:
-                                  AppColors.primary.withValues(alpha: 0.12),
-                              checkmarkColor: AppColors.primary,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ),
+                  ),
+                  ...widget.gameTitles.map((t) {
+                    return CheckboxListTile(
+                      key: ValueKey(
+                        'pending-orders-filter-game-${_sanitizeKey(t)}',
+                      ),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(
+                        t,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      value: _gameSelection.contains(t),
+                      onChanged: (v) {
+                        setState(() {
+                          if (v == true) {
+                            _gameSelection.add(t);
+                          } else {
+                            _gameSelection.remove(t);
+                          }
+                        });
+                      },
+                      side: BorderSide(
+                        color: AppColors.outline.withValues(alpha: 0.5),
+                      ),
+                    );
+                  }),
+                ],
               const SizedBox(height: AppSpacing.xxl),
               Row(
                 children: [

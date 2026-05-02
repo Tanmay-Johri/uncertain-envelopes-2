@@ -32,10 +32,13 @@ void main() {
       _row('b', 'Beta', PersonalOrderSide.sell, createdAt: DateTime.utc(2026, 1, 1)),
     ];
 
-    test('both sides and no games filter keeps all directions', () {
+    test('empty directions does not filter by side', () {
       final out = applyPendingOrdersFilters(
         items,
-        PendingOrdersFilterState.initial,
+        const PendingOrdersFilterState(
+          directions: {},
+          selectedGameTitles: {},
+        ),
       );
       expect(out.length, 2);
     });
@@ -62,16 +65,24 @@ void main() {
       expect(out.single.order.id, 'b');
     });
 
-    test('empty direction yields empty', () {
-      expect(
-        applyPendingOrdersFilters(
-          items,
-          const PendingOrdersFilterState(
-            directions: {},
-            selectedGameTitles: {},
-          ),
+    test('explicit both directions matches empty-direction behavior', () {
+      final withBoth = applyPendingOrdersFilters(
+        items,
+        const PendingOrdersFilterState(
+          directions: {
+            PersonalOrderSide.buy,
+            PersonalOrderSide.sell,
+          },
+          selectedGameTitles: {},
         ),
-        isEmpty,
+      );
+      final emptyDir = applyPendingOrdersFilters(
+        items,
+        PendingOrdersFilterState.initial,
+      );
+      expect(
+        withBoth.map((e) => e.order.id).toSet(),
+        emptyDir.map((e) => e.order.id).toSet(),
       );
     });
 

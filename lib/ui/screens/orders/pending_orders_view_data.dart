@@ -9,16 +9,16 @@ class PendingOrdersFilterState {
     required this.selectedGameTitles,
   });
 
-  /// Buys and/or sells. **Empty** ⇒ no orders pass the direction gate.
+  /// **Empty** ⇒ do not filter by side (buy and sell both included).
   final Set<PersonalOrderSide> directions;
 
   /// **Empty** ⇒ do not filter by game (all games). **Non-empty** ⇒ keep
   /// rows whose [PendingOrderListItem.gameTitle] is in this set (OR).
   final Set<String> selectedGameTitles;
 
-  /// Default: both sides; no game restriction.
+  /// Default: no direction filter, no game filter (everything visible).
   static const PendingOrdersFilterState initial = PendingOrdersFilterState(
-    directions: {PersonalOrderSide.buy, PersonalOrderSide.sell},
+    directions: {},
     selectedGameTitles: {},
   );
 
@@ -85,12 +85,12 @@ List<PendingOrderListItem> applyPendingOrdersFilters(
   List<PendingOrderListItem> items,
   PendingOrdersFilterState filters,
 ) {
-  if (filters.directions.isEmpty) {
-    return [];
+  var out = List<PendingOrderListItem>.from(items);
+  if (filters.directions.isNotEmpty) {
+    out = out
+        .where((e) => filters.directions.contains(e.order.side))
+        .toList();
   }
-  var out = items
-      .where((e) => filters.directions.contains(e.order.side))
-      .toList();
   if (filters.selectedGameTitles.isNotEmpty) {
     out = out
         .where((e) => filters.selectedGameTitles.contains(e.gameTitle))
