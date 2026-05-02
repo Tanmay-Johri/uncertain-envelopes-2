@@ -222,7 +222,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                       textAlign: TextAlign.left,
                       style: AppTypography.monoSmall.copyWith(
                         fontSize: 11,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),

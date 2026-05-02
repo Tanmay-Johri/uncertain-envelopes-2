@@ -48,14 +48,21 @@ void main() {
       expect(s, contains('·'));
     });
 
-    test('old orders use calendar line with literal at + time', () {
+    test('old orders use calendar line with readable date + clock', () {
       final s = pendingOrderPlacedLabel(
         createdAt: DateTime.utc(2025, 1, 15, 8, 7),
         now: now,
       );
       expect(s.toLowerCase(), contains('2025'));
       expect(s, contains(' at '));
-      expect(RegExp('[0-9]').hasMatch(s), isTrue);
+      final parts = s.split(' at ');
+      expect(parts.length, 2);
+      expect(parts[1], matches(RegExp(r'\d{1,2}:\d{2}')));
+      expect(RegExp(r'^[jJ]\d').hasMatch(parts[1]), isFalse,
+          reason: 'no ICU hour-placeholder leak like j35');
+      expect(parts[0], matches(RegExp(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)')),
+          reason: 'abbr month name from yMMMd');
+      expect(parts[0], contains(','));
     });
 
     test('negative duration uses calendar formatting with time', () {
@@ -63,6 +70,7 @@ void main() {
       final s = pendingOrderPlacedLabel(createdAt: future, now: now);
       expect(s, isNot('—'));
       expect(s, contains(' at '));
+      expect(s.split(' at ')[1], matches(RegExp(r'\d{1,2}:\d{2}')));
     });
   });
 }
