@@ -358,43 +358,39 @@ class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
                   ),
                 )
               else ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Semantics(
-                        label: 'Select all games',
-                        child: Checkbox(
-                          key: const ValueKey(
-                            'pending-orders-filter-games-select-all',
-                          ),
-                          value: widget.gameTitles.isNotEmpty &&
-                              _gameSelection.length ==
-                                  widget.gameTitles.length &&
-                              widget.gameTitles.every(_gameSelection.contains),
-                          tristate: false,
-                          onChanged: widget.gameTitles.isEmpty
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    if (v == true) {
-                                      _gameSelection = Set<String>.from(
-                                        widget.gameTitles,
-                                      );
-                                    } else {
-                                      _gameSelection.clear();
-                                    }
-                                  });
-                                },
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          side: BorderSide(
-                            color:
-                                AppColors.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
+                  CheckboxListTile(
+                    key: const ValueKey(
+                      'pending-orders-filter-games-select-all',
+                    ),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: Text(
+                      'Select All',
+                      style: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
+                    ),
+                    value: widget.gameTitles.isNotEmpty &&
+                        _gameSelection.length ==
+                            widget.gameTitles.length &&
+                        widget.gameTitles.every(_gameSelection.contains),
+                    tristate: false,
+                    onChanged: widget.gameTitles.isEmpty
+                        ? null
+                        : (v) {
+                            setState(() {
+                              if (v == true) {
+                                _gameSelection =
+                                    Set<String>.from(widget.gameTitles);
+                              } else {
+                                _gameSelection.clear();
+                              }
+                            });
+                          },
+                    side: BorderSide(
+                      color: AppColors.outline.withValues(alpha: 0.5),
                     ),
                   ),
                   ...widget.gameTitles.map((t) {

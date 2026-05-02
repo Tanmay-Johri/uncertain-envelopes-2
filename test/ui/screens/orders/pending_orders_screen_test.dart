@@ -149,6 +149,7 @@ void main() {
     expect(find.byKey(const ValueKey('pending-orders-filter-apply')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-reset')), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-orders-filter-games-select-all')), findsOneWidget);
+    expect(find.text('Select All'), findsOneWidget);
   });
 
   testWidgets('newest createdAt renders above older regardless of source order',
