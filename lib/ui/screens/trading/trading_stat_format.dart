@@ -21,7 +21,16 @@ String formatTradingDeltaEnvelopes(double v) {
   return '$n';
 }
 
+/// Shown when a USD money line has no resolved value (envelope / PnL pending).
+const String kUnsetUsdLine = r'$—';
+
 /// Whole-dollar display for the PnL line (tinted separately in the widget).
 String formatProjectedPnl(double pnl) {
   return formatTradingDeltaCash(pnl);
+}
+
+/// PnL column when backend has not applied an envelope snapshot yet.
+String formatResultsPnlPlaceholder(double? pnl) {
+  if (pnl == null) return kUnsetUsdLine;
+  return formatProjectedPnl(pnl);
 }

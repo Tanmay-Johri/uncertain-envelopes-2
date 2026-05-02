@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'app_bottom_navigation_bar.dart';
 
 /// One of the three destinations reachable from the bottom nav.
 ///
@@ -55,7 +56,7 @@ class AppShell extends StatelessWidget {
         ),
       ),
       body: SafeArea(top: false, child: child),
-      bottomNavigationBar: _BottomNav(
+      bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: currentIndex,
         onTap: onDestinationSelected,
       ),
@@ -115,39 +116,3 @@ class _FrostedHeader extends StatelessWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentIndex, required this.onTap});
-
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: AppColors.background.withValues(alpha: 0.95),
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.textTertiary,
-      showUnselectedLabels: true,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'HOME',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.add_circle_outline),
-          activeIcon: Icon(Icons.add_circle),
-          label: 'CREATE',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long_outlined),
-          activeIcon: Icon(Icons.receipt_long),
-          label: 'ORDERS',
-        ),
-      ],
-    );
-  }
-}

@@ -7,6 +7,7 @@ import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/lobby/game_lobby_screen.dart';
 import '../../ui/screens/lobby/lobby_mock_data.dart';
+import '../../ui/screens/results/game_results_mock_route_host.dart';
 import '../../ui/screens/trading/game_trading_screen.dart';
 import '../../ui/screens/trading/trading_mock_data.dart';
 import '../../ui/widgets/app_shell.dart';
@@ -106,10 +107,10 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: '/game/:id/results',
-        builder: (_, state) => PlaceholderScreen(
-          routeName: 'GAME RESULTS',
-          subtitle: 'id=${state.pathParameters['id']}',
-        ),
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return GameResultsMockRouteHost(gameId: id);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

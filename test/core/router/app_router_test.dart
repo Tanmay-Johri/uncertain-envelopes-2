@@ -9,7 +9,9 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/game_lobby_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/results/game_results_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -191,8 +193,10 @@ void main() {
 
     testWidgets('/game/:id/results parses id correctly', (tester) async {
       await _pumpAppWith(tester, initialLocation: '/game/GAME1/results');
-      expect(find.text('GAME RESULTS'), findsOneWidget);
-      expect(find.text('id=GAME1'), findsOneWidget);
+      expect(find.byType(GameResultsScreen), findsOneWidget);
+      expect(find.textContaining('Forex Masters'), findsWidgets);
+      // Unknown ids resolve to Default player-view mock (“HTML ref” envelope).
+      expect(find.text(kUnsetUsdLine), findsWidgets);
     });
 
     testWidgets('long uuid id is accepted in deep link', (tester) async {
