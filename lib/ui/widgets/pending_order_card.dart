@@ -215,24 +215,15 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Order ID: #${o.id}',
-                        style: AppTypography.monoSmall.copyWith(
-                          fontSize: 11,
-                          color: AppColors.textTertiary,
-                        ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Placed: ${pendingOrderPlacedLabel(createdAt: o.createdAt, now: widget.now())}',
+                      style: AppTypography.monoSmall.copyWith(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
                       ),
-                      Text(
-                        'Placed: ${pendingOrderPlacedLabel(createdAt: o.createdAt, now: widget.now())}',
-                        style: AppTypography.monoSmall.copyWith(
-                          fontSize: 11,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   SizedBox(

@@ -73,7 +73,7 @@ Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; nar
 | Slice | Scope | Tests | Notes |
 |-------|--------|-------|--------|
 | **C9a** | `pending_orders_placed_label.dart`, `pending_orders_view_data.dart`, `pending_orders_mock_data.dart` — sort newest-first, side filter **All / Buy / Sell**, `PersonalOrder` reuse. | `pending_orders_placed_label_test.dart`, `pending_orders_view_data_test.dart` | |
-| **C9b** | `PendingOrderCard` — collapsed title/qty/price/Buy·Sell; expanded description, Order ID, `Placed:` via injectable `now`, cancel + `ConfirmationDialog` when cancellable. | `pending_order_card_test.dart` | Market headline price `—`. |
+| **C9b** | `PendingOrderCard` — collapsed title/qty/price/Buy·Sell; expanded description, **`Placed:`** via injectable `now`, cancel + `ConfirmationDialog` when cancellable. | `pending_order_card_test.dart` | Market headline price `—`; order id not shown in-body (HTML ref diverges). |
 | **C9c** | `PendingOrdersScreen` under **`AppShell`** `/orders`; filter bottom sheet; empty vs filter-empty copy; optional `onCancelOrder` stub. | `pending_orders_screen_test.dart` | |
 | **C9d** | `app_router` ORDERS branch → screen; `app_router_test` ORDERS navigation. | `app_router_test.dart` | |
 | **C9e** | `dart analyze` touched paths; full `flutter test`; gaps doc. MCP: `/orders` when practical. | — | |

@@ -50,8 +50,9 @@ void main() {
         ),
       );
 
-  testWidgets('expand shows description order id placed and cancel affordance',
-      (tester) async {
+  testWidgets(
+    'expand shows description placed line and cancel affordance',
+    (tester) async {
     await pumpCard(tester, restingSell());
     expect(find.textContaining('Qty:'), findsOneWidget);
 
@@ -64,8 +65,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('Order ID:'), findsOneWidget);
-    expect(find.textContaining('88293-A'), findsOneWidget);
     expect(find.textContaining('Placed:'), findsOneWidget);
     expect(find.text('Cancel Order'), findsOneWidget);
   });
