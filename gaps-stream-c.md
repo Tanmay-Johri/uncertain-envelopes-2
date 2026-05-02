@@ -66,6 +66,20 @@ Narrative **C7** in `prd-uncertain-envelopes-2.md` (trading ended → admin sets
 
 ---
 
+## Plan mapping — C9 Pending Orders (`stream-c-orders`)
+
+Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; narrative **C9** in `uncertain_envelopes_v2_0644749c.plan.md`. Design: `design-uncertain-envelopes-2/admin_game_trading_dashboard_4/code.html`.
+
+| Slice | Scope | Tests | Notes |
+|-------|--------|-------|--------|
+| **C9a** | `pending_orders_placed_label.dart`, `pending_orders_view_data.dart`, `pending_orders_mock_data.dart` — sort newest-first, side filter **All / Buy / Sell**, `PersonalOrder` reuse. | `pending_orders_placed_label_test.dart`, `pending_orders_view_data_test.dart` | |
+| **C9b** | `PendingOrderCard` — collapsed title/qty/price/Buy·Sell; expanded description, Order ID, `Placed:` via injectable `now`, cancel + `ConfirmationDialog` when cancellable. | `pending_order_card_test.dart` | Market headline price `—`. |
+| **C9c** | `PendingOrdersScreen` under **`AppShell`** `/orders`; filter bottom sheet; empty vs filter-empty copy; optional `onCancelOrder` stub. | `pending_orders_screen_test.dart` | |
+| **C9d** | `app_router` ORDERS branch → screen; `app_router_test` ORDERS navigation. | `app_router_test.dart` | |
+| **C9e** | `dart analyze` touched paths; full `flutter test`; gaps doc. MCP: `/orders` when practical. | — | |
+
+---
+
 ## Progress log (Stream C)
 
 | Date | Slice | Commit | Notes |
@@ -80,7 +94,7 @@ Narrative **C7** in `prd-uncertain-envelopes-2.md` (trading ended → admin sets
 | 2026-04-23 | **C6** PnL calculator (trading) | `feat(trading): C6 PnL calculator with dynamic envelope bounds` | `projectedPnl`, `envelopeSliderBoundsForCenter` / `valueFitsInBounds`, input parsing, `PnlCalculator` (ExpansionTile, slider + typed + reset, dynamic bounds), `formatProjectedPnl`, `GameTradingScreen` order **stats → PnL → chart → order book**; full `flutter test` green, `dart analyze` unchanged warnings elsewhere. **Bounds (C6):** raw = ±50% of center; for **v < 1** and **1 ≤ v < 10** use a common decimal scale [p] (0…8) so both raws match after `round(·×10^p)/10^p`, then same min-digit + step grid, **clamp** to [0,1] or [0,10], then “≈1” rules. For **v ≥ 10** use truncated int raws. **Browser MCP** `/game/g1/trading` not run. |
 | 2026-04-23 | **C7** Game Results (mock envelope + leaderboard) | `736c473` — `feat(results): C7 game results screen with envelope admin flow` | Results route + mock host; admin UPDATE / reconcile / END GAME + `gameEnded` UI; PRD PnL in core + sorted rows; `$—` unset line (`kUnsetUsdLine`); blurred empty draft does not mirror committed price until UPDATE; caret collapsed on focus (`TextSelection.collapsed`). **Gaps:** no real backend; trading screen does not auto-route here on phase change; MCP canvas sometimes blank until delay or accessibility. Full `flutter test` green before commit. |
 | 2026-05-02 | **C8** Profile (`/profile`) | — | `ProfileScreen`: while editing username, **close** always visible (revert); **check** always visible (confirm, grey until dirty or taken); inline **`Username taken`**. Router mocks rename (`taken` only for literal username `taken`); **`onSignOut`** empty closure for NeonButton parity; **`/history`** still placeholder. **`flutter run -d web-server`:** prefer **`--release`** if debug waits forever on DDS. Full `flutter test` green before commit. |
-| 2026-05-03 | **C8** wrap-up (`stream-c-profile`) | `feat(profile): C8 wrap-up — VERIFIED badge, delete stub tests` | **VERIFIED** pill on email row when `emailVerified`; router **`onDeleteAccount`** no-op parity with sign-out stub; **`profile_screen_test`** covers badge, WIN RATE/GAMES PLAYED, sign-out/delete dialog (Back vs confirm), invalid-username snackbar, single editable `TextField`. Full **`flutter test`** suite green after change. MCP `/profile`: optional (same flakes as Flutter web + a11y). |
+| 2026-05-03 | **C9** Pending orders (`/orders`) | `feat(orders): C9 PendingOrdersScreen + PendingOrderCard` | `PendingOrdersScreen` / **`PendingOrderCard`** / **`kMockPendingOrders`** from HTML ref **`admin_game_trading_dashboard_4`**; side-filter sheet (**All \| Buy \| Sell**); **`pendingOrderPlacedLabel`**; **`onCancelOrder`** optional (router omits — no persistence). **`flutter test`** 493 passes; MCP `/orders` not run here. Phase 2: repository + ack path like **`GameTradingScreen`**. |
 
 ---
 
@@ -116,7 +130,7 @@ Narrative **C7** in `prd-uncertain-envelopes-2.md` (trading ended → admin sets
 | Gap | Notes | Suggested direction |
 |-----|--------|---------------------|
 | **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router → `GameLobbyScreen` (mock data by id). | Phase 2: replace mocks with `GameRepository` snapshot; ensure API `id` shape matches route param. |
-| **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen` scaffold (plan **C4a**). **ORDERS:** still `PlaceholderScreen`. | Finish C4b–f on create; build pending orders screen (C9) or Phase 2. |
+| **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen`; **ORDERS:** **`PendingOrdersScreen`** (**C9** mock). | Wire **`onCancelOrder`** to commands + realtime; **`OrderRepository.fetchPendingOrdersAcrossGames`**. |
 | **Profile (`/profile`)** | **C8 complete (mock):** same as Stream C UX spec; **`VERIFIED`** micro-tag when **`emailVerified`**; delete flow uses **`ConfirmationDialog`** → **`onDeleteAccount`**. Router: mock rename (`taken` literal), **`onSignOut`** / **`onDeleteAccount`** no-ops for now. **`/history`** still placeholder. | Load profile from Supabase/session; real rename + uniqueness errors; **`onSignOut`** + **`onDeleteAccount`** wired to APIs; ship **History** UI; reconcile with Streams A/B auth. |
 | **Trading → Results navigation** | User can deep-link `/game/:id/results`; **no** automatic `go` from `GameTradingScreen` when phase becomes *trading ended*. | Subscribe to game phase (WS/poll); when server reports trading ended, navigate or show CTA to results; keep deep link as fallback. |
 | **Results bottom nav** | Same Home / Create / Orders shell destinations; **no** “current game” persistence from results. | Optional: pass `gameId` query or restore last game from session when returning from shell. |
@@ -165,6 +179,6 @@ Narrative **C7** in `prd-uncertain-envelopes-2.md` (trading ended → admin sets
 1. **C7 → production seam:** implement `GameResultsRepository` + authz (admin vs player), `set_envelope_price` and `end_game` commands, and replace `GameResultsMockRouteHost` with a provider that maps API DTOs → `GameResultsViewData` (keep mock for tests / dev flag).
 2. **Phase-driven navigation:** when `game_state` enters *trading ended*, route from `GameTradingScreen` (or show explicit “View results”) to `/game/:id/results`; handle *discarded* / *game_finalised* redirects if the user deep-links stale URLs.
 3. **Lobby / menu integration:** wire **End game** on trading and lobby to the same backend semantics as results **END GAME**; ensure a single source of truth for “game ended” so admin cannot double-submit.
-4. **ORDERS / profile / history:** build or merge pending shell routes (C9 or cross-stream); reconcile with Stream A/B auth entry and session.
+4. **history / polish:** **`/history`** still placeholder (**C10**); reconcile with Stream A/B auth entry and session.
 5. **Browser MCP hygiene:** document Flutter web **Enable accessibility** + ~5–8s first paint for results URLs; add a short **contributor** note if not already in README.
 6. **Merge prep:** triage **this file** + `gaps-stream-a.md` + `gaps-stream-b.md` on `main`; resolve route table and game model conflicts; turn open rows into issues with owners.

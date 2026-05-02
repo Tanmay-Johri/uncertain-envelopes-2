@@ -8,6 +8,7 @@ import '../../ui/screens/profile/profile_screen.dart';
 import '../../ui/screens/profile/profile_view_data.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
+import '../../ui/screens/orders/pending_orders_screen.dart';
 import '../../ui/screens/lobby/game_lobby_screen.dart';
 import '../../ui/screens/lobby/lobby_mock_data.dart';
 import '../../ui/screens/results/game_results_mock_route_host.dart';
@@ -158,8 +159,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.orders,
-                builder: (context, _) =>
-                    const PlaceholderScreen(routeName: 'ORDERS'),
+                builder: (context, _) => const PendingOrdersScreen(),
               ),
             ],
           ),

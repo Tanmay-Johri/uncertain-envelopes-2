@@ -100,12 +100,16 @@ void main() {
       expect(find.text('V 8 J A J'), findsOneWidget);
     });
 
-    testWidgets('tapping ORDERS switches the shell branch',
+    testWidgets('tapping ORDERS switches to pending orders shell branch',
         (tester) async {
       await _pumpAppWith(tester);
       await tester.tap(find.text('ORDERS'));
       await tester.pumpAndSettle();
-      expect(find.text('ORDERS'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('pending-orders-scaffold')),
+        findsOneWidget,
+      );
+      expect(find.byType(AppShell), findsOneWidget);
     });
 
     testWidgets('switching branches preserves shell chrome (header + nav)',
