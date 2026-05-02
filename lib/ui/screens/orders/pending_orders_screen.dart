@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/trading/personal_order.dart';
+import '../../widgets/neon_button.dart';
 import '../../widgets/pending_order_card.dart';
 import 'pending_orders_mock_data.dart';
 import 'pending_orders_view_data.dart';
@@ -31,7 +33,7 @@ class PendingOrdersScreen extends StatefulWidget {
 
 class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   late List<PendingOrderListItem> _source;
-  PendingOrdersSideFilter _filter = PendingOrdersSideFilter.all;
+  PendingOrdersFilterState _filter = PendingOrdersFilterState.initial;
 
   @override
   void initState() {
@@ -54,23 +56,33 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   DateTime Function() get _effectiveNow =>
       widget.now ?? DateTime.now;
 
+  List<String> get _distinctSortedGameTitles {
+    final s = _source.map((e) => e.gameTitle).toSet().toList()
+      ..sort();
+    return s;
+  }
+
   List<PendingOrderListItem> get _visible {
-    final filtered = applyPendingOrdersSideFilter(_source, _filter);
+    final filtered = applyPendingOrdersFilters(_source, _filter);
     return pendingOrderListItemsSortedNewestFirst(filtered);
   }
 
-  Future<void> _openSideFilter() async {
-    final chosen = await showModalBottomSheet<PendingOrdersSideFilter>(
+  Future<void> _openFilterSheet() async {
+    final chosen = await showModalBottomSheet<PendingOrdersFilterState>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.surfaceContainer,
       barrierColor: Colors.black.withValues(alpha: 0.55),
       shape: const RoundedRectangleBorder(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      builder: (ctx) => _SideFilterSheet(current: _filter),
+      builder: (ctx) => _PendingOrdersFilterSheet(
+        initial: _filter,
+        gameTitles: _distinctSortedGameTitles,
+      ),
     );
-    if (!mounted || chosen == null || chosen == _filter) return;
+    if (!mounted || chosen == null) return;
     setState(() => _filter = chosen);
   }
 
@@ -104,7 +116,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
               ),
               TextButton(
                 key: const ValueKey('pending-orders-filter-btn'),
-                onPressed: () => _openSideFilter(),
+                onPressed: () => _openFilterSheet(),
                 child: Text(
                   'Filter',
                   style: AppTypography.monoSmall.copyWith(
@@ -180,60 +192,245 @@ class _EmptyBanner extends StatelessWidget {
   }
 }
 
-class _SideFilterSheet extends StatelessWidget {
-  const _SideFilterSheet({required this.current});
+class _PendingOrdersFilterSheet extends StatefulWidget {
+  const _PendingOrdersFilterSheet({
+    required this.initial,
+    required this.gameTitles,
+  });
 
-  final PendingOrdersSideFilter current;
+  final PendingOrdersFilterState initial;
+  final List<String> gameTitles;
 
-  String _label(PendingOrdersSideFilter f) {
-    return switch (f) {
-      PendingOrdersSideFilter.all => 'All',
-      PendingOrdersSideFilter.buy => 'Buy orders',
-      PendingOrdersSideFilter.sell => 'Sell orders',
-    };
+  @override
+  State<_PendingOrdersFilterSheet> createState() =>
+      _PendingOrdersFilterSheetState();
+}
+
+class _PendingOrdersFilterSheetState extends State<_PendingOrdersFilterSheet> {
+  late Set<PersonalOrderSide> _directions;
+  late Set<String> _gameSelection;
+
+  @override
+  void initState() {
+    super.initState();
+    _directions = Set<PersonalOrderSide>.from(widget.initial.directions);
+    _gameSelection = Set<String>.from(widget.initial.selectedGameTitles);
   }
+
+  void _apply() {
+    Navigator.of(context).pop(
+      PendingOrdersFilterState(
+        directions: Set<PersonalOrderSide>.from(_directions),
+        selectedGameTitles: Set<String>.from(_gameSelection),
+      ),
+    );
+  }
+
+  void _reset() {
+    Navigator.of(context).pop(PendingOrdersFilterState.initial);
+  }
+
+  static String _sanitizeKey(String title) =>
+      title.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.lg,
           AppSpacing.md,
           AppSpacing.lg,
-          AppSpacing.xxl,
+          AppSpacing.lg + bottomInset,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'FILTER BY SIDE',
-              textAlign: TextAlign.center,
-              style: AppTypography.monoSmall.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            for (final f in PendingOrdersSideFilter.values)
-              ListTile(
-                key: ValueKey('pending-orders-filter-${f.name}'),
-                title: Text(
-                  _label(f),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'FILTERS',
+                textAlign: TextAlign.center,
+                style: AppTypography.monoSmall.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                  color: AppColors.textTertiary,
                 ),
-                trailing: f == current
-                    ? Icon(Icons.check, color: AppColors.primary)
-                    : null,
-                onTap: () => Navigator.of(context).pop(f),
               ),
-          ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'DIRECTION',
+                style: AppTypography.monoSmall.copyWith(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Select buy, sell, or both. Pick both sides to see every order.',
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  FilterChip(
+                    key: const ValueKey('pending-orders-filter-dir-buy'),
+                    label: Text(
+                      'Buy',
+                      style: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    selected: _directions.contains(PersonalOrderSide.buy),
+                    onSelected: (v) {
+                      setState(() {
+                        if (v) {
+                          _directions.add(PersonalOrderSide.buy);
+                        } else {
+                          _directions.remove(PersonalOrderSide.buy);
+                        }
+                      });
+                    },
+                    selectedColor:
+                        AppColors.primary.withValues(alpha: 0.18),
+                    checkmarkColor: AppColors.primary,
+                    labelStyle: TextStyle(
+                      color: _directions.contains(PersonalOrderSide.buy)
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  FilterChip(
+                    key: const ValueKey('pending-orders-filter-dir-sell'),
+                    label: Text(
+                      'Sell',
+                      style: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    selected: _directions.contains(PersonalOrderSide.sell),
+                    onSelected: (v) {
+                      setState(() {
+                        if (v) {
+                          _directions.add(PersonalOrderSide.sell);
+                        } else {
+                          _directions.remove(PersonalOrderSide.sell);
+                        }
+                      });
+                    },
+                    selectedColor:
+                        AppColors.secondary.withValues(alpha: 0.15),
+                    checkmarkColor: AppColors.secondary,
+                    labelStyle: TextStyle(
+                      color: _directions.contains(PersonalOrderSide.sell)
+                          ? AppColors.secondary
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              Text(
+                'GAMES',
+                style: AppTypography.monoSmall.copyWith(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Multi-select games. Leave all unchecked to include every game.',
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (widget.gameTitles.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Text(
+                    'No games in this list',
+                    style: AppTypography.monoSmall.copyWith(
+                      color: AppColors.textDisabled,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: widget.gameTitles
+                      .map(
+                        (t) => FilterChip(
+                          key: ValueKey(
+                            'pending-orders-filter-game-${_sanitizeKey(t)}',
+                          ),
+                          label: Text(
+                            t,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          selected: _gameSelection.contains(t),
+                          onSelected: (v) {
+                            setState(() {
+                              if (v) {
+                                _gameSelection.add(t);
+                              } else {
+                                _gameSelection.remove(t);
+                              }
+                            });
+                          },
+                          selectedColor:
+                              AppColors.primary.withValues(alpha: 0.12),
+                          checkmarkColor: AppColors.primary,
+                        ),
+                      )
+                      .toList(),
+                ),
+              const SizedBox(height: AppSpacing.xxl),
+              Row(
+                children: [
+                  Expanded(
+                    child: NeonButton(
+                      key: const ValueKey('pending-orders-filter-reset'),
+                      label: 'Reset',
+                      variant: NeonButtonVariant.outline,
+                      onPressed: _reset,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: NeonButton(
+                      key: const ValueKey('pending-orders-filter-apply'),
+                      label: 'Apply',
+                      variant: NeonButtonVariant.primary,
+                      onPressed: _apply,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

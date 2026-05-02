@@ -2,11 +2,39 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/trading/personal_order.dart';
 
-/// Filter shown from the **Filter** control (Stream C9).
-enum PendingOrdersSideFilter {
-  all,
-  buy,
-  sell,
+@immutable
+class PendingOrdersFilterState {
+  const PendingOrdersFilterState({
+    required this.directions,
+    required this.selectedGameTitles,
+  });
+
+  /// Buys and/or sells. **Empty** ⇒ no orders pass the direction gate.
+  final Set<PersonalOrderSide> directions;
+
+  /// **Empty** ⇒ do not filter by game (all games). **Non-empty** ⇒ keep
+  /// rows whose [PendingOrderListItem.gameTitle] is in this set (OR).
+  final Set<String> selectedGameTitles;
+
+  /// Default: both sides; no game restriction.
+  static const PendingOrdersFilterState initial = PendingOrdersFilterState(
+    directions: {PersonalOrderSide.buy, PersonalOrderSide.sell},
+    selectedGameTitles: {},
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PendingOrdersFilterState &&
+        setEquals(directions, other.directions) &&
+        setEquals(selectedGameTitles, other.selectedGameTitles);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        Object.hashAll(directions),
+        Object.hashAll(selectedGameTitles),
+      );
 }
 
 @immutable
@@ -53,15 +81,20 @@ List<PendingOrderListItem> pendingOrderListItemsSortedNewestFirst(
   return copy;
 }
 
-List<PendingOrderListItem> applyPendingOrdersSideFilter(
+List<PendingOrderListItem> applyPendingOrdersFilters(
   List<PendingOrderListItem> items,
-  PendingOrdersSideFilter filter,
+  PendingOrdersFilterState filters,
 ) {
-  return switch (filter) {
-    PendingOrdersSideFilter.all => List<PendingOrderListItem>.from(items),
-    PendingOrdersSideFilter.buy =>
-      items.where((e) => e.order.side == PersonalOrderSide.buy).toList(),
-    PendingOrdersSideFilter.sell =>
-      items.where((e) => e.order.side == PersonalOrderSide.sell).toList(),
-  };
+  if (filters.directions.isEmpty) {
+    return [];
+  }
+  var out = items
+      .where((e) => filters.directions.contains(e.order.side))
+      .toList();
+  if (filters.selectedGameTitles.isNotEmpty) {
+    out = out
+        .where((e) => filters.selectedGameTitles.contains(e.gameTitle))
+        .toList();
+  }
+  return out;
 }
