@@ -44,7 +44,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
     if (o.side == PersonalOrderSide.buy) {
       return AppColors.primary;
     }
-    return AppColors.textPrimary;
+    return AppColors.secondary;
   }
 
   String _headlinePriceText() {

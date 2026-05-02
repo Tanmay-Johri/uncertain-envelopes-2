@@ -70,12 +70,12 @@ void main() {
   });
 
   testWidgets(
-    'sell headline price uses neutral primary text color; buy uses primary green',
+    'sell headline price uses red secondary; buy uses primary green',
     (tester) async {
       final sell = restingSell();
       await pumpCard(tester, sell);
       final priceSell = tester.widget<Text>(find.text(r'$0.45'));
-      expect(priceSell.style?.color, AppColors.textPrimary);
+      expect(priceSell.style?.color, AppColors.secondary);
 
       final buy = PendingOrderListItem(
         gameTitle: 'Fx',
