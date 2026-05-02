@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
 import '../../ui/screens/auth/auth_screen.dart';
+import '../../ui/screens/profile/profile_mock_data.dart';
+import '../../ui/screens/profile/profile_screen.dart';
+import '../../ui/screens/profile/profile_view_data.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/lobby/game_lobby_screen.dart';
@@ -65,13 +68,21 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (_, __) =>
-            const PlaceholderScreen(routeName: 'PROFILE'),
+        builder: (context, _) => ProfileScreen(
+          data: mockProfileViewDataDefault(),
+          onGameHistoryTap: () => context.go(AppRoutes.history),
+          onSignOut: () {},
+          onUsernameCommit: (lowercaseUsername) async {
+            if (lowercaseUsername == 'taken') {
+              return ProfileUsernameSubmitResult.taken;
+            }
+            return ProfileUsernameSubmitResult.success;
+          },
+        ),
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (_, __) =>
-            const PlaceholderScreen(routeName: 'HISTORY'),
+        builder: (context, _) => const PlaceholderScreen(routeName: 'HISTORY'),
       ),
       GoRoute(
         path: '/game/:id/lobby',
@@ -138,7 +149,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.create,
-                builder: (_, __) => const CreateGameScreen(),
+                builder: (context, _) => const CreateGameScreen(),
               ),
             ],
           ),
@@ -146,7 +157,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.orders,
-                builder: (_, __) =>
+                builder: (context, _) =>
                     const PlaceholderScreen(routeName: 'ORDERS'),
               ),
             ],

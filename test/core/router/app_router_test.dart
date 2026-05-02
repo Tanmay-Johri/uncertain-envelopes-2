@@ -140,10 +140,13 @@ void main() {
       expect(find.byType(LoginForm), findsOneWidget);
     });
 
-    testWidgets('/profile renders PROFILE placeholder outside shell',
+    testWidgets('/profile renders ProfileScreen outside shell',
         (tester) async {
       await _pumpAppWith(tester, initialLocation: AppRoutes.profile);
-      expect(find.text('PROFILE'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('profile-scaffold')),
+        findsOneWidget,
+      );
       expect(find.byType(AppShell), findsNothing);
     });
 
@@ -232,7 +235,10 @@ void main() {
       await _pumpAppWith(tester);
       await tester.tap(find.byIcon(Icons.account_circle_outlined));
       await tester.pumpAndSettle();
-      expect(find.text('PROFILE'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('profile-scaffold')),
+        findsOneWidget,
+      );
       expect(find.byType(AppShell), findsNothing);
     });
 
