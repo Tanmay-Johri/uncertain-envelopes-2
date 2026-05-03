@@ -114,8 +114,8 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
           final id = state.pathParameters['id']!;
           final scenario = mockTradingScenarioForGameId(id);
           return GameTradingScreen(
+            gameId: id,
             data: scenario.data,
-            onShowLogs: () {},
             onEndGameFromMenu: () {},
             onAddTime: () {},
           );

@@ -65,6 +65,25 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
   );
 });
 
+/// Mock executed trades for the transaction log.
+const _g1TradeLogs = <TradeLogEntry>[
+  TradeLogEntry(
+      sellerName: 'CryptoKing99', buyerName: 'Player1', quantity: 3, price: 149.50),
+  TradeLogEntry(
+      sellerName: 'Player2', buyerName: 'CryptoKing99', quantity: 5, price: 150.00),
+  TradeLogEntry(
+      sellerName: 'Player1', buyerName: 'Player2', quantity: 2, price: 148.90),
+  TradeLogEntry(
+      sellerName: 'CryptoKing99', buyerName: 'Player1', quantity: 7, price: 151.00),
+];
+
+const _g2TradeLogs = <TradeLogEntry>[
+  TradeLogEntry(
+      sellerName: 'TechTrader', buyerName: 'CryptoFan', quantity: 10, price: 150.00),
+  TradeLogEntry(
+      sellerName: 'CryptoFan', buyerName: 'TechTrader', quantity: 4, price: 150.80),
+];
+
 /// Mix of statuses for **Active orders** (C6). [createdAt] → **Created:** line.
 final _g1PersonalOrders = <PersonalOrder>[
   PersonalOrder(
@@ -174,6 +193,7 @@ final GameTradingScenario _g1PlayerTrading = GameTradingScenario(
     chartSessionElapsed: _kMockChartSessionElapsed,
     gameStartedAtUtc: _kMockGameStartedAtUtc,
     personalOrders: _g1PersonalOrders,
+    tradeLogs: _g1TradeLogs,
   ),
 );
 
@@ -195,5 +215,6 @@ final GameTradingScenario _g2AdminTrading = GameTradingScenario(
     chartSessionElapsed: _kMockChartSessionElapsed,
     gameStartedAtUtc: _kMockGameStartedAtUtc,
     personalOrders: _g2PersonalOrders,
+    tradeLogs: _g2TradeLogs,
   ),
 );

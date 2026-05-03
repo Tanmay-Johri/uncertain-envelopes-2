@@ -28,6 +28,7 @@ class GameTradingScreen extends StatefulWidget {
   const GameTradingScreen({
     super.key,
     required this.data,
+    this.gameId = '',
     this.onShowLogs,
     this.onEndGameFromMenu,
     this.onAddTime,
@@ -35,6 +36,10 @@ class GameTradingScreen extends StatefulWidget {
   });
 
   final GameTradingViewData data;
+
+  /// Routing id — used by the back button to return to the game lobby.
+  final String gameId;
+
   final VoidCallback? onShowLogs;
   final VoidCallback? onEndGameFromMenu;
   final VoidCallback? onAddTime;
@@ -182,6 +187,15 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     });
   }
 
+  void _openLogsSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _TradeLogsSheet(logs: widget.data.tradeLogs),
+    );
+  }
+
   Future<void> _openNewOrder(BuildContext context) async {
     final created = await NewOrderModal.show(
       context,
@@ -229,10 +243,13 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
           SafeArea(
             bottom: false,
             child: _TradingWindowHeader(
+              gameId: widget.gameId,
               isViewerAdmin: data.isViewerAdmin,
-              onShowLogs: widget.onShowLogs,
+              onShowLogs: () {
+                widget.onShowLogs?.call();
+                _openLogsSheet(context);
+              },
               onEndGameFromMenu: widget.onEndGameFromMenu,
-              onAccountTap: () => context.go(AppRoutes.profile),
             ),
           ),
           Expanded(
@@ -365,18 +382,19 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   }
 }
 
-/// Sticky frosted header: account (left), `TRADING WINDOW` (center), overflow (right).
+/// Sticky frosted header: back arrow (left), `TRADING WINDOW` (center),
+/// three-dots menu (right, always visible).
 class _TradingWindowHeader extends StatelessWidget {
   const _TradingWindowHeader({
+    required this.gameId,
     required this.isViewerAdmin,
-    required this.onAccountTap,
-    this.onShowLogs,
+    required this.onShowLogs,
     this.onEndGameFromMenu,
   });
 
+  final String gameId;
   final bool isViewerAdmin;
-  final VoidCallback onAccountTap;
-  final VoidCallback? onShowLogs;
+  final VoidCallback onShowLogs;
   final VoidCallback? onEndGameFromMenu;
 
   /// Content row only; padding is added outside this height.
@@ -412,66 +430,75 @@ class _TradingWindowHeader extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Back arrow → game lobby
                     IconButton(
+                      key: const ValueKey('game-trading-back'),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 36,
                         minHeight: _toolbarHeight,
                       ),
-                      icon: Icon(
-                        Icons.account_circle_outlined,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      tooltip: 'Back to lobby',
+                      onPressed: () {
+                        if (gameId.isNotEmpty) {
+                          context.go(AppRoutes.gameLobby(gameId));
+                        } else {
+                          Navigator.of(context).maybePop();
+                        }
+                      },
+                    ),
+                    // Three-dots menu — always visible
+                    PopupMenuButton<String>(
+                      key: const ValueKey('game-trading-menu'),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: _toolbarHeight,
+                      ),
+                      icon: const Icon(
+                        Icons.more_vert,
                         color: AppColors.textSecondary,
                         size: 22,
                       ),
-                      tooltip: 'Profile',
-                      onPressed: onAccountTap,
-                    ),
-                    if (isViewerAdmin)
-                      PopupMenuButton<String>(
-                        key: const ValueKey('game-trading-admin-menu'),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: _toolbarHeight,
-                        ),
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: AppColors.textSecondary,
-                          size: 22,
-                        ),
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'logs':
-                              onShowLogs?.call();
-                            case 'end':
-                              onEndGameFromMenu?.call();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'logs',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.terminal,
-                                  size: 18,
-                                  color: AppColors.textSecondary,
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'logs':
+                            onShowLogs();
+                          case 'end':
+                            onEndGameFromMenu?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'logs',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.receipt_long_outlined,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Show Logs',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textPrimary,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Show Logs',
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
+                        if (isViewerAdmin)
                           PopupMenuItem(
                             value: 'end',
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.stop_circle_outlined,
                                   size: 18,
                                   color: AppColors.secondary,
@@ -486,10 +513,8 @@ class _TradingWindowHeader extends StatelessWidget {
                               ],
                             ),
                           ),
-                        ],
-                      )
-                    else
-                      const SizedBox(width: 36),
+                      ],
+                    ),
                   ],
                 ),
               ],
@@ -497,6 +522,209 @@ class _TradingWindowHeader extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Trade logs bottom sheet
+// ---------------------------------------------------------------------------
+
+/// Bottom sheet listing every executed trade:
+/// `Seller ——(qty @ $price)——→ Buyer`
+class _TradeLogsSheet extends StatelessWidget {
+  const _TradeLogsSheet({required this.logs});
+
+  final List<TradeLogEntry> logs;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        border: Border.all(color: AppColors.outlineSubtle),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.outlineSubtle,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Text(
+                  'TRANSACTION LOG',
+                  style: AppTypography.microLabel.copyWith(
+                    color: AppColors.textTertiary,
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const Divider(color: AppColors.outlineSubtle, height: 1),
+          // Column headers
+          if (logs.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'SELLER',
+                      textAlign: TextAlign.right,
+                      style: AppTypography.microLabel.copyWith(
+                        color: AppColors.textTertiary,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Expanded(flex: 4, child: SizedBox()),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'BUYER',
+                      style: AppTypography.microLabel.copyWith(
+                        color: AppColors.textTertiary,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Log list or empty state
+          if (logs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Text(
+                'No transactions yet',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.separated(
+                key: const ValueKey('trade-logs-list'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                itemCount: logs.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, index) =>
+                    _TradeLogRow(entry: logs[index]),
+              ),
+            ),
+          SizedBox(height: MediaQuery.paddingOf(context).bottom + AppSpacing.md),
+        ],
+      ),
+    );
+  }
+}
+
+class _TradeLogRow extends StatelessWidget {
+  const _TradeLogRow({required this.entry});
+
+  final TradeLogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final priceText =
+        '\$${entry.price % 1 == 0 ? entry.price.toInt() : entry.price.toStringAsFixed(2)}';
+    final annotation = '${entry.quantity} @ $priceText';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Seller
+        Expanded(
+          flex: 3,
+          child: Text(
+            entry.sellerName,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        // Arrow section
+        Expanded(
+          flex: 4,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                annotation,
+                style: AppTypography.microLabel.copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppColors.outlineSubtle,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 10,
+                    color: AppColors.textTertiary,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        // Buyer
+        Expanded(
+          flex: 3,
+          child: Text(
+            entry.buyerName,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

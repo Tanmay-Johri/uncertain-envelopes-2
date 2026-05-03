@@ -220,29 +220,37 @@ void main() {
       expect(find.text('60:00'), findsOneWidget);
     });
 
-    testWidgets('non-admin does not show admin overflow menu', (tester) async {
+    testWidgets('non-admin sees three-dots menu but not End Game', (tester) async {
       final s = mockTradingScenarioForGameId('g1');
       expect(s.data.isViewerAdmin, isFalse);
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: GameTradingScreen(data: s.data),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
         ),
       );
-      expect(find.byKey(const ValueKey('game-trading-admin-menu')), findsNothing);
+      // Three-dots menu always visible
+      expect(find.byKey(const ValueKey('game-trading-menu')), findsOneWidget);
+      // Add-time and End Game are admin-only
       expect(find.byKey(const ValueKey('game-trading-add-time')), findsNothing);
     });
 
-    testWidgets('admin sees overflow menu and add-time control', (tester) async {
+    testWidgets('admin sees three-dots menu and add-time control', (tester) async {
       final s = mockTradingScenarioForGameId('g2');
       expect(s.data.isViewerAdmin, isTrue);
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: GameTradingScreen(data: s.data),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
         ),
       );
-      expect(find.byKey(const ValueKey('game-trading-admin-menu')), findsOneWidget);
+      expect(find.byKey(const ValueKey('game-trading-menu')), findsOneWidget);
       expect(find.byKey(const ValueKey('game-trading-add-time')), findsOneWidget);
     });
 
@@ -291,13 +299,16 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byKey(const ValueKey('game-trading-admin-menu')));
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Show Logs'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(logs, isTrue);
+      // Dismiss the logs sheet by tapping the barrier above it.
+      await tester.tapAt(const Offset(400, 100));
+      await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('game-trading-admin-menu')));
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('End Game'));
       await tester.pump();
@@ -447,6 +458,154 @@ void main() {
         expect(find.text('Cancelled'), findsOneWidget);
       },
     );
+  });
+
+  // -------------------------------------------------------------------------
+
+  group('GameTradingScreen — header', () {
+    testWidgets('back button is present', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data, gameId: 'g1'),
+          ),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-back')), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new), findsOneWidget);
+    });
+
+    testWidgets('three-dots menu is always visible for non-admin', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      expect(s.data.isViewerAdmin, isFalse);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
+        ),
+      );
+      expect(find.byKey(const ValueKey('game-trading-menu')), findsOneWidget);
+    });
+
+    testWidgets('non-admin Show Logs opens logs sheet', (tester) async {
+      const logs = [
+        TradeLogEntry(
+            sellerName: 'Alice', buyerName: 'Bob', quantity: 3, price: 149.50),
+        TradeLogEntry(
+            sellerName: 'Bob', buyerName: 'Charlie', quantity: 1, price: 150.00),
+      ];
+      const data = GameTradingViewData(
+        gameTitle: 'T',
+        description: 'd',
+        isViewerAdmin: false,
+        currentPlayerId: 'p1',
+        isTimed: false,
+        tradingTimeRemaining: null,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+        orderBookBids: [],
+        orderBookAsks: [],
+        marketPrice: 10,
+        priceHistory: [],
+        chartSessionElapsed: Duration.zero,
+        tradeLogs: logs,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show Logs'));
+      await tester.pumpAndSettle();
+      expect(find.text('TRANSACTION LOG'), findsOneWidget);
+      expect(find.text('SELLER'), findsOneWidget);
+      expect(find.text('BUYER'), findsOneWidget);
+      expect(find.text('Alice'), findsOneWidget);
+      expect(find.text('Bob'), findsWidgets);
+      expect(find.text('Charlie'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trade-logs-list')), findsOneWidget);
+    });
+
+    testWidgets('logs sheet shows empty state when no trades', (tester) async {
+      const data = GameTradingViewData(
+        gameTitle: 'T',
+        description: 'd',
+        isViewerAdmin: false,
+        currentPlayerId: 'p1',
+        isTimed: false,
+        tradingTimeRemaining: null,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+        orderBookBids: [],
+        orderBookAsks: [],
+        marketPrice: 10,
+        priceHistory: [],
+        chartSessionElapsed: Duration.zero,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show Logs'));
+      await tester.pumpAndSettle();
+      expect(find.text('TRANSACTION LOG'), findsOneWidget);
+      expect(find.text('No transactions yet'), findsOneWidget);
+    });
+
+    testWidgets('non-admin menu has Show Logs but not End Game', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      expect(s.data.isViewerAdmin, isFalse);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('Show Logs'), findsOneWidget);
+      expect(find.text('End Game'), findsNothing);
+    });
+
+    testWidgets('admin menu has both Show Logs and End Game', (tester) async {
+      final s = mockTradingScenarioForGameId('g2');
+      expect(s.data.isViewerAdmin, isTrue);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: s.data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('Show Logs'), findsOneWidget);
+      expect(find.text('End Game'), findsOneWidget);
+    });
   });
 }
 

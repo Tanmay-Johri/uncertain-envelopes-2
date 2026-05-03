@@ -12,6 +12,29 @@ export '../../../core/trading/personal_order.dart'
         PersonalOrderType,
         personalOrderClearsCancellationPending;
 
+/// One executed trade between two players, shown in the transaction log.
+@immutable
+class TradeLogEntry {
+  const TradeLogEntry({
+    required this.sellerName,
+    required this.buyerName,
+    required this.quantity,
+    required this.price,
+  });
+
+  /// Display name of the player who sold (gave envelopes).
+  final String sellerName;
+
+  /// Display name of the player who bought (received envelopes).
+  final String buyerName;
+
+  /// Number of envelopes exchanged.
+  final int quantity;
+
+  /// Execution price per envelope (USD).
+  final double price;
+}
+
 @immutable
 class OrderBookLevel {
   const OrderBookLevel({required this.price, required this.quantity});
@@ -53,6 +76,7 @@ class GameTradingViewData {
     required this.priceHistory,
     required this.chartSessionElapsed,
     this.personalOrders = const [],
+    this.tradeLogs = const [],
     this.gameStartedAtUtc,
     this.tradingTimeRemaining,
   });
@@ -89,6 +113,9 @@ class GameTradingViewData {
 
   /// Player’s own orders for **Active orders** (C6 mock; Phase 2 from providers).
   final List<PersonalOrder> personalOrders;
+
+  /// Executed trades shown in the transaction log. Empty until Phase 2.
+  final List<TradeLogEntry> tradeLogs;
 
   /// Game start instant in UTC (Supabase `start_time`); used for touch tooltips only.
   final DateTime? gameStartedAtUtc;
