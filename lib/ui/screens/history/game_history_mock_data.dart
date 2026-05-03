@@ -12,7 +12,8 @@ List<GameHistoryEntry> kMockGameHistory() => [
         isRanked: true,
         adminName: 'MasterTrader',
         envelopePriceUsd: 12.50,
-        playedAt: DateTime.utc(2024, 10, 24, 14, 30),
+        startedAt: DateTime.utc(2024, 10, 24, 14, 30),
+        endedAt: DateTime.utc(2024, 10, 24, 16, 0),
         playerResults: const [
           GameHistoryPlayerResult(
             playerId: 'p1',
@@ -40,7 +41,8 @@ List<GameHistoryEntry> kMockGameHistory() => [
         isRanked: false,
         adminName: 'MasterTrader',
         envelopePriceUsd: 8.00,
-        playedAt: DateTime.utc(2024, 10, 20, 10, 0),
+        startedAt: DateTime.utc(2024, 10, 20, 10, 0),
+        endedAt: DateTime.utc(2024, 10, 20, 11, 45),
         playerResults: const [
           GameHistoryPlayerResult(
             playerId: 'p1',
@@ -68,7 +70,8 @@ List<GameHistoryEntry> kMockGameHistory() => [
         isRanked: true,
         adminName: 'MasterTrader',
         envelopePriceUsd: 15.00,
-        playedAt: DateTime.utc(2024, 10, 15, 9, 0),
+        startedAt: DateTime.utc(2024, 10, 15, 9, 0),
+        endedAt: DateTime.utc(2024, 10, 15, 10, 30),
         playerResults: const [
           GameHistoryPlayerResult(
             playerId: 'p3',
@@ -96,7 +99,8 @@ List<GameHistoryEntry> kMockGameHistory() => [
         isRanked: true,
         adminName: 'MasterTrader',
         envelopePriceUsd: 95.00,
-        playedAt: DateTime.utc(2024, 10, 10, 16, 45),
+        startedAt: DateTime.utc(2024, 10, 10, 16, 45),
+        endedAt: DateTime.utc(2024, 10, 10, 18, 15),
         playerResults: const [
           GameHistoryPlayerResult(
             playerId: 'p8',
@@ -124,7 +128,8 @@ List<GameHistoryEntry> kMockGameHistory() => [
         isRanked: false,
         adminName: 'MasterTrader',
         envelopePriceUsd: 22.50,
-        playedAt: DateTime.utc(2024, 10, 5, 11, 15),
+        startedAt: DateTime.utc(2024, 10, 5, 11, 15),
+        endedAt: DateTime.utc(2024, 10, 5, 13, 0),
         playerResults: const [
           GameHistoryPlayerResult(
             playerId: 'p10',

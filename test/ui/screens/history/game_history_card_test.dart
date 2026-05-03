@@ -18,6 +18,8 @@ GameHistoryEntry _entry({
   bool isRanked = true,
   String adminName = 'MasterTrader',
   double? envelopePriceUsd = 12.50,
+  DateTime? startedAt,
+  DateTime? endedAt,
   List<GameHistoryPlayerResult> playerResults = const [
     GameHistoryPlayerResult(playerId: 'p1', displayName: 'Player1', pnl: 100),
     GameHistoryPlayerResult(playerId: 'p2', displayName: 'Player2', pnl: -20),
@@ -34,7 +36,8 @@ GameHistoryEntry _entry({
     isRanked: isRanked,
     adminName: adminName,
     envelopePriceUsd: envelopePriceUsd,
-    playedAt: DateTime.utc(2024, 10, 24, 14, 30),
+    startedAt: startedAt,
+    endedAt: endedAt,
     playerResults: playerResults,
   );
 }
@@ -178,6 +181,16 @@ void main() {
       expect(find.text('Ranked'), findsNothing);
     });
 
+    testWidgets('Ranked value is white (not green)', (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(
+            entry: _entry(isRanked: true), isExpanded: true, onTap: () {}),
+      );
+      final rankedWidget = tester.widget<Text>(find.text('Ranked'));
+      expect(rankedWidget.style?.color, AppColors.textPrimary);
+    });
+
     testWidgets('shows ADMIN prefixed with @', (tester) async {
       await _pump(
         tester,
@@ -211,6 +224,59 @@ void main() {
             onTap: () {}),
       );
       expect(find.text(r'$—'), findsOneWidget);
+    });
+
+    testWidgets('shows STARTED label and formatted time', (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(
+          entry: _entry(startedAt: DateTime.utc(2024, 10, 24, 14, 30)),
+          isExpanded: true,
+          onTap: () {},
+        ),
+      );
+      expect(find.text('STARTED'), findsOneWidget);
+      expect(find.text('Oct 24, 14:30'), findsOneWidget);
+    });
+
+    testWidgets('shows ENDED label and formatted time', (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(
+          entry: _entry(endedAt: DateTime.utc(2024, 10, 24, 16, 0)),
+          isExpanded: true,
+          onTap: () {},
+        ),
+      );
+      expect(find.text('ENDED'), findsOneWidget);
+      expect(find.text('Oct 24, 16:00'), findsOneWidget);
+    });
+
+    testWidgets('shows — when startedAt is null', (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(
+          entry: _entry(startedAt: null),
+          isExpanded: true,
+          onTap: () {},
+        ),
+      );
+      expect(find.text('STARTED'), findsOneWidget);
+      // At least one '—' is present (could also be endedAt if both null)
+      expect(find.text('—'), findsWidgets);
+    });
+
+    testWidgets('shows — when endedAt is null', (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(
+          entry: _entry(endedAt: null),
+          isExpanded: true,
+          onTap: () {},
+        ),
+      );
+      expect(find.text('ENDED'), findsOneWidget);
+      expect(find.text('—'), findsWidgets);
     });
 
     testWidgets('shows all player names in PLAYERS PNL section', (tester) async {

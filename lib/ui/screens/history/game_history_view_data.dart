@@ -28,7 +28,8 @@ class GameHistoryEntry {
     required this.isRanked,
     required this.adminName,
     required this.envelopePriceUsd,
-    required this.playedAt,
+    required this.startedAt,
+    required this.endedAt,
     required this.playerResults,
   });
 
@@ -54,8 +55,11 @@ class GameHistoryEntry {
   /// null when the envelope price was never set (e.g. discarded game).
   final double? envelopePriceUsd;
 
-  /// When the game was played. null for legacy / unknown.
-  final DateTime? playedAt;
+  /// When the game started. null for legacy / unknown.
+  final DateTime? startedAt;
+
+  /// When the game ended. null for legacy / unknown.
+  final DateTime? endedAt;
 
   /// All players sorted by PnL descending (caller's responsibility).
   final List<GameHistoryPlayerResult> playerResults;

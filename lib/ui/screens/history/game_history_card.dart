@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -161,7 +162,6 @@ class _ExpandedBody extends StatelessWidget {
                 child: _MetaCell(
                   label: 'STATUS',
                   value: entry.isRanked ? 'Ranked' : 'Casual',
-                  valueColor: entry.isRanked ? AppColors.primary : null,
                 ),
               ),
             ],
@@ -179,6 +179,23 @@ class _ExpandedBody extends StatelessWidget {
                 child: _MetaCell(
                   label: 'ENVELOPE PRICE',
                   value: envelopeText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _MetaCell(
+                  label: 'STARTED',
+                  value: _formatDateTime(entry.startedAt),
+                ),
+              ),
+              Expanded(
+                child: _MetaCell(
+                  label: 'ENDED',
+                  value: _formatDateTime(entry.endedAt),
                 ),
               ),
             ],
@@ -299,6 +316,12 @@ class _PlayerPnlRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+final _dtFormat = DateFormat('MMM d, HH:mm');
+
+/// Returns a formatted date/time string, or "—" when [dt] is null.
+String _formatDateTime(DateTime? dt) =>
+    dt != null ? _dtFormat.format(dt) : '—';
 
 Color _pnlColor(double pnl) {
   if (pnl > 0) return AppColors.primary;

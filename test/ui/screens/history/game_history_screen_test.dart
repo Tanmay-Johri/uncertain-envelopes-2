@@ -65,7 +65,8 @@ List<GameHistoryEntry> _twoEntries() => [
         isRanked: true,
         adminName: 'Admin1',
         envelopePriceUsd: 10.0,
-        playedAt: null,
+        startedAt: null,
+        endedAt: null,
         playerResults: [
           GameHistoryPlayerResult(playerId: 'p1', displayName: 'P1', pnl: 100),
         ],
@@ -79,7 +80,8 @@ List<GameHistoryEntry> _twoEntries() => [
         isRanked: false,
         adminName: 'Admin2',
         envelopePriceUsd: 5.0,
-        playedAt: null,
+        startedAt: null,
+        endedAt: null,
         playerResults: [
           GameHistoryPlayerResult(playerId: 'p2', displayName: 'P2', pnl: -50),
         ],
@@ -244,7 +246,8 @@ void main() {
           isRanked: i.isEven,
           adminName: 'Admin$i',
           envelopePriceUsd: i.toDouble(),
-          playedAt: null,
+          startedAt: null,
+        endedAt: null,
           playerResults: const [],
         ),
       );

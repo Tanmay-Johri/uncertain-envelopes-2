@@ -44,7 +44,8 @@ void main() {
       String id = 'gh-1',
       double viewerPnl = 100,
       double? envelopePriceUsd = 12.50,
-      DateTime? playedAt,
+      DateTime? startedAt,
+      DateTime? endedAt,
       List<GameHistoryPlayerResult> playerResults = const [],
       bool isRanked = true,
     }) {
@@ -57,13 +58,15 @@ void main() {
         isRanked: isRanked,
         adminName: 'MasterTrader',
         envelopePriceUsd: envelopePriceUsd,
-        playedAt: playedAt,
+        startedAt: startedAt,
+        endedAt: endedAt,
         playerResults: playerResults,
       );
     }
 
     test('stores all fields correctly', () {
-      final played = DateTime.utc(2024, 10, 24, 14, 30);
+      final started = DateTime.utc(2024, 10, 24, 14, 30);
+      final ended = DateTime.utc(2024, 10, 24, 16, 0);
       final results = [
         const GameHistoryPlayerResult(playerId: 'p1', displayName: 'Alice', pnl: 50),
       ];
@@ -71,7 +74,8 @@ void main() {
         id: 'gh-test',
         viewerPnl: 240,
         envelopePriceUsd: 12.50,
-        playedAt: played,
+        startedAt: started,
+        endedAt: ended,
         playerResults: results,
       );
       expect(e.id, 'gh-test');
@@ -81,7 +85,8 @@ void main() {
       expect(e.isRanked, true);
       expect(e.adminName, 'MasterTrader');
       expect(e.envelopePriceUsd, 12.50);
-      expect(e.playedAt, played);
+      expect(e.startedAt, started);
+      expect(e.endedAt, ended);
       expect(e.playerResults.length, 1);
     });
 
@@ -99,8 +104,20 @@ void main() {
       expect(_entry(envelopePriceUsd: 0).envelopePriceUsd, 0.0);
     });
 
-    test('playedAt can be null', () {
-      expect(_entry(playedAt: null).playedAt, isNull);
+    test('startedAt can be null', () {
+      expect(_entry(startedAt: null).startedAt, isNull);
+    });
+
+    test('endedAt can be null', () {
+      expect(_entry(endedAt: null).endedAt, isNull);
+    });
+
+    test('startedAt and endedAt can both be set', () {
+      final s = DateTime.utc(2024, 10, 5, 9, 0);
+      final e = DateTime.utc(2024, 10, 5, 11, 0);
+      final entry = _entry(startedAt: s, endedAt: e);
+      expect(entry.startedAt, s);
+      expect(entry.endedAt, e);
     });
 
     test('playerResults can be empty', () {
