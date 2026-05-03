@@ -20,6 +20,7 @@ class TradeLogEntry {
     required this.buyerName,
     required this.quantity,
     required this.price,
+    this.tradedAt,
   });
 
   /// Display name of the player who sold (gave envelopes).
@@ -33,6 +34,10 @@ class TradeLogEntry {
 
   /// Execution price per envelope (USD).
   final double price;
+
+  /// Wall-clock UTC time when the trade was executed. Shown as HH:MM in the
+  /// transaction log. Null until Phase 2 wires real execution data.
+  final DateTime? tradedAt;
 }
 
 @immutable

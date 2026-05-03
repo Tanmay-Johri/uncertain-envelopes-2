@@ -99,7 +99,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             phase: scenario.phase,
             currentPlayerId: scenario.currentPlayerId,
             isViewerAdmin: scenario.isViewerAdmin,
-            onStartGame: () {},
+            onStartGame: () => context.go(AppRoutes.gameTrading(id)),
             onEndGame: () {},
             onEnterGame: () => context.go(AppRoutes.gameTrading(id)),
             onJoinGame: () {},
@@ -117,7 +117,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             gameId: id,
             data: scenario.data,
             onEndGameFromMenu: () {},
-            onAddTime: () {},
+            onAddTime: (_) {},
           );
         },
       ),

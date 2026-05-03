@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -42,7 +43,9 @@ class GameTradingScreen extends StatefulWidget {
 
   final VoidCallback? onShowLogs;
   final VoidCallback? onEndGameFromMenu;
-  final VoidCallback? onAddTime;
+  /// Called with the number of minutes chosen by the admin when they confirm
+  /// the "Add Time" dialog.
+  final void Function(int minutes)? onAddTime;
 
   /// Completes when the backend acks that the `cancel_order` command **row**
   /// was created. Defaults to [defaultSubmitCancelOrderCommandAck] in state.
@@ -187,6 +190,14 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     });
   }
 
+  Future<void> _openAddTimeDialog(BuildContext context) async {
+    final minutes = await showDialog<int>(
+      context: context,
+      builder: (_) => const _AddTimeDialog(),
+    );
+    if (minutes != null) widget.onAddTime?.call(minutes);
+  }
+
   void _openLogsSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -283,11 +294,15 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (data.isTimed &&
-                            data.tradingTimeRemaining != null) ...[
+                    if (data.isTimed &&
+                        data.tradingTimeRemaining != null)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Invisible left spacer balances the "+" on the
+                          // right so the clock stays at true screen centre.
+                          if (data.isViewerAdmin)
+                            const SizedBox(width: AppSpacing.md + 40),
                           CountdownTimer(
                             key: const ValueKey('game-trading-countdown'),
                             initialRemaining: data.tradingTimeRemaining!,
@@ -295,11 +310,12 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                           ),
                           if (data.isViewerAdmin) ...[
                             const SizedBox(width: AppSpacing.md),
-                            _AddTimeButton(onPressed: widget.onAddTime),
+                            _AddTimeButton(
+                              onPressed: () => _openAddTimeDialog(context),
+                            ),
                           ],
                         ],
-                      ],
-                    ),
+                      ),
                     if (data.isTimed && data.tradingTimeRemaining != null)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -590,6 +606,17 @@ class _TradeLogsSheet extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
+                    flex: 2,
+                    child: Text(
+                      'TIME',
+                      style: AppTypography.microLabel.copyWith(
+                        color: AppColors.textTertiary,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Expanded(
                     flex: 3,
                     child: Text(
                       'SELLER',
@@ -661,9 +688,24 @@ class _TradeLogRow extends StatelessWidget {
         '\$${entry.price % 1 == 0 ? entry.price.toInt() : entry.price.toStringAsFixed(2)}';
     final annotation = '${entry.quantity} @ $priceText';
 
+    final timeLabel = entry.tradedAt != null
+        ? '${entry.tradedAt!.hour.toString().padLeft(2, '0')}:${entry.tradedAt!.minute.toString().padLeft(2, '0')}'
+        : '--:--';
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Time
+        Expanded(
+          flex: 2,
+          child: Text(
+            timeLabel,
+            style: AppTypography.microLabel.copyWith(
+              color: AppColors.textTertiary,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ),
         // Seller
         Expanded(
           flex: 3,
@@ -729,6 +771,198 @@ class _TradeLogRow extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Add-time dialog
+// ---------------------------------------------------------------------------
+
+/// Step size and bounds for the add-time stepper.
+abstract final class _AddTimeLimits {
+  static const int step = 5;
+  static const int min = 1;   // any natural number via keyboard
+  static const int max = 600; // 10 hours
+  static const int defaultValue = 5;
+}
+
+class _AddTimeDialog extends StatefulWidget {
+  const _AddTimeDialog();
+
+  @override
+  State<_AddTimeDialog> createState() => _AddTimeDialogState();
+}
+
+class _AddTimeDialogState extends State<_AddTimeDialog> {
+  int _minutes = _AddTimeLimits.defaultValue;
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: '${_AddTimeLimits.defaultValue}');
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) _commitFromField();
+  }
+
+  void _commitFromField() {
+    final raw = _controller.text.trim();
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed < _AddTimeLimits.min) {
+      _setMinutes(_minutes); // revert to last valid
+      return;
+    }
+    // Free-form entry: any natural number, just clamp to max.
+    _setMinutes(parsed.clamp(_AddTimeLimits.min, _AddTimeLimits.max));
+  }
+
+  void _setMinutes(int value) {
+    setState(() => _minutes = value.clamp(_AddTimeLimits.min, _AddTimeLimits.max));
+    _controller.text = '$_minutes';
+  }
+
+  void _adjust(int delta) {
+    final next = _minutes + delta * _AddTimeLimits.step;
+    _setMinutes(next);
+    _focusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppColors.outlineSubtle),
+      ),
+      title: Text(
+        'ADD TIME',
+        style: AppTypography.microLabel.copyWith(
+          color: AppColors.primary,
+          fontSize: 13,
+          letterSpacing: 1.4,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'DURATION (MINUTES)',
+            style: AppTypography.microLabel.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              _StepperSideButton(
+                key: const ValueKey('add-time-minus'),
+                icon: Icons.remove,
+                onPressed: _minutes > _AddTimeLimits.min
+                    ? () => _adjust(-1)
+                    : null,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: TextField(
+                  key: const ValueKey('add-time-value'),
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.statValue.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppColors.background,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.md,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: const BorderSide(color: AppColors.outline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  onEditingComplete: _commitFromField,
+                  onSubmitted: (_) => _commitFromField(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              _StepperSideButton(
+                key: const ValueKey('add-time-plus'),
+                icon: Icons.add,
+                onPressed: _minutes < _AddTimeLimits.max
+                    ? () => _adjust(1)
+                    : null,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Max 600 min (10 hours) · steps of 5 min',
+            style: AppTypography.microLabel.copyWith(
+              color: AppColors.textTertiary,
+              fontSize: 10,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          key: const ValueKey('add-time-cancel'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'CANCEL',
+            style: AppTypography.microLabel.copyWith(
+              color: AppColors.textSecondary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        TextButton(
+          key: const ValueKey('add-time-confirm'),
+          onPressed: () => Navigator.of(context).pop(_minutes),
+          child: Text(
+            'ADD',
+            style: AppTypography.microLabel.copyWith(
+              color: AppColors.primary,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add-time circular "+" button
+// ---------------------------------------------------------------------------
+
 class _AddTimeButton extends StatelessWidget {
   const _AddTimeButton({this.onPressed});
 
@@ -750,6 +984,42 @@ class _AddTimeButton extends StatelessWidget {
           width: 40,
           height: 40,
           child: Icon(Icons.add, color: AppColors.textPrimary, size: 24),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stepper ± button shared by _AddTimeDialog
+// ---------------------------------------------------------------------------
+
+class _StepperSideButton extends StatelessWidget {
+  const _StepperSideButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return Material(
+      color: AppColors.surfaceContainer,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(
+            icon,
+            color: enabled ? AppColors.textPrimary : AppColors.textDisabled,
+          ),
         ),
       ),
     );
