@@ -12,6 +12,7 @@ import 'package:uncertain_envelopes_2/ui/screens/lobby/game_lobby_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/results/game_results_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dart';
+import 'package:uncertain_envelopes_2/ui/screens/history/game_history_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 Future<GoRouter> _pumpAppWith(
@@ -154,10 +155,10 @@ void main() {
       expect(find.byType(AppShell), findsNothing);
     });
 
-    testWidgets('/history renders HISTORY placeholder outside shell',
+    testWidgets('/history renders GameHistoryScreen outside shell',
         (tester) async {
       await _pumpAppWith(tester, initialLocation: AppRoutes.history);
-      expect(find.text('HISTORY'), findsWidgets);
+      expect(find.byType(GameHistoryScreen), findsOneWidget);
       expect(find.byType(AppShell), findsNothing);
     });
   });

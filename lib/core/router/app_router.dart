@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
+import '../../ui/screens/history/game_history_mock_data.dart';
+import '../../ui/screens/history/game_history_screen.dart';
 import '../../ui/screens/auth/auth_screen.dart';
 import '../../ui/screens/profile/profile_mock_data.dart';
 import '../../ui/screens/profile/profile_screen.dart';
@@ -84,7 +86,8 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (context, _) => const PlaceholderScreen(routeName: 'HISTORY'),
+        builder: (context, _) =>
+            GameHistoryScreen(entries: kMockGameHistory()),
       ),
       GoRoute(
         path: '/game/:id/lobby',
