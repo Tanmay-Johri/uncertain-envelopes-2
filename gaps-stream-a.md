@@ -213,7 +213,7 @@ These are **planned** work from the master plan, not regressions:
 | Unit | Missing artifact | Status |
 |------|------------------|--------|
 | A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) | ✅ **DONE** — `005_create_lifecycle_functions.sql` + `lifecycle_procs_test.sql`; full suite green |
-| A6 | Order matching (`process_create_order`, `match_order`) | pending |
+| A6 | Order matching (`process_create_order`, `match_order`) | ✅ **DONE** — `006_create_order_matching.sql` + `order_matching_test.sql`; full suite green |
 | A7 | `process_cancel_order` | pending |
 | A8 | Edge `command-processor` + trigger wiring | pending |
 | A9 | Edge `sweeper` + pg_cron | pending |
@@ -237,6 +237,37 @@ corruption.
 
 **Priority:** Low — the schema enforces it; this is a reminder for A9 implementation.
 
+### New gaps identified during A6 (append as A-GAP-10+)
+
+**A-GAP-10 — `match_order` self-match: allowed by design, unverified UX impact**
+
+Self-matching (a player's own resting order matched against their new incoming order)
+is currently **allowed** — a deliberate design decision made during A6 planning.
+No cross-stream product sign-off has been obtained. In real markets this is "wash
+trading"; in a classroom/game context it may or may not matter. A6 tests do not
+exercise the self-match path (every test uses alice as the incoming side and bob/carol
+as resting counterparts).
+
+**What to do:**
+1. **Phase 2** — product decision: confirm allowed or prohibit. If prohibited, add
+   `AND created_by_player_id <> v_order.created_by_player_id` to both cursor
+   WHERE clauses in `match_order` and add a dedicated self-match test.
+
+**Priority:** Low for gameplay correctness; medium if leaderboards / ranked mode care
+about wash-trading distortion.
+
+**A-GAP-11 — Concurrent order matching correctness not tested under load**
+
+`match_order` uses `FOR UPDATE` on resting order rows to serialise concurrent
+processors. Correctness under genuine concurrency (two `process_create_order`
+calls racing the same game's order book) is not exercised by the single-session
+unit tests. Removing `FOR UPDATE` would not fail any current A6 test.
+
+**What to do:** Phase 2 INT3 — load-test with two simultaneous order submissions
+to the same game; assert no duplicate execution, no double-counted delta.
+
+**Priority:** Medium for production; low until high-concurrency order flow matters.
+
 ---
 
 ## Priority / ordering recommendation for Phase 2 (Stream A–related items only)
@@ -255,5 +286,5 @@ corruption.
 
 ---
 
-*Last updated: reflects Stream A state through A5 lifecycle procs (A-GAP-8
-row updated). Next: A6 order matching. New gaps from A5: A-GAP-9.*
+*Last updated: reflects Stream A state through A6 order matching (A-GAP-8
+row updated). Next: A7 cancel order. New gaps from A6: A-GAP-10, A-GAP-11.*
