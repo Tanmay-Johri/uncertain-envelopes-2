@@ -210,18 +210,32 @@ it as non-retriable without string-matching on message text.
 
 These are **planned** work from the master plan, not regressions:
 
-| Unit | Missing artifact |
-|------|------------------|
-| A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) |
-| A6 | Order matching (`process_create_order`, `match_order`) |
-| A7 | `process_cancel_order` |
-| A8 | Edge `command-processor` + trigger wiring |
-| A9 | Edge `sweeper` + pg_cron |
-| A10 | Redis version cache + Edge `get-state-version` |
-| A11 | Realtime publication + client filter docs |
+| Unit | Missing artifact | Status |
+|------|------------------|--------|
+| A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) | ✅ **DONE** — `005_create_lifecycle_functions.sql` + `lifecycle_procs_test.sql`; full suite green |
+| A6 | Order matching (`process_create_order`, `match_order`) | pending |
+| A7 | `process_cancel_order` | pending |
+| A8 | Edge `command-processor` + trigger wiring | pending |
+| A9 | Edge `sweeper` + pg_cron | pending |
+| A10 | Redis version cache + Edge `get-state-version` | pending |
+| A11 | Realtime publication + client filter docs | pending |
 
 Phase 2 should **not** try to close A-GAP-1–7 by relying on these existing;
 gaps above apply to **already-shipped** migrations A1–A4.
+
+### New gaps identified during A5 (append as A-GAP-9+)
+
+**A-GAP-9 — `process_end_trading` system path: sweeper must supply `command_game_id`**
+
+The schema `CHECK` constraint `commands_game_id_required_for_non_create` requires
+`command_game_id IS NOT NULL` for all non-`create_game` commands. When the sweeper
+inserts an `end_trading` command with `player_id = NULL`, it **must** supply a valid
+`command_game_id`. This is obvious from the schema but worth documenting explicitly
+so A9 (sweeper implementation) sets it correctly. The proc itself validates it (UE001
+if null), so a misconfigured sweeper will produce a clean rejection rather than silent
+corruption.
+
+**Priority:** Low — the schema enforces it; this is a reminder for A9 implementation.
 
 ---
 
@@ -241,6 +255,5 @@ gaps above apply to **already-shipped** migrations A1–A4.
 
 ---
 
-*Last updated: reflects Stream A state through commit `27ead0a` (A4 lobby
-procs). Revisit after A5–A11 land — new gaps should be appended with new
-IDs (`A-GAP-9`, …).*
+*Last updated: reflects Stream A state through A5 lifecycle procs (A-GAP-8
+row updated). Next: A6 order matching. New gaps from A5: A-GAP-9.*
