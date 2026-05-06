@@ -214,7 +214,7 @@ These are **planned** work from the master plan, not regressions:
 |------|------------------|--------|
 | A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) | ✅ **DONE** — `005_create_lifecycle_functions.sql` + `lifecycle_procs_test.sql`; full suite green |
 | A6 | Order matching (`process_create_order`, `match_order`) | ✅ **DONE** — `006_create_order_matching.sql` + `order_matching_test.sql`; full suite green |
-| A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; run locally (requires Docker/psql stack) |
+| A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; full `cancel_order_test.sql` verified against linked Supabase project via MCP (`apply_migration` + `execute_sql`); local runs still supported with Docker/psql |
 | A8 | Edge `command-processor` + trigger wiring | pending |
 | A9 | Edge `sweeper` + pg_cron | pending |
 | A10 | Redis version cache + Edge `get-state-version` | pending |
