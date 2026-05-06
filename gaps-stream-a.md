@@ -214,7 +214,7 @@ These are **planned** work from the master plan, not regressions:
 |------|------------------|--------|
 | A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) | ✅ **DONE** — `005_create_lifecycle_functions.sql` + `lifecycle_procs_test.sql`; full suite green |
 | A6 | Order matching (`process_create_order`, `match_order`) | ✅ **DONE** — `006_create_order_matching.sql` + `order_matching_test.sql`; full suite green |
-| A7 | `process_cancel_order` | pending |
+| A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; run locally (requires Docker/psql stack) |
 | A8 | Edge `command-processor` + trigger wiring | pending |
 | A9 | Edge `sweeper` + pg_cron | pending |
 | A10 | Redis version cache + Edge `get-state-version` | pending |
@@ -268,6 +268,24 @@ to the same game; assert no duplicate execution, no double-counted delta.
 
 **Priority:** Medium for production; low until high-concurrency order flow matters.
 
+### New gaps identified during A7
+
+**A-GAP-12 — `process_cancel_order`: `command_game_id IS NULL` branch is unreachable via normal INSERT**
+
+Same pattern as **A-GAP-1**. The defensive `command_game_id` null check duplicates the schema
+CHECK `commands_game_id_required_for_non_create`. Tests exercise it only by briefly dropping that
+CHECK inside a rolled-back transaction (`cancel_order_test.sql` §E3).
+
+**Priority:** Low — leave as defence-in-depth or delete the redundant `IF` if we prefer FK/CHECK-only.
+
+**A-GAP-13 — Concurrent cancel + match on the same resting order not stress-tested**
+
+`process_cancel_order` locks the targeted order (`SELECT … FOR UPDATE`), so correctness under a
+hypothetical race with `match_order` on the same row is enforced by Postgres row locking, not proven
+by a multi-session torture test comparable to **A-GAP-11**.
+
+**Priority:** Medium for production scepticism; defer to Phase 2 INT3 / load tooling.
+
 ---
 
 ## Priority / ordering recommendation for Phase 2 (Stream A–related items only)
@@ -286,5 +304,6 @@ to the same game; assert no duplicate execution, no double-counted delta.
 
 ---
 
-*Last updated: reflects Stream A state through A6 order matching (A-GAP-8
-row updated). Next: A7 cancel order. New gaps from A6: A-GAP-10, A-GAP-11.*
+*Last updated: reflects Stream A state through A7 cancel order (A-GAP-8 row
+updated). Next: A8 command-processor Edge Function. New gaps from A7: A-GAP-12,
+A-GAP-13.*
