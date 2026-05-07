@@ -223,7 +223,7 @@ These are **planned** work from the master plan, not regressions:
 | A6 | Order matching (`process_create_order`, `match_order`) | ✅ **DONE** — `006_create_order_matching.sql` + `order_matching_test.sql`; full suite green |
 | A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; full `cancel_order_test.sql` verified against linked Supabase project via MCP (`apply_migration` + `execute_sql`); local runs still supported with Docker/psql |
 | A8 | Edge `command-processor` + trigger wiring | ✅ **DONE** — `008_command_processor_trigger.sql` (applied as `008_command_processor_trigger` migration) + `supabase/functions/command-processor/` + `classification.test.ts`; `verify_jwt=false`, shared-secret webhook auth, Upstash Redis fail-open sync after success |
-| A9 | Edge `sweeper` + pg_cron | pending |
+| A9 | SQL sweeper + `sweeper_run` + pg_cron (`009`/`010`) | ✅ **DONE** — `sweeper_invoke_command_processor`, `sweeper_rescue_stuck_claimed`, `sweeper_auto_end_timed_games`, `sweeper_kick_idle_processors`, `sweeper_run`; cron `* * * * *` (best-effort if `pg_cron` restricted); `sweeper_test.sql` for local/psql |
 | A10 | Redis version cache + Edge `get-state-version` | pending |
 | A11 | Realtime publication + client filter docs | pending |
 
@@ -332,7 +332,7 @@ timing-sensitive flakes.
 
 ---
 
-*Last updated: reflects Stream A through A8 command-processor (A-GAP-8 row closed for A8,
-A-GAP‑7 nuanced, new A‑GAP‑14). Prior A7 notes remain: A‑GAP‑12, A‑GAP‑13. Next infra:
-vault secrets + Edge env for Upstash Redis + webhook bearer; automated async integration
-polling after secrets land.*
+*Last updated: reflects Stream A through **A9** sweeper (`009_command_sweeper` +
+`010_command_sweeper_schedule`, SQL-only + pg_cron), `sweeper_test.sql`, remote
+`SELECT sweeper_run()` sanity check. Prior A7–A8 notes remain (A‑GAP‑12 … A‑GAP‑14).
+Next infra: **A10** Redis read path / `get-state-version`, **A11** Realtime.*

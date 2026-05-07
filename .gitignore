@@ -4,6 +4,11 @@
 !.env.*.example
 .env.local
 
+# MCP helper payloads (local only)
+mcp_apply_*.json
+mcp_execute_*.json
+.tmp_*.json
+
 # Miscellaneous
 *.class
 *.log
