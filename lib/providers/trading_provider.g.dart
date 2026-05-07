@@ -370,11 +370,15 @@ class _PersonalOrdersProviderElement
   String get playerId => (origin as PersonalOrdersProvider).playerId;
 }
 
-String _$executionHistoryHash() => r'41dccbb38b9096b4ec7c1967e29dc6957970a6c4';
+String _$executionHistoryHash() => r'fe07cad5c3f7aaa56217f27b184ba072bff90e93';
 
 /// (timeElapsed, price) datapoints for the trading chart. Returns an
 /// empty list when the game has not started yet (no start_time), when
 /// the snapshot is still loading, or when no executions exist yet.
+///
+/// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+/// which is also what [PriceChart] (the UI widget) consumes — so the
+/// provider output flows straight into the chart with no conversion.
 ///
 /// Copied from [executionHistory].
 @ProviderFor(executionHistory)
@@ -384,11 +388,19 @@ const executionHistoryProvider = ExecutionHistoryFamily();
 /// empty list when the game has not started yet (no start_time), when
 /// the snapshot is still loading, or when no executions exist yet.
 ///
+/// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+/// which is also what [PriceChart] (the UI widget) consumes — so the
+/// provider output flows straight into the chart with no conversion.
+///
 /// Copied from [executionHistory].
-class ExecutionHistoryFamily extends Family<List<ExecutionPoint>> {
+class ExecutionHistoryFamily extends Family<List<PriceChartPoint>> {
   /// (timeElapsed, price) datapoints for the trading chart. Returns an
   /// empty list when the game has not started yet (no start_time), when
   /// the snapshot is still loading, or when no executions exist yet.
+  ///
+  /// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+  /// which is also what [PriceChart] (the UI widget) consumes — so the
+  /// provider output flows straight into the chart with no conversion.
   ///
   /// Copied from [executionHistory].
   const ExecutionHistoryFamily();
@@ -396,6 +408,10 @@ class ExecutionHistoryFamily extends Family<List<ExecutionPoint>> {
   /// (timeElapsed, price) datapoints for the trading chart. Returns an
   /// empty list when the game has not started yet (no start_time), when
   /// the snapshot is still loading, or when no executions exist yet.
+  ///
+  /// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+  /// which is also what [PriceChart] (the UI widget) consumes — so the
+  /// provider output flows straight into the chart with no conversion.
   ///
   /// Copied from [executionHistory].
   ExecutionHistoryProvider call(String gameId) {
@@ -428,12 +444,20 @@ class ExecutionHistoryFamily extends Family<List<ExecutionPoint>> {
 /// empty list when the game has not started yet (no start_time), when
 /// the snapshot is still loading, or when no executions exist yet.
 ///
+/// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+/// which is also what [PriceChart] (the UI widget) consumes — so the
+/// provider output flows straight into the chart with no conversion.
+///
 /// Copied from [executionHistory].
 class ExecutionHistoryProvider
-    extends AutoDisposeProvider<List<ExecutionPoint>> {
+    extends AutoDisposeProvider<List<PriceChartPoint>> {
   /// (timeElapsed, price) datapoints for the trading chart. Returns an
   /// empty list when the game has not started yet (no start_time), when
   /// the snapshot is still loading, or when no executions exist yet.
+  ///
+  /// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+  /// which is also what [PriceChart] (the UI widget) consumes — so the
+  /// provider output flows straight into the chart with no conversion.
   ///
   /// Copied from [executionHistory].
   ExecutionHistoryProvider(String gameId)
@@ -464,7 +488,7 @@ class ExecutionHistoryProvider
 
   @override
   Override overrideWith(
-    List<ExecutionPoint> Function(ExecutionHistoryRef provider) create,
+    List<PriceChartPoint> Function(ExecutionHistoryRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -481,7 +505,7 @@ class ExecutionHistoryProvider
   }
 
   @override
-  AutoDisposeProviderElement<List<ExecutionPoint>> createElement() {
+  AutoDisposeProviderElement<List<PriceChartPoint>> createElement() {
     return _ExecutionHistoryProviderElement(this);
   }
 
@@ -501,13 +525,13 @@ class ExecutionHistoryProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin ExecutionHistoryRef on AutoDisposeProviderRef<List<ExecutionPoint>> {
+mixin ExecutionHistoryRef on AutoDisposeProviderRef<List<PriceChartPoint>> {
   /// The parameter `gameId` of this provider.
   String get gameId;
 }
 
 class _ExecutionHistoryProviderElement
-    extends AutoDisposeProviderElement<List<ExecutionPoint>>
+    extends AutoDisposeProviderElement<List<PriceChartPoint>>
     with ExecutionHistoryRef {
   _ExecutionHistoryProviderElement(super.provider);
 
@@ -515,44 +539,233 @@ class _ExecutionHistoryProviderElement
   String get gameId => (origin as ExecutionHistoryProvider).gameId;
 }
 
-String _$chartAxisHash() => r'bfbf1d4247c031b50f7a669918b99b34c98cdd38';
+String _$chartSessionElapsedHash() =>
+    r'f5113500cccf4e8d3b85b5576b428d34c4267ba3';
 
-/// Chart axis configuration derived from executionHistory + game times.
+/// Wall-clock elapsed time the chart should cover (the "session" duration).
 ///
-/// Elapsed logic matches the PRD:
+/// PRD elapsed rules:
+/// - Before start_time exists: synthesise 1 minute so the axis renders.
 /// - While trading is active: elapsed = now() - start_time
 /// - After trading ended: elapsed = end_time_actual - start_time
-/// - Before start: null (the chart is rendered empty with default axes)
+///
+/// Exposed as its own provider (not just inlined in [chartAxis]) because
+/// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+/// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+/// the same number.
+///
+/// Copied from [chartSessionElapsed].
+@ProviderFor(chartSessionElapsed)
+const chartSessionElapsedProvider = ChartSessionElapsedFamily();
+
+/// Wall-clock elapsed time the chart should cover (the "session" duration).
+///
+/// PRD elapsed rules:
+/// - Before start_time exists: synthesise 1 minute so the axis renders.
+/// - While trading is active: elapsed = now() - start_time
+/// - After trading ended: elapsed = end_time_actual - start_time
+///
+/// Exposed as its own provider (not just inlined in [chartAxis]) because
+/// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+/// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+/// the same number.
+///
+/// Copied from [chartSessionElapsed].
+class ChartSessionElapsedFamily extends Family<Duration> {
+  /// Wall-clock elapsed time the chart should cover (the "session" duration).
+  ///
+  /// PRD elapsed rules:
+  /// - Before start_time exists: synthesise 1 minute so the axis renders.
+  /// - While trading is active: elapsed = now() - start_time
+  /// - After trading ended: elapsed = end_time_actual - start_time
+  ///
+  /// Exposed as its own provider (not just inlined in [chartAxis]) because
+  /// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+  /// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+  /// the same number.
+  ///
+  /// Copied from [chartSessionElapsed].
+  const ChartSessionElapsedFamily();
+
+  /// Wall-clock elapsed time the chart should cover (the "session" duration).
+  ///
+  /// PRD elapsed rules:
+  /// - Before start_time exists: synthesise 1 minute so the axis renders.
+  /// - While trading is active: elapsed = now() - start_time
+  /// - After trading ended: elapsed = end_time_actual - start_time
+  ///
+  /// Exposed as its own provider (not just inlined in [chartAxis]) because
+  /// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+  /// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+  /// the same number.
+  ///
+  /// Copied from [chartSessionElapsed].
+  ChartSessionElapsedProvider call(String gameId) {
+    return ChartSessionElapsedProvider(gameId);
+  }
+
+  @override
+  ChartSessionElapsedProvider getProviderOverride(
+    covariant ChartSessionElapsedProvider provider,
+  ) {
+    return call(provider.gameId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'chartSessionElapsedProvider';
+}
+
+/// Wall-clock elapsed time the chart should cover (the "session" duration).
+///
+/// PRD elapsed rules:
+/// - Before start_time exists: synthesise 1 minute so the axis renders.
+/// - While trading is active: elapsed = now() - start_time
+/// - After trading ended: elapsed = end_time_actual - start_time
+///
+/// Exposed as its own provider (not just inlined in [chartAxis]) because
+/// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+/// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+/// the same number.
+///
+/// Copied from [chartSessionElapsed].
+class ChartSessionElapsedProvider extends AutoDisposeProvider<Duration> {
+  /// Wall-clock elapsed time the chart should cover (the "session" duration).
+  ///
+  /// PRD elapsed rules:
+  /// - Before start_time exists: synthesise 1 minute so the axis renders.
+  /// - While trading is active: elapsed = now() - start_time
+  /// - After trading ended: elapsed = end_time_actual - start_time
+  ///
+  /// Exposed as its own provider (not just inlined in [chartAxis]) because
+  /// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+  /// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+  /// the same number.
+  ///
+  /// Copied from [chartSessionElapsed].
+  ChartSessionElapsedProvider(String gameId)
+    : this._internal(
+        (ref) => chartSessionElapsed(ref as ChartSessionElapsedRef, gameId),
+        from: chartSessionElapsedProvider,
+        name: r'chartSessionElapsedProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$chartSessionElapsedHash,
+        dependencies: ChartSessionElapsedFamily._dependencies,
+        allTransitiveDependencies:
+            ChartSessionElapsedFamily._allTransitiveDependencies,
+        gameId: gameId,
+      );
+
+  ChartSessionElapsedProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.gameId,
+  }) : super.internal();
+
+  final String gameId;
+
+  @override
+  Override overrideWith(
+    Duration Function(ChartSessionElapsedRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: ChartSessionElapsedProvider._internal(
+        (ref) => create(ref as ChartSessionElapsedRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        gameId: gameId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeProviderElement<Duration> createElement() {
+    return _ChartSessionElapsedProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChartSessionElapsedProvider && other.gameId == gameId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, gameId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin ChartSessionElapsedRef on AutoDisposeProviderRef<Duration> {
+  /// The parameter `gameId` of this provider.
+  String get gameId;
+}
+
+class _ChartSessionElapsedProviderElement
+    extends AutoDisposeProviderElement<Duration>
+    with ChartSessionElapsedRef {
+  _ChartSessionElapsedProviderElement(super.provider);
+
+  @override
+  String get gameId => (origin as ChartSessionElapsedProvider).gameId;
+}
+
+String _$chartAxisHash() => r'b5382f0d36c3af38fdbbf4049e4a809054ba7344';
+
+/// Chart axis configuration derived from executionHistory + session
+/// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+/// the same factory the trading screen calls inline today — so the
+/// provider-driven path is byte-identical to the mock-driven path the
+/// UI was tuned against.
 ///
 /// Copied from [chartAxis].
 @ProviderFor(chartAxis)
 const chartAxisProvider = ChartAxisFamily();
 
-/// Chart axis configuration derived from executionHistory + game times.
-///
-/// Elapsed logic matches the PRD:
-/// - While trading is active: elapsed = now() - start_time
-/// - After trading ended: elapsed = end_time_actual - start_time
-/// - Before start: null (the chart is rendered empty with default axes)
+/// Chart axis configuration derived from executionHistory + session
+/// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+/// the same factory the trading screen calls inline today — so the
+/// provider-driven path is byte-identical to the mock-driven path the
+/// UI was tuned against.
 ///
 /// Copied from [chartAxis].
 class ChartAxisFamily extends Family<ChartAxisConfig> {
-  /// Chart axis configuration derived from executionHistory + game times.
-  ///
-  /// Elapsed logic matches the PRD:
-  /// - While trading is active: elapsed = now() - start_time
-  /// - After trading ended: elapsed = end_time_actual - start_time
-  /// - Before start: null (the chart is rendered empty with default axes)
+  /// Chart axis configuration derived from executionHistory + session
+  /// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+  /// the same factory the trading screen calls inline today — so the
+  /// provider-driven path is byte-identical to the mock-driven path the
+  /// UI was tuned against.
   ///
   /// Copied from [chartAxis].
   const ChartAxisFamily();
 
-  /// Chart axis configuration derived from executionHistory + game times.
-  ///
-  /// Elapsed logic matches the PRD:
-  /// - While trading is active: elapsed = now() - start_time
-  /// - After trading ended: elapsed = end_time_actual - start_time
-  /// - Before start: null (the chart is rendered empty with default axes)
+  /// Chart axis configuration derived from executionHistory + session
+  /// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+  /// the same factory the trading screen calls inline today — so the
+  /// provider-driven path is byte-identical to the mock-driven path the
+  /// UI was tuned against.
   ///
   /// Copied from [chartAxis].
   ChartAxisProvider call(String gameId) {
@@ -579,21 +792,19 @@ class ChartAxisFamily extends Family<ChartAxisConfig> {
   String? get name => r'chartAxisProvider';
 }
 
-/// Chart axis configuration derived from executionHistory + game times.
-///
-/// Elapsed logic matches the PRD:
-/// - While trading is active: elapsed = now() - start_time
-/// - After trading ended: elapsed = end_time_actual - start_time
-/// - Before start: null (the chart is rendered empty with default axes)
+/// Chart axis configuration derived from executionHistory + session
+/// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+/// the same factory the trading screen calls inline today — so the
+/// provider-driven path is byte-identical to the mock-driven path the
+/// UI was tuned against.
 ///
 /// Copied from [chartAxis].
 class ChartAxisProvider extends AutoDisposeProvider<ChartAxisConfig> {
-  /// Chart axis configuration derived from executionHistory + game times.
-  ///
-  /// Elapsed logic matches the PRD:
-  /// - While trading is active: elapsed = now() - start_time
-  /// - After trading ended: elapsed = end_time_actual - start_time
-  /// - Before start: null (the chart is rendered empty with default axes)
+  /// Chart axis configuration derived from executionHistory + session
+  /// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+  /// the same factory the trading screen calls inline today — so the
+  /// provider-driven path is byte-identical to the mock-driven path the
+  /// UI was tuned against.
   ///
   /// Copied from [chartAxis].
   ChartAxisProvider(String gameId)

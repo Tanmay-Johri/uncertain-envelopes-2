@@ -5,8 +5,9 @@ import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_state.dart';
 import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_status.dart';
+import 'package:uncertain_envelopes_2/core/chart/chart_axis.dart';
+import 'package:uncertain_envelopes_2/core/chart/price_chart_point.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_type.dart';
-import 'package:uncertain_envelopes_2/data/models/chart_axis.dart';
 import 'package:uncertain_envelopes_2/data/models/execution.dart';
 import 'package:uncertain_envelopes_2/data/models/game.dart';
 import 'package:uncertain_envelopes_2/data/models/order.dart';
@@ -108,33 +109,12 @@ void main() {
     );
   }
 
-  group('pickDivisionMinutes (pure function, PRD lookup)', () {
-    test('matches PRD lookup thresholds', () {
-      expect(pickDivisionMinutes(const Duration(minutes: 3)), 1);
-      expect(pickDivisionMinutes(const Duration(minutes: 5, seconds: 59)), 1);
-      expect(pickDivisionMinutes(const Duration(minutes: 6)), 2);
-      expect(pickDivisionMinutes(const Duration(minutes: 11)), 2);
-      expect(pickDivisionMinutes(const Duration(minutes: 12)), 3);
-      expect(pickDivisionMinutes(const Duration(minutes: 17)), 3);
-      expect(pickDivisionMinutes(const Duration(minutes: 18)), 4);
-      expect(pickDivisionMinutes(const Duration(minutes: 23)), 4);
-      expect(pickDivisionMinutes(const Duration(minutes: 24)), 5);
-      expect(pickDivisionMinutes(const Duration(minutes: 29)), 5);
-      expect(pickDivisionMinutes(const Duration(minutes: 30)), 10);
-      expect(pickDivisionMinutes(const Duration(minutes: 59)), 10);
-      expect(pickDivisionMinutes(const Duration(minutes: 60)), 20);
-      expect(pickDivisionMinutes(const Duration(minutes: 119)), 20);
-      expect(pickDivisionMinutes(const Duration(minutes: 120)), 30);
-      expect(pickDivisionMinutes(const Duration(minutes: 179)), 30);
-      expect(pickDivisionMinutes(const Duration(minutes: 180)), 40);
-      expect(pickDivisionMinutes(const Duration(minutes: 239)), 40);
-      expect(pickDivisionMinutes(const Duration(minutes: 240)), 60);
-      expect(pickDivisionMinutes(const Duration(hours: 100)), 60);
-    });
-    test('zero duration falls in the 1-minute bucket', () {
-      expect(pickDivisionMinutes(Duration.zero), 1);
-    });
-  });
+  // Note: the pure division-minute lookup function lives at
+  // `core/chart/chart_axis.dart` (chartDivisionMinutesFromElapsed) and is
+  // exhaustively covered by `test/core/chart/chart_axis_test.dart`. The
+  // provider-side coverage below verifies the *integration* — that the
+  // provider feeds elapsed/points to the canonical factory correctly,
+  // not that the lookup itself is right.
 
   group('orderBookProvider', () {
     test('splits bids desc + asks asc and aggregates per price level',
@@ -412,22 +392,23 @@ void main() {
     });
   });
 
-  group('chartAxisProvider', () {
+  group('chartSessionElapsedProvider', () {
     test('uses end_time_actual - start_time after trading has ended',
         () async {
       final start = DateTime.utc(2026, 1, 1, 10);
       final end = start.add(const Duration(minutes: 8));
       games.seedGame(_gameTrading(start: start, endActual: end));
       final container = makeContainer(
-        // Clock far past the game end; should NOT affect the axis.
+        // Clock far past the game end; should NOT affect elapsed.
         clock: () => start.add(const Duration(hours: 5)),
       );
       addTearDown(container.dispose);
       await container.read(currentGameProvider('g-1').future);
       await container.read(executionsProvider('g-1').future);
-      final axis = container.read(chartAxisProvider('g-1'));
-      expect(axis.divisionMinutes, 2);
-      expect(axis.totalElapsedSeconds, 8 * 60);
+      expect(
+        container.read(chartSessionElapsedProvider('g-1')),
+        const Duration(minutes: 8),
+      );
     });
 
     test('uses now() - start_time during active trading', () async {
@@ -439,9 +420,96 @@ void main() {
       addTearDown(container.dispose);
       await container.read(currentGameProvider('g-1').future);
       await container.read(executionsProvider('g-1').future);
-      final axis = container.read(chartAxisProvider('g-1'));
-      expect(axis.divisionMinutes, 5);
-      expect(axis.totalElapsedSeconds, 25 * 60);
+      expect(
+        container.read(chartSessionElapsedProvider('g-1')),
+        const Duration(minutes: 25),
+      );
+    });
+
+    test('clamps to zero when clock < start_time (clock skew protection)',
+        () async {
+      final start = DateTime.utc(2026, 1, 1, 10);
+      games.seedGame(_gameTrading(start: start));
+      final container = makeContainer(
+        clock: () => start.subtract(const Duration(seconds: 30)),
+      );
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(executionsProvider('g-1').future);
+      expect(
+        container.read(chartSessionElapsedProvider('g-1')),
+        Duration.zero,
+      );
+    });
+  });
+
+  group('chartAxisProvider', () {
+    // The provider is a thin wrapper around
+    // ChartAxisConfig.fromExecutionHistory(elapsed, points). Its job is to
+    // (a) feed the right inputs in, and (b) emit the *exact* same
+    // ChartAxisConfig the trading screen builds today from mocks — so the
+    // chart UI cannot move by a single pixel under provider wiring.
+    // Coverage of the factory's own padding/maxX math lives in
+    // test/core/chart/chart_axis_test.dart and
+    // test/ui/widgets/price_chart_test.dart — not duplicated here.
+
+    test('forwards inputs to ChartAxisConfig.fromExecutionHistory verbatim',
+        () async {
+      final start = DateTime.utc(2026, 1, 1, 10);
+      games.seedGame(_gameTrading(start: start));
+      executions.seedExecutions([
+        _exec(id: 'e1', price: 100, at: start.add(const Duration(seconds: 5))),
+        _exec(id: 'e2', price: 110, at: start.add(const Duration(seconds: 10))),
+      ]);
+      final container = makeContainer(
+        clock: () => start.add(const Duration(minutes: 25)),
+      );
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(executionsProvider('g-1').future);
+
+      final providerAxis = container.read(chartAxisProvider('g-1'));
+      final providerPoints =
+          container.read(executionHistoryProvider('g-1'));
+      final providerElapsed =
+          container.read(chartSessionElapsedProvider('g-1'));
+
+      // The provider's axis must equal what the screen would produce
+      // calling the factory directly with the same provider-supplied
+      // inputs — full-field equality, not field-by-field.
+      final expected = ChartAxisConfig.fromExecutionHistory(
+        sessionElapsed: providerElapsed,
+        points: providerPoints,
+      );
+      expect(providerAxis.divisionMinutes, expected.divisionMinutes);
+      expect(providerAxis.maxXMinutes, expected.maxXMinutes);
+      expect(providerAxis.minPrice, expected.minPrice);
+      expect(providerAxis.maxPrice, expected.maxPrice);
+    });
+
+    test('division minutes derive from elapsed (8 min -> 2)', () async {
+      final start = DateTime.utc(2026, 1, 1, 10);
+      final end = start.add(const Duration(minutes: 8));
+      games.seedGame(_gameTrading(start: start, endActual: end));
+      final container = makeContainer(
+        clock: () => start.add(const Duration(hours: 5)),
+      );
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(executionsProvider('g-1').future);
+      expect(container.read(chartAxisProvider('g-1')).divisionMinutes, 2);
+    });
+
+    test('division minutes derive from elapsed (25 min -> 5)', () async {
+      final start = DateTime.utc(2026, 1, 1, 10);
+      games.seedGame(_gameTrading(start: start));
+      final container = makeContainer(
+        clock: () => start.add(const Duration(minutes: 25)),
+      );
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(executionsProvider('g-1').future);
+      expect(container.read(chartAxisProvider('g-1')).divisionMinutes, 5);
     });
 
     test('price axis defaults to [0, 1] when no executions', () async {
@@ -458,41 +526,31 @@ void main() {
       expect(axis.maxPrice, 1);
     });
 
-    test('price axis pads min/max by 10% when a range exists', () async {
-      final start = DateTime.utc(2026, 1, 1, 10);
-      games.seedGame(_gameTrading(start: start));
-      executions.seedExecutions([
-        _exec(id: 'e1', price: 100, at: start.add(const Duration(seconds: 5))),
-        _exec(id: 'e2', price: 110, at: start.add(const Duration(seconds: 10))),
-      ]);
-      final container = makeContainer(
-        clock: () => start.add(const Duration(minutes: 1)),
-      );
-      addTearDown(container.dispose);
-      await container.read(currentGameProvider('g-1').future);
-      await container.read(executionsProvider('g-1').future);
-      final axis = container.read(chartAxisProvider('g-1'));
-      // Range 100-110 -> pad = 1; so 99 to 111.
-      expect(axis.minPrice, 99);
-      expect(axis.maxPrice, 111);
-    });
-
-    test('single-price widens instead of returning zero range', () async {
-      final start = DateTime.utc(2026, 1, 1, 10);
-      games.seedGame(_gameTrading(start: start));
-      executions.seedExecutions([
-        _exec(id: 'e1', price: 100, at: start.add(const Duration(seconds: 5))),
-      ]);
-      final container = makeContainer(
-        clock: () => start.add(const Duration(minutes: 1)),
-      );
-      addTearDown(container.dispose);
-      await container.read(currentGameProvider('g-1').future);
-      await container.read(executionsProvider('g-1').future);
-      final axis = container.read(chartAxisProvider('g-1'));
-      expect(axis.minPrice, lessThan(axis.maxPrice));
-      expect(axis.minPrice, closeTo(90, 0.001));
-      expect(axis.maxPrice, closeTo(110, 0.001));
-    });
+    test(
+      'single-price widens via the 0.5 padding floor (not a zero-range axis)',
+      () async {
+        final start = DateTime.utc(2026, 1, 1, 10);
+        games.seedGame(_gameTrading(start: start));
+        executions.seedExecutions([
+          _exec(
+            id: 'e1',
+            price: 100,
+            at: start.add(const Duration(seconds: 5)),
+          ),
+        ]);
+        final container = makeContainer(
+          clock: () => start.add(const Duration(minutes: 1)),
+        );
+        addTearDown(container.dispose);
+        await container.read(currentGameProvider('g-1').future);
+        await container.read(executionsProvider('g-1').future);
+        final axis = container.read(chartAxisProvider('g-1'));
+        expect(axis.minPrice, lessThan(axis.maxPrice));
+        // Floor padding = 0.5 either side; matches what fromExecutionHistory
+        // produces for a single-point series.
+        expect(axis.minPrice, closeTo(99.5, 0.001));
+        expect(axis.maxPrice, closeTo(100.5, 0.001));
+      },
+    );
   });
 }

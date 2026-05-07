@@ -1,9 +1,9 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../core/chart/chart_axis.dart';
+import '../core/chart/price_chart_point.dart';
 import '../data/enums/order_status.dart';
-import '../data/models/chart_axis.dart';
 import '../data/models/execution.dart';
 import '../data/models/order.dart';
 import '../data/models/order_book.dart';
@@ -154,8 +154,12 @@ List<Order> personalOrders(
 /// (timeElapsed, price) datapoints for the trading chart. Returns an
 /// empty list when the game has not started yet (no start_time), when
 /// the snapshot is still loading, or when no executions exist yet.
+///
+/// Emits the canonical [PriceChartPoint] type owned by `lib/core/chart/`,
+/// which is also what [PriceChart] (the UI widget) consumes — so the
+/// provider output flows straight into the chart with no conversion.
 @riverpod
-List<ExecutionPoint> executionHistory(Ref ref, String gameId) {
+List<PriceChartPoint> executionHistory(Ref ref, String gameId) {
   final snap = ref.watch(currentGameProvider(gameId));
   final start = snap.valueOrNull?.game.startTime;
   if (start == null) return const [];
@@ -165,7 +169,7 @@ List<ExecutionPoint> executionHistory(Ref ref, String gameId) {
 
   final points = executions
       .map(
-        (e) => ExecutionPoint(
+        (e) => PriceChartPoint(
           timeElapsed: e.executedAt.difference(start),
           price: e.executionPrice,
         ),
@@ -175,14 +179,19 @@ List<ExecutionPoint> executionHistory(Ref ref, String gameId) {
   return List.unmodifiable(points);
 }
 
-/// Chart axis configuration derived from executionHistory + game times.
+/// Wall-clock elapsed time the chart should cover (the "session" duration).
 ///
-/// Elapsed logic matches the PRD:
+/// PRD elapsed rules:
+/// - Before start_time exists: synthesise 1 minute so the axis renders.
 /// - While trading is active: elapsed = now() - start_time
 /// - After trading ended: elapsed = end_time_actual - start_time
-/// - Before start: null (the chart is rendered empty with default axes)
+///
+/// Exposed as its own provider (not just inlined in [chartAxis]) because
+/// `GameTradingViewData.chartSessionElapsed` consumes exactly this value
+/// at INT1 wiring time, and [PriceChart] derives its tooltip x-axis from
+/// the same number.
 @riverpod
-ChartAxisConfig chartAxis(Ref ref, String gameId) {
+Duration chartSessionElapsed(Ref ref, String gameId) {
   final snap = ref.watch(currentGameProvider(gameId));
   final game = snap.valueOrNull?.game;
   final start = game?.startTime;
@@ -198,40 +207,20 @@ ChartAxisConfig chartAxis(Ref ref, String gameId) {
   } else {
     elapsed = now.difference(start);
   }
-  if (elapsed.isNegative) {
-    elapsed = Duration.zero;
-  }
+  return elapsed.isNegative ? Duration.zero : elapsed;
+}
 
-  final divisionMinutes = pickDivisionMinutes(elapsed);
-
+/// Chart axis configuration derived from executionHistory + session
+/// elapsed time. Delegates to [ChartAxisConfig.fromExecutionHistory] —
+/// the same factory the trading screen calls inline today — so the
+/// provider-driven path is byte-identical to the mock-driven path the
+/// UI was tuned against.
+@riverpod
+ChartAxisConfig chartAxis(Ref ref, String gameId) {
+  final elapsed = ref.watch(chartSessionElapsedProvider(gameId));
   final points = ref.watch(executionHistoryProvider(gameId));
-  double minPrice;
-  double maxPrice;
-  if (points.isEmpty) {
-    minPrice = 0;
-    maxPrice = 1;
-  } else {
-    final prices = points.map((p) => p.price);
-    minPrice = prices.min;
-    maxPrice = prices.max;
-    if (minPrice == maxPrice) {
-      // Single-price axis: widen slightly so the line isn't exactly on a
-      // grid line and still visible.
-      final pad = minPrice == 0 ? 1.0 : minPrice * 0.1;
-      minPrice -= pad;
-      maxPrice += pad;
-    } else {
-      final pad = (maxPrice - minPrice) * 0.1;
-      minPrice -= pad;
-      maxPrice += pad;
-    }
-  }
-
-  return ChartAxisConfig(
-    divisionMinutes: divisionMinutes,
-    divisionCount: 6,
-    totalElapsedSeconds: elapsed.inSeconds,
-    minPrice: minPrice,
-    maxPrice: maxPrice,
+  return ChartAxisConfig.fromExecutionHistory(
+    sessionElapsed: elapsed,
+    points: points,
   );
 }
