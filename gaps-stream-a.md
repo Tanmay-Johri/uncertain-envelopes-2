@@ -12,7 +12,7 @@ and `stream-c` into `main`, by reading this file beside:
 - `gaps-stream-b.md`
 - `gaps-stream-c.md`
 
-Tracked gap IDs: `A-GAP-1` … `A-GAP-8`.
+Tracked gap IDs: `A-GAP-1` … `A-GAP-14` (see table + append-only sections below).
 
 ---
 
@@ -202,6 +202,13 @@ reliably in A8.
 integration test: raise `UE001` from SQL, assert the Edge function classifies
 it as non-retriable without string-matching on message text.
 
+**Status after A8 (2026‑05‑07):** Implemented in Edge `command-processor` via structured `code`,
+message/details/hint, and serialized JSON substring fallbacks (`classification.ts` +
+`classification.test.ts`). **DB→Edge async integration** (raise `RAISE EXCEPTION … 'UE001'`
+inside a proc, observe `commands.command_status=rejected`) is still **recommended** once
+vault secrets + webhook env are wired; classify as deferred verification, not unresolved
+routing logic.
+
 **Priority:** Medium at A8 implementation time; not blocking earlier A-units.
 
 ---
@@ -215,7 +222,7 @@ These are **planned** work from the master plan, not regressions:
 | A5 | Lifecycle procs (`start_game`, `end_trading`, `set_envelope_price`, `finalise`, `discard`, `add_time`) | ✅ **DONE** — `005_create_lifecycle_functions.sql` + `lifecycle_procs_test.sql`; full suite green |
 | A6 | Order matching (`process_create_order`, `match_order`) | ✅ **DONE** — `006_create_order_matching.sql` + `order_matching_test.sql`; full suite green |
 | A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; full `cancel_order_test.sql` verified against linked Supabase project via MCP (`apply_migration` + `execute_sql`); local runs still supported with Docker/psql |
-| A8 | Edge `command-processor` + trigger wiring | pending |
+| A8 | Edge `command-processor` + trigger wiring | ✅ **DONE** — `008_command_processor_trigger.sql` (applied as `008_command_processor_trigger` migration) + `supabase/functions/command-processor/` + `classification.test.ts`; `verify_jwt=false`, shared-secret webhook auth, Upstash Redis fail-open sync after success |
 | A9 | Edge `sweeper` + pg_cron | pending |
 | A10 | Redis version cache + Edge `get-state-version` | pending |
 | A11 | Realtime publication + client filter docs | pending |
@@ -288,6 +295,27 @@ by a multi-session torture test comparable to **A-GAP-11**.
 
 ---
 
+### New gaps identified during A8 (append as A-GAP-14+)
+
+**A-GAP-14 — Command processor relies on Postgres vault secrets + pg_net latency**
+
+Until `vault.create_secret` has populated `command_processor_url`,
+`command_processor_anon_key`, and `command_processor_webhook_secret` (matching Edge secret
+`COMMAND_PROCESSOR_WEBHOOK_SECRET`), the trigger emits a **`WARNING`** and leaves fresh
+commands **`pending`** with no outbound HTTP notify. Recover still works via polling / A9
+sweeper, but staging smoke tests that “INSERT then expect `processed` in <500 ms” become
+timing-sensitive flakes.
+
+**What to do:**
+1. Add secrets + redeploy checklist to runbooks (`Stream A README` / onboarding doc).
+2. After secrets exist, bake a MCP/poll regression: insert benign `create_game`,
+   poll ≤15 s until `processed`.
+3. Log/monitor pg_net `_http_response` for non-200 from the webhook URL once observability lands.
+
+**Priority:** Medium until first production-ish environment; drops to low once secrets are standard.
+
+---
+
 ## Priority / ordering recommendation for Phase 2 (Stream A–related items only)
 
 1. **A-GAP-5** — small defensive `UPDATE orders` in leave/kick if still
@@ -297,13 +325,14 @@ by a multi-session torture test comparable to **A-GAP-11**.
 3. **A-GAP-4** — concurrency join test alongside INT3 multi-tab stress
    (combine with B/C realtime tests).
 4. **A-GAP-6** — product decision; code is one `IF` once decided.
-5. **A-GAP-7** — verify at A8 processor implementation.
+5. **A-GAP-7** — unit-level classification exercised; defer full async SQL→HTTP→RPC proof to integration once vault/pg_net wired.
 6. **A-GAP-1 / A-GAP-2** — optional hygiene; acceptable to close as
    "documented only" or with targeted tests if audit requires 100 % branch
    coverage.
 
 ---
 
-*Last updated: reflects Stream A state through A7 cancel order (A-GAP-8 row
-updated). Next: A8 command-processor Edge Function. New gaps from A7: A-GAP-12,
-A-GAP-13.*
+*Last updated: reflects Stream A through A8 command-processor (A-GAP-8 row closed for A8,
+A-GAP‑7 nuanced, new A‑GAP‑14). Prior A7 notes remain: A‑GAP‑12, A‑GAP‑13. Next infra:
+vault secrets + Edge env for Upstash Redis + webhook bearer; automated async integration
+polling after secrets land.*

@@ -12,6 +12,13 @@
 .swiftpm/
 migrate_working_dir/
 
+# Supabase CLI local metadata (do not commit linked project temps)
+supabase/.temp/
+
+# Supabase Edge helpers (never commit MCP deploy blobs)
+**/supabase/functions/**/.deploy_payload.json
+**/supabase/functions/**/*_args_only.json
+
 # IntelliJ related
 *.iml
 *.ipr
