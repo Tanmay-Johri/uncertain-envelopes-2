@@ -12,7 +12,7 @@ and `stream-c` into `main`, by reading this file beside:
 - `gaps-stream-b.md`
 - `gaps-stream-c.md`
 
-Tracked gap IDs: `A-GAP-1` … `A-GAP-16` (see table + append-only sections below).
+Tracked gap IDs: `A-GAP-1` … `A-GAP-17` (see table + append-only sections below).
 
 ---
 
@@ -225,7 +225,7 @@ These are **planned** work from the master plan, not regressions:
 | A8 | Edge `command-processor` + trigger wiring | ✅ **DONE** — `008_command_processor_trigger.sql` (applied as `008_command_processor_trigger` migration) + `supabase/functions/command-processor/` + `classification.test.ts`; `verify_jwt=false`, shared-secret webhook auth, Upstash Redis fail-open sync after success |
 | A9 | SQL sweeper + `sweeper_run` + pg_cron (`009`/`010`) | ✅ **DONE** — `sweeper_invoke_command_processor`, `sweeper_rescue_stuck_claimed`, `sweeper_auto_end_timed_games`, `sweeper_kick_idle_processors`, `sweeper_run`; cron `* * * * *` (best-effort if `pg_cron` restricted); `sweeper_test.sql` for local/psql |
 | A10 | Redis version cache + Edge `get-state-version` | ✅ **DONE** — write path unchanged (`command-processor` + `redis-sync.ts`); read path `supabase/functions/get-state-version/` (JWT via `SUPABASE_ANON_KEY` + `auth.getUser`, Upstash `MGET`, fail-open nulls, batch ≤50, dedupe). Deno: `logic.test.ts`, `upstash-mget.test.ts`, `redis-sync.test.ts`. Deploy: set `verify_jwt` per project policy (handler always validates JWT). |
-| A11 | Realtime publication + client filter docs | pending |
+| A11 | Realtime publication + client filter docs | ✅ **DONE** — `011_enable_realtime.sql` (idempotent `ALTER PUBLICATION supabase_realtime ADD TABLE …`); `supabase/tests/realtime_test.sql`; remote verify: MCP `apply_migration` + `execute_sql` publication check on project `agohjlgjjxbtfjdgqixa`. |
 
 Phase 2 should **not** try to close A-GAP-1–7 by relying on these existing;
 gaps above apply to **already-shipped** migrations A1–A4.
@@ -332,8 +332,57 @@ timing-sensitive flakes.
 
 ---
 
-*Last updated: reflects Stream A through **A10** (`get-state-version` Edge Function +
-`redis-sync` extraction + Deno tests). **A11** Realtime next.*
+*Last updated: reflects Stream A through **A11** (Realtime publication + `realtime_test.sql` +
+MCP migration apply on linked project). Phase 2 integration is next for cross-stream work.*
+
+---
+
+## Stream B — Realtime subscription contract (from A11)
+
+Tables in `supabase_realtime`: `games`, `games_players`, `orders`, `executions`.
+
+Use **one channel per game** (or one combined channel) with `postgres_changes` and a
+**per-table `filter`** on the correct column name (not always `game_id`):
+
+| Table | Filter column | Example `filter` string |
+|-------|----------------|-------------------------|
+| `games` | `game_id` | `game_id=eq.<uuid>` |
+| `games_players` | `map_game_id` | `map_game_id=eq.<uuid>` |
+| `orders` | `game_id` | `game_id=eq.<uuid>` |
+| `executions` | `executions_game_id` | `executions_game_id=eq.<uuid>` |
+
+JavaScript / `supabase-js` (Flutter `supabase_flutter` mirrors the same options):
+
+```javascript
+supabase
+  .channel(`game:${gameId}`)
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "games", filter: `game_id=eq.${gameId}` },
+    (payload) => {
+      /* merge */
+    },
+  )
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "games_players",
+      filter: `map_game_id=eq.${gameId}`,
+    },
+    (payload) => {
+      /* merge */
+    },
+  )
+  .subscribe();
+```
+
+Repeat for `orders` (`game_id`) and `executions` (`executions_game_id`), or split channels
+as needed for reconnect scope.
+
+**RLS:** Subscribers still only receive rows their JWT is allowed to `SELECT`; publication
+enablement does not bypass RLS.
 
 ### New gaps identified during A10
 
@@ -352,3 +401,19 @@ step. Unit tests cover handler + Upstash MGET shape; async JWT↔Auth integratio
 class as **A-GAP-14**.
 
 **Priority:** Medium until first staging environment with secrets.
+
+---
+
+### New gaps identified during A11
+
+**A-GAP-17 — Realtime *event delivery* not proven in Stream A**
+
+`realtime_test.sql` proves **publication membership** only. Proving INSERT/UPDATE/DELETE
+events over the Realtime WebSocket requires a connected client (Stream B
+`GameRealtimeService` or Phase 2 INT3). MCP `get_logs` on `realtime` may be empty in quiet
+projects and does not assert per-row fan-out.
+
+**What to do:** Phase 2 — widget/integration test: open channel with filters, mutate a
+row as another session (or SQL), assert callback payload.
+
+**Priority:** Medium for confidence; low for “tables are published” correctness.
