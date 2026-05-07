@@ -40,7 +40,7 @@ void main() {
   // GameHistoryEntry
   // ---------------------------------------------------------------------------
   group('GameHistoryEntry', () {
-    GameHistoryEntry _entry({
+    GameHistoryEntry buildEntry({
       String id = 'gh-1',
       double viewerPnl = 100,
       double? envelopePriceUsd = 12.50,
@@ -70,7 +70,7 @@ void main() {
       final results = [
         const GameHistoryPlayerResult(playerId: 'p1', displayName: 'Alice', pnl: 50),
       ];
-      final e = _entry(
+      final e = buildEntry(
         id: 'gh-test',
         viewerPnl: 240,
         envelopePriceUsd: 12.50,
@@ -90,43 +90,43 @@ void main() {
       expect(e.playerResults.length, 1);
     });
 
-    test('viewerPnl positive', () => expect(_entry(viewerPnl: 0.01).viewerPnl, greaterThan(0)));
-    test('viewerPnl negative', () => expect(_entry(viewerPnl: -0.01).viewerPnl, lessThan(0)));
-    test('viewerPnl zero', () => expect(_entry(viewerPnl: 0).viewerPnl, 0.0));
-    test('viewerPnl large positive', () => expect(_entry(viewerPnl: 1200).viewerPnl, 1200));
-    test('viewerPnl large negative', () => expect(_entry(viewerPnl: -9999.99).viewerPnl, -9999.99));
+    test('viewerPnl positive', () => expect(buildEntry(viewerPnl: 0.01).viewerPnl, greaterThan(0)));
+    test('viewerPnl negative', () => expect(buildEntry(viewerPnl: -0.01).viewerPnl, lessThan(0)));
+    test('viewerPnl zero', () => expect(buildEntry(viewerPnl: 0).viewerPnl, 0.0));
+    test('viewerPnl large positive', () => expect(buildEntry(viewerPnl: 1200).viewerPnl, 1200));
+    test('viewerPnl large negative', () => expect(buildEntry(viewerPnl: -9999.99).viewerPnl, -9999.99));
 
     test('envelopePriceUsd can be null', () {
-      expect(_entry(envelopePriceUsd: null).envelopePriceUsd, isNull);
+      expect(buildEntry(envelopePriceUsd: null).envelopePriceUsd, isNull);
     });
 
     test('envelopePriceUsd can be zero', () {
-      expect(_entry(envelopePriceUsd: 0).envelopePriceUsd, 0.0);
+      expect(buildEntry(envelopePriceUsd: 0).envelopePriceUsd, 0.0);
     });
 
     test('startedAt can be null', () {
-      expect(_entry(startedAt: null).startedAt, isNull);
+      expect(buildEntry(startedAt: null).startedAt, isNull);
     });
 
     test('endedAt can be null', () {
-      expect(_entry(endedAt: null).endedAt, isNull);
+      expect(buildEntry(endedAt: null).endedAt, isNull);
     });
 
     test('startedAt and endedAt can both be set', () {
       final s = DateTime.utc(2024, 10, 5, 9, 0);
       final e = DateTime.utc(2024, 10, 5, 11, 0);
-      final entry = _entry(startedAt: s, endedAt: e);
+      final entry = buildEntry(startedAt: s, endedAt: e);
       expect(entry.startedAt, s);
       expect(entry.endedAt, e);
     });
 
     test('playerResults can be empty', () {
-      expect(_entry(playerResults: const []).playerResults, isEmpty);
+      expect(buildEntry(playerResults: const []).playerResults, isEmpty);
     });
 
     test('playerResults single entry', () {
       const r = GameHistoryPlayerResult(playerId: 'x', displayName: 'X', pnl: 1);
-      final e = _entry(playerResults: [r]);
+      final e = buildEntry(playerResults: [r]);
       expect(e.playerResults.length, 1);
       expect(e.playerResults.first.playerId, 'x');
     });
@@ -140,12 +140,12 @@ void main() {
           pnl: (i % 2 == 0 ? 1 : -1) * i.toDouble(),
         ),
       );
-      final e = _entry(playerResults: results);
+      final e = buildEntry(playerResults: results);
       expect(e.playerResults.length, 20);
     });
 
     test('isRanked false stores correctly', () {
-      expect(_entry(isRanked: false).isRanked, isFalse);
+      expect(buildEntry(isRanked: false).isRanked, isFalse);
     });
   });
 }

@@ -13,14 +13,10 @@ import 'auth_repository.dart';
 /// Stream semantics: [watchCurrentPlayer] emits the current value on
 /// subscription and on every state change.
 class InMemoryAuthRepository implements AuthRepository {
-  InMemoryAuthRepository({
-    Map<String, _PlayerRecord>? seedByEmail,
-    DateTime Function()? now,
-  })  : _now = now ?? DateTime.now,
-        _byEmail = Map.of(seedByEmail ?? const {});
+  InMemoryAuthRepository({DateTime Function()? now}) : _now = now ?? DateTime.now;
 
   final DateTime Function() _now;
-  final Map<String, _PlayerRecord> _byEmail;
+  final Map<String, _PlayerRecord> _byEmail = {};
   Player? _current;
   final StreamController<Player?> _controller =
       StreamController<Player?>.broadcast();

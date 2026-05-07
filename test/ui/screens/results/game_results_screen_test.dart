@@ -24,7 +24,7 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
         routes: [
           GoRoute(
             path: '/__results_test',
-            builder: (_, __) => screen,
+            builder: (_, _) => screen,
           ),
           GoRoute(
             path: '/game/:id/lobby',
@@ -33,15 +33,15 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
           ),
           GoRoute(
             path: AppRoutes.home,
-            builder: (_, __) => const Scaffold(body: Text('stub-home')),
+            builder: (_, _) => const Scaffold(body: Text('stub-home')),
           ),
           GoRoute(
             path: AppRoutes.create,
-            builder: (_, __) => const Scaffold(body: Text('stub-create')),
+            builder: (_, _) => const Scaffold(body: Text('stub-create')),
           ),
           GoRoute(
             path: AppRoutes.orders,
-            builder: (_, __) => const Scaffold(body: Text('stub-orders')),
+            builder: (_, _) => const Scaffold(body: Text('stub-orders')),
           ),
         ],
       ),
@@ -61,25 +61,25 @@ Future<void> _pumpStaleHost(WidgetTester tester, Widget host) async {
       routerConfig: GoRouter(
         initialLocation: '/__stale',
         routes: [
-          GoRoute(path: '/__stale', builder: (_, __) => host),
+          GoRoute(path: '/__stale', builder: (_, _) => host),
           GoRoute(
             path: '/game/:id/lobby',
-            builder: (_, __) =>
+            builder: (_, _) =>
                 const Scaffold(body: Text('stub-lob')),
           ),
           GoRoute(
             path: AppRoutes.home,
-            builder: (_, __) =>
+            builder: (_, _) =>
                 const Scaffold(body: Text('stub-home')),
           ),
           GoRoute(
             path: AppRoutes.create,
-            builder: (_, __) =>
+            builder: (_, _) =>
                 const Scaffold(body: Text('stub-create')),
           ),
           GoRoute(
             path: AppRoutes.orders,
-            builder: (_, __) =>
+            builder: (_, _) =>
                 const Scaffold(body: Text('stub-orders')),
           ),
         ],

@@ -7,7 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
 /// Formats a non-negative duration as `MM:SS` (minutes may exceed 59).
-@visibleForTesting
+/// Public on purpose: `game_lobby_screen.dart` reuses it for the
+/// header chip so the lobby and the timer widget never drift apart.
 String formatCountdownMmSs(Duration remaining) {
   final secs = math.max(0, remaining.inSeconds);
   final mm = secs ~/ 60;

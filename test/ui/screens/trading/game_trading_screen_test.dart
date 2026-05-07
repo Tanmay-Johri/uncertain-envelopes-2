@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
-import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';

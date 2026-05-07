@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
@@ -275,9 +274,9 @@ void main() {
         ),
       );
       final limitBorder =
-          ((limit.decoration! as BoxDecoration).border! as Border).top.color;
+          ((limit.decoration as BoxDecoration).border as Border).top.color;
       final marketBorder =
-          ((market.decoration! as BoxDecoration).border! as Border).top.color;
+          ((market.decoration as BoxDecoration).border as Border).top.color;
       expect(limitBorder, green.border);
       expect(marketBorder, isNot(green.border));
       expect(
@@ -320,10 +319,10 @@ void main() {
       final sellChip =
           personalOrderStatusChipStyle(PersonalOrderStatus.cancelled);
       expect(limit.decoration, isA<BoxDecoration>());
-      final d = limit.decoration! as BoxDecoration;
+      final d = limit.decoration as BoxDecoration;
       expect(d.border, isA<Border>());
       expect(
-        (d.border! as Border).top.color,
+        (d.border as Border).top.color,
         sellChip.border,
       );
     });

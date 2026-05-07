@@ -341,7 +341,7 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('GameHistoryCard — PnL colors', () {
-    Color? _pnlTextColor(WidgetTester tester, String text) {
+    Color? pnlTextColor(WidgetTester tester, String text) {
       final widget = tester.widget<Text>(find.text(text).first);
       return widget.style?.color;
     }
@@ -352,7 +352,7 @@ void main() {
         GameHistoryCard(
             entry: _entry(viewerPnl: 100), isExpanded: false, onTap: () {}),
       );
-      expect(_pnlTextColor(tester, '+\$100'), AppColors.primary);
+      expect(pnlTextColor(tester, '+\$100'), AppColors.primary);
     });
 
     testWidgets('negative viewerPnl → secondary (red)', (tester) async {
@@ -361,7 +361,7 @@ void main() {
         GameHistoryCard(
             entry: _entry(viewerPnl: -50), isExpanded: false, onTap: () {}),
       );
-      expect(_pnlTextColor(tester, '-\$50'), AppColors.secondary);
+      expect(pnlTextColor(tester, '-\$50'), AppColors.secondary);
     });
 
     testWidgets('zero viewerPnl → textPrimary (white)', (tester) async {
@@ -370,7 +370,7 @@ void main() {
         GameHistoryCard(
             entry: _entry(viewerPnl: 0), isExpanded: false, onTap: () {}),
       );
-      expect(_pnlTextColor(tester, '\$0'), AppColors.textPrimary);
+      expect(pnlTextColor(tester, '\$0'), AppColors.textPrimary);
     });
 
     testWidgets('positive epsilon (0.001) → green (raw float, not rounded display)', (tester) async {

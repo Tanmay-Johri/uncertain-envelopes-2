@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Web URL strategy (drops the leading `#` in routes); ships with the
+  # Flutter SDK, declared explicitly so `lib/main.dart`'s import is not
+  # an implicit transitive.
+  flutter_web_plugins:
+    sdk: flutter
 
   # Auth + Backend
   supabase_flutter: ^2.8.0

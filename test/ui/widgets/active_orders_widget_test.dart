@@ -14,7 +14,7 @@ void main() {
             body: ActiveOrdersWidget(
               orders: const [],
               pendingCancellationOrderIds: const {},
-              onCancellationRequested: (_, __) {},
+              onCancellationRequested: (_, _) {},
             ),
           ),
         ),

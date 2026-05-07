@@ -344,7 +344,7 @@ void main() {
         // Subscribe so the provider is alive.
         container.listen<int?>(
           gameSecondsRemainingProvider('g-1'),
-          (_, __) {},
+          (_, _) {},
           fireImmediately: true,
         );
 

@@ -285,13 +285,11 @@ class _MetaTile extends StatelessWidget {
     required this.label,
     required this.value,
     this.icon,
-    this.iconColor,
   });
 
   final String label;
   final String value;
   final IconData? icon;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -323,7 +321,7 @@ class _MetaTile extends StatelessWidget {
                 Icon(
                   icon,
                   size: 18,
-                  color: iconColor ?? AppColors.textPrimary,
+                  color: AppColors.textPrimary,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

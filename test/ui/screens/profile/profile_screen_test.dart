@@ -17,14 +17,14 @@ Future<void> _pumpProfile(WidgetTester tester, ProfileScreen screen) async {
       theme: buildAppTheme(),
       routerConfig: GoRouter(
         routes: [
-          GoRoute(path: '/', builder: (_, __) => screen),
+          GoRoute(path: '/', builder: (_, _) => screen),
           GoRoute(
             path: '/home',
-            builder: (_, __) => const Scaffold(body: Text('mock-home')),
+            builder: (_, _) => const Scaffold(body: Text('mock-home')),
           ),
           GoRoute(
             path: AppRoutes.history,
-            builder: (_, __) =>
+            builder: (_, _) =>
                 const Scaffold(body: Text('mock-history-shell')),
           ),
         ],
@@ -256,11 +256,11 @@ void main() {
           routes: [
             GoRoute(
               path: '/home',
-              builder: (_, __) => const Scaffold(body: Text('at-home')),
+              builder: (_, _) => const Scaffold(body: Text('at-home')),
             ),
             GoRoute(
               path: '/p',
-              builder: (_, __) =>
+              builder: (_, _) =>
                   ProfileScreen(data: mockProfileViewDataDefault()),
             ),
           ],

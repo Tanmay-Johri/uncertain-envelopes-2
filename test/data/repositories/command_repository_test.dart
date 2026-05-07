@@ -28,7 +28,7 @@ class _Record {
 /// proves the two code paths never drift.
 void main() {
   group('InMemoryCommandRepository', () {
-    final fixture = () {
+    _Fixture fixture() {
       final repo = InMemoryCommandRepository();
       return _Fixture(
         repo: repo,
@@ -41,18 +41,18 @@ void main() {
                 ))
             .toList(),
       );
-    };
+    }
     _runContract(fixture);
   });
 
   group('SupabaseCommandRepository (fake gateway)', () {
-    final fixture = () {
+    _Fixture fixture() {
       final gateway = _FakeCommandGateway();
       return _Fixture(
         repo: SupabaseCommandRepository(gateway),
         records: () => gateway.calls,
       );
-    };
+    }
     _runContract(fixture);
   });
 }

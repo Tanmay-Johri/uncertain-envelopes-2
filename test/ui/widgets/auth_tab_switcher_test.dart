@@ -35,7 +35,7 @@ void main() {
   });
 
   group('AuthTabSwitcher active styling', () {
-    Color _textColor(WidgetTester tester, String label) {
+    Color textColor(WidgetTester tester, String label) {
       final text = tester.widget<Text>(find.text(label));
       return text.style!.color!;
     }
@@ -46,8 +46,8 @@ void main() {
         tester,
         AuthTabSwitcher(selected: AuthTab.logIn, onChanged: (_) {}),
       );
-      expect(_textColor(tester, 'LOG IN'), AppColors.primary);
-      expect(_textColor(tester, 'SIGN UP'), AppColors.textTertiary);
+      expect(textColor(tester, 'LOG IN'), AppColors.primary);
+      expect(textColor(tester, 'SIGN UP'), AppColors.textTertiary);
     });
 
     testWidgets('SignUp selected: SIGN UP is primary, LOG IN is tertiary',
@@ -56,8 +56,8 @@ void main() {
         tester,
         AuthTabSwitcher(selected: AuthTab.signUp, onChanged: (_) {}),
       );
-      expect(_textColor(tester, 'SIGN UP'), AppColors.primary);
-      expect(_textColor(tester, 'LOG IN'), AppColors.textTertiary);
+      expect(textColor(tester, 'SIGN UP'), AppColors.primary);
+      expect(textColor(tester, 'LOG IN'), AppColors.textTertiary);
     });
   });
 

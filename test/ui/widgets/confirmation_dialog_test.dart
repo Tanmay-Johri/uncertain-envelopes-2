@@ -103,12 +103,12 @@ void main() {
 
     testWidgets('confirm returns true', (tester) async {
       final result = await _openAndTap(tester, buttonLabel: 'Confirm');
-      expect(await result, isTrue);
+      expect(result, isTrue);
     });
 
     testWidgets('cancel returns false', (tester) async {
       final result = await _openAndTap(tester, buttonLabel: 'Cancel');
-      expect(await result, isFalse);
+      expect(result, isFalse);
     });
 
     testWidgets('uppercaseActionLabels false preserves casing on buttons',

@@ -51,7 +51,7 @@ void main() {
         PersonalOrderStatus.gameEnded,
       ]) {
         final c = personalOrderStatusChipStyle(s);
-        expect(c.foreground.value, 0xFFF87171);
+        expect(c.foreground.toARGB32(), 0xFFF87171);
         expect(c.border, AppColors.secondary.withValues(alpha: 0.35));
       }
     });
@@ -63,7 +63,7 @@ void main() {
 
     test('blue for in-flight statuses', () {
       final c = personalOrderStatusChipStyle(PersonalOrderStatus.inQueue);
-      expect(c.foreground.value, 0xFF60A5FA);
+      expect(c.foreground.toARGB32(), 0xFF60A5FA);
     });
   });
 

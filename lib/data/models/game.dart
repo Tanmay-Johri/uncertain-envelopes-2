@@ -1,3 +1,9 @@
+// `@JsonKey(name: ...)` lives on freezed constructor parameters and is
+// correctly forwarded to the generated field — but the analyzer flags
+// the parameter-position annotation as `invalid_annotation_target`.
+// Documented standard workaround: silence the lint at file scope.
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../enums/end_condition.dart';

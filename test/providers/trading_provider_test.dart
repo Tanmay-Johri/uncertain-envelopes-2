@@ -6,7 +6,6 @@ import 'package:uncertain_envelopes_2/data/enums/game_state.dart';
 import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_status.dart';
 import 'package:uncertain_envelopes_2/core/chart/chart_axis.dart';
-import 'package:uncertain_envelopes_2/core/chart/price_chart_point.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_type.dart';
 import 'package:uncertain_envelopes_2/data/models/execution.dart';
 import 'package:uncertain_envelopes_2/data/models/game.dart';

@@ -12,6 +12,12 @@ mcp_execute_*.json
 # Local Deno install (used for Edge Function unit tests in CI/dev)
 .deno/
 
+# Local AI assistant config / scratch (kept on disk, never committed)
+.claude/
+CLAUDE.md
+.cursor/
+AGENTS.md
+
 # Miscellaneous
 *.class
 *.log

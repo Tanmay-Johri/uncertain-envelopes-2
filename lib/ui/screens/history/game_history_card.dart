@@ -233,15 +233,10 @@ class _ExpandedBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _MetaCell extends StatelessWidget {
-  const _MetaCell({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _MetaCell({required this.label, required this.value});
 
   final String label;
   final String value;
-  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +255,7 @@ class _MetaCell extends StatelessWidget {
         Text(
           value,
           style: AppTypography.bodySmall.copyWith(
-            color: valueColor ?? AppColors.textPrimary,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),

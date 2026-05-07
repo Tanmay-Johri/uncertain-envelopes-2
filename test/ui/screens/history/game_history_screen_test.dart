@@ -30,23 +30,23 @@ Future<void> _pump(
         routes: [
           GoRoute(
             path: AppRoutes.history,
-            builder: (_, __) => GameHistoryScreen(entries: entries),
+            builder: (_, _) => GameHistoryScreen(entries: entries),
           ),
           GoRoute(
             path: AppRoutes.home,
-            builder: (_, __) => const Scaffold(body: Text('stub-home')),
+            builder: (_, _) => const Scaffold(body: Text('stub-home')),
           ),
           GoRoute(
             path: AppRoutes.create,
-            builder: (_, __) => const Scaffold(body: Text('stub-create')),
+            builder: (_, _) => const Scaffold(body: Text('stub-create')),
           ),
           GoRoute(
             path: AppRoutes.orders,
-            builder: (_, __) => const Scaffold(body: Text('stub-orders')),
+            builder: (_, _) => const Scaffold(body: Text('stub-orders')),
           ),
           GoRoute(
             path: AppRoutes.profile,
-            builder: (_, __) => const Scaffold(body: Text('stub-profile')),
+            builder: (_, _) => const Scaffold(body: Text('stub-profile')),
           ),
         ],
       ),

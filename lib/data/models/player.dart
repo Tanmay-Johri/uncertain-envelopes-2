@@ -1,3 +1,7 @@
+// Silences `invalid_annotation_target` for `@JsonKey(name: ...)` on
+// freezed constructor parameters — see lib/data/models/game.dart.
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'player.freezed.dart';

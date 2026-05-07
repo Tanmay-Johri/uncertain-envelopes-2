@@ -6,7 +6,6 @@ import '../../../core/theme/app_typography.dart';
 import '../../widgets/code_input.dart';
 import '../../widgets/game_card.dart';
 import '../../widgets/neon_button.dart';
-import '../../widgets/status_badge.dart';
 import 'home_mock_data.dart';
 
 enum _HomeListTab { joined, public }

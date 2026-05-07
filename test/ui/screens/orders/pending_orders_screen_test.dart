@@ -10,7 +10,7 @@ import 'package:uncertain_envelopes_2/ui/widgets/neon_button.dart';
 void main() {
   final t0 = DateTime.utc(2018, 7, 10, 12, 0);
 
-  List<PendingOrderListItem> _twoGamesTwoSides() => [
+  List<PendingOrderListItem> twoGamesTwoSides() => [
         PendingOrderListItem(
           gameTitle: 'Game A',
           gameDescription: '',
@@ -41,7 +41,7 @@ void main() {
         ),
       ];
 
-  List<PendingOrderListItem> _multiRowSameGame() => [
+  List<PendingOrderListItem> multiRowSameGame() => [
         PendingOrderListItem(
           gameTitle: 'Game A',
           gameDescription: '',
@@ -88,7 +88,7 @@ void main() {
 
   /// Source list ordered **oldest first** (`older` then `later`); `later` has
   /// the newer `createdAt` so the screen should show it **above** `older`.
-  List<PendingOrderListItem> _twoCreatedAtOlderFirst(DateTime earlier) => [
+  List<PendingOrderListItem> twoCreatedAtOlderFirst(DateTime earlier) => [
         PendingOrderListItem(
           gameTitle: 'Game Older',
           gameDescription: '',
@@ -133,7 +133,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
-          items: _twoGamesTwoSides(),
+          items: twoGamesTwoSides(),
         ),
       ),
     );
@@ -154,7 +154,7 @@ void main() {
 
   testWidgets('newest createdAt renders above older regardless of source order',
       (tester) async {
-    final pair = _twoCreatedAtOlderFirst(t0);
+    final pair = twoCreatedAtOlderFirst(t0);
     for (final items in [pair, pair.reversed.toList()]) {
       await tester.pumpWidget(
         MaterialApp(
@@ -187,7 +187,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
-          items: _twoGamesTwoSides(),
+          items: twoGamesTwoSides(),
         ),
       ),
     );
@@ -210,7 +210,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
-          items: _multiRowSameGame(),
+          items: multiRowSameGame(),
         ),
       ),
     );
@@ -239,7 +239,7 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
-            items: _multiRowSameGame(),
+            items: multiRowSameGame(),
           ),
         ),
       );
@@ -277,7 +277,7 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
-            items: _twoGamesTwoSides(),
+            items: twoGamesTwoSides(),
           ),
         ),
       );
@@ -299,7 +299,7 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
-            items: _twoGamesTwoSides(),
+            items: twoGamesTwoSides(),
           ),
         ),
       );
@@ -328,7 +328,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
-          items: _twoGamesTwoSides(),
+          items: twoGamesTwoSides(),
         ),
       ),
     );
@@ -482,7 +482,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
-          items: _twoGamesTwoSides(),
+          items: twoGamesTwoSides(),
         ),
       ),
     );
