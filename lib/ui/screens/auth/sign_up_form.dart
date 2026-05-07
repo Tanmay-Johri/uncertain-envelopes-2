@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../widgets/neon_button.dart';
+
+/// Credentials collected by the sign-up form.
+class SignUpSubmission {
+  const SignUpSubmission({
+    required this.username,
+    required this.email,
+    required this.password,
+  });
+
+  /// Normalised to lowercase for uniqueness (matches PRD players.username).
+  final String username;
+  final String email;
+  final String password;
+}
+
+/// The Sign Up tab content: username, email, password, and submit.
+///
+/// Validation rules here intentionally mirror the PRD + stream-A
+/// server-side constraints so the client rejects bad inputs before we
+/// spend a round trip:
+///
+/// - Username: 3–32 chars, alphanumeric + `_-`.
+/// - Email: non-empty, matches a conservative email pattern.
+/// - Password: min 8 chars.
+class SignUpForm extends StatefulWidget {
+  const SignUpForm({super.key, required this.onSubmit});
+
+  final ValueChanged<SignUpSubmission> onSubmit;
+
+  @override
+  State<SignUpForm> createState() => _SignUpFormState();
+}
+
+class _SignUpFormState extends State<SignUpForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  AutovalidateMode _autovalidate = AutovalidateMode.disabled;
+
+  // Kept intentionally simple: exactly one `@` with something on each
+  // side and a `.` in the domain. Full RFC-compliant validation lives
+  // server-side.
+  static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static final _usernameRegex = RegExp(r'^[A-Za-z0-9_-]+$');
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    setState(() => _autovalidate = AutovalidateMode.onUserInteraction);
+    if (_formKey.currentState?.validate() != true) return;
+    widget.onSubmit(
+      SignUpSubmission(
+        username: _usernameController.text.trim().toLowerCase(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      ),
+    );
+  }
+
+  String? _validateUsername(String? value) {
+    final trimmed = (value ?? '').trim();
+    if (trimmed.isEmpty) return 'Required';
+    if (trimmed.length < AppConstants.minUsernameLength) {
+      return 'At least ${AppConstants.minUsernameLength} characters';
+    }
+    if (trimmed.length > AppConstants.maxUsernameLength) {
+      return 'At most ${AppConstants.maxUsernameLength} characters';
+    }
+    if (!_usernameRegex.hasMatch(trimmed)) {
+      return 'Letters, numbers, _ or - only';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final trimmed = (value ?? '').trim();
+    if (trimmed.isEmpty) return 'Required';
+    if (!_emailRegex.hasMatch(trimmed)) return 'Invalid email';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    if (value.length < AppConstants.minPasswordLength) {
+      return 'At least ${AppConstants.minPasswordLength} characters';
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      autovalidateMode: _autovalidate,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('USERNAME', style: AppTypography.label),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            key: const Key('signup_username_field'),
+            controller: _usernameController,
+            autofillHints: const [AutofillHints.newUsername],
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              hintText: 'Choose a username',
+              suffixIcon: Icon(Icons.person_outline),
+            ),
+            validator: _validateUsername,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('EMAIL', style: AppTypography.label),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            key: const Key('signup_email_field'),
+            controller: _emailController,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: 'trader@example.com',
+              suffixIcon: Icon(Icons.mail_outline),
+            ),
+            validator: _validateEmail,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('PASSWORD', style: AppTypography.label),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            key: const Key('signup_password_field'),
+            controller: _passwordController,
+            obscureText: true,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(
+              hintText: 'Create a strong password',
+              suffixIcon: Icon(Icons.lock_outline),
+            ),
+            validator: _validatePassword,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          NeonButton(
+            key: const Key('signup_submit_button'),
+            label: 'Sign Up',
+            trailingIcon: Icons.arrow_forward,
+            onPressed: _submit,
+          ),
+        ],
+      ),
+    );
+  }
+}

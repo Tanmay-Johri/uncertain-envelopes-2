@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
@@ -8,8 +7,6 @@ ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-
-    // Colors
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.secondary,
@@ -25,12 +22,12 @@ ThemeData buildAppTheme() {
     scaffoldBackgroundColor: AppColors.background,
     canvasColor: AppColors.background,
 
-    // Typography — font families registered via google_fonts at app startup
+    // Default font for anything that doesn't explicitly set one.
     fontFamily: AppFontFamilies.body,
 
     // AppBar
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.background.withAlpha(242),
+      backgroundColor: AppColors.background.withValues(alpha: 0.95),
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
@@ -41,16 +38,18 @@ ThemeData buildAppTheme() {
 
     // Bottom nav
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xF21F1F1F), // background @ 95%
+      backgroundColor: Color(0xF21F1F1F),
       selectedItemColor: AppColors.primary,
       unselectedItemColor: AppColors.textTertiary,
       type: BottomNavigationBarType.fixed,
       selectedLabelStyle: TextStyle(
+        fontFamily: AppFontFamilies.body,
         fontSize: 10,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.5,
       ),
       unselectedLabelStyle: TextStyle(
+        fontFamily: AppFontFamilies.body,
         fontSize: 10,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.5,
@@ -105,11 +104,7 @@ ThemeData buildAppTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        textStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-        ),
+        textStyle: AppTypography.buttonPrimary,
         elevation: 0,
       ),
     ),
@@ -123,11 +118,7 @@ ThemeData buildAppTheme() {
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         side: const BorderSide(color: AppColors.outline),
-        textStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-        ),
+        textStyle: AppTypography.buttonSecondary,
       ),
     ),
 
@@ -154,26 +145,10 @@ ThemeData buildAppTheme() {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      labelStyle: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.5,
-      ),
+      labelStyle: AppTypography.microLabel,
     ),
 
-    // Splash / ripple
-    splashColor: AppColors.primary.withAlpha(26),
-    highlightColor: AppColors.primary.withAlpha(13),
+    splashColor: AppColors.primary.withValues(alpha: 0.1),
+    highlightColor: AppColors.primary.withValues(alpha: 0.05),
   );
-}
-
-/// Call once in main() to register Google Fonts for the app.
-/// This ensures fonts load from the network at runtime but
-/// tests can use the font family names as plain strings.
-void registerGoogleFonts() {
-  GoogleFonts.config.allowRuntimeFetching = true;
-  // Pre-warm the fonts by accessing them once
-  GoogleFonts.epilogue();
-  GoogleFonts.spaceGrotesk();
-  GoogleFonts.firaCode();
 }

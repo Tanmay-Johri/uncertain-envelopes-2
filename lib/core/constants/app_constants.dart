@@ -9,16 +9,25 @@ abstract final class AppConstants {
   static const upstashRedisToken =
       'gQAAAAAAAWnGAAIncDI2NWZmYzkzOWJmMTY0NDc0YTUxNmNhZjE3NjY3NTJjNHAyOTI2MTQ';
 
+  // Account constraints
+  static const minUsernameLength = 3;
+  static const maxUsernameLength = 32;
+  static const minPasswordLength = 8;
+
   // Game constraints
   static const maxGameNameLength = 32;
   static const maxGameDescriptionLength = 256;
   static const minMaxPlayers = 1;
-  static const maxMaxPlayers = 100;
+  static const maxMaxPlayers = 128;
   static const joiningCodeLength = 5;
   static const maxCommandRetries = 3;
   static const sweeperIntervalSeconds = 10;
   static const staleClaimThresholdSeconds = 30;
   static const versionPollIntervalSeconds = 5;
+
+  /// Max wait for backend ack that a `cancel_order` **command row** was created.
+  /// If this elapses, UI reverts from **Cancelling** and shows a small banner.
+  static const cancelOrderCommandAckTimeout = Duration(seconds: 10);
 
   // App metadata
   static const appTitle = 'uncertain-envelopes-2';

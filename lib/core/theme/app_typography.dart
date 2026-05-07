@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
+/// Logical font family names.
+///
+/// These are also the exact `family` values declared in pubspec.yaml,
+/// so any `TextStyle(fontFamily: AppFontFamilies.display)` resolves to
+/// the bundled TTFs without a network fetch.
 abstract final class AppFontFamilies {
   static const display = 'Epilogue';
   static const body = 'SpaceGrotesk';
   static const mono = 'FiraCode';
 }
 
+/// Centralised semantic typography scale.
+///
+/// Fonts are bundled locally via pubspec.yaml, so every style is just a
+/// plain `TextStyle` and can be `const`-constructed, giving better tree
+/// shaking and zero runtime cost.
 abstract final class AppTypography {
   // ── Display / Headlines (Epilogue) ─────────────────────────────
 
@@ -119,6 +129,17 @@ abstract final class AppTypography {
     color: AppColors.textPrimary,
     letterSpacing: -2,
     height: 1.1,
+  );
+
+  /// Sticky trading header title (`admin_game_trading_dashboard_7`):
+  /// `text-sm font-bold uppercase tracking-widest text-slate-400` in mono.
+  static const tradingWindowHeaderTitle = TextStyle(
+    fontFamily: AppFontFamilies.mono,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+    letterSpacing: 2.8,
+    height: 1.2,
   );
 
   // ── Brand header ───────────────────────────────────────────────
