@@ -9,6 +9,9 @@ mcp_apply_*.json
 mcp_execute_*.json
 .tmp_*.json
 
+# Local Deno install (used for Edge Function unit tests in CI/dev)
+.deno/
+
 # Miscellaneous
 *.class
 *.log

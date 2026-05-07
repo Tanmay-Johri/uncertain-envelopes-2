@@ -29,7 +29,12 @@ async function redisCommand(
   }
 }
 
-/** SET key → value with EX ttl seconds */
+/**
+ * SET key → value with EX ttl seconds.
+ * Each successful write uses Redis SET with EX: the TTL is **reset** from
+ * zero on every call (standard Redis semantics), so active games keep a fresh
+ * 1-hour window while trading continues.
+ */
 export async function redisSetGameVersion(
   gameId: string,
   stateVersion: number,

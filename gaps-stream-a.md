@@ -12,7 +12,7 @@ and `stream-c` into `main`, by reading this file beside:
 - `gaps-stream-b.md`
 - `gaps-stream-c.md`
 
-Tracked gap IDs: `A-GAP-1` … `A-GAP-14` (see table + append-only sections below).
+Tracked gap IDs: `A-GAP-1` … `A-GAP-16` (see table + append-only sections below).
 
 ---
 
@@ -224,7 +224,7 @@ These are **planned** work from the master plan, not regressions:
 | A7 | `process_cancel_order` | ✅ **DONE** — `007_create_cancel_order.sql` + `cancel_order_test.sql`; full `cancel_order_test.sql` verified against linked Supabase project via MCP (`apply_migration` + `execute_sql`); local runs still supported with Docker/psql |
 | A8 | Edge `command-processor` + trigger wiring | ✅ **DONE** — `008_command_processor_trigger.sql` (applied as `008_command_processor_trigger` migration) + `supabase/functions/command-processor/` + `classification.test.ts`; `verify_jwt=false`, shared-secret webhook auth, Upstash Redis fail-open sync after success |
 | A9 | SQL sweeper + `sweeper_run` + pg_cron (`009`/`010`) | ✅ **DONE** — `sweeper_invoke_command_processor`, `sweeper_rescue_stuck_claimed`, `sweeper_auto_end_timed_games`, `sweeper_kick_idle_processors`, `sweeper_run`; cron `* * * * *` (best-effort if `pg_cron` restricted); `sweeper_test.sql` for local/psql |
-| A10 | Redis version cache + Edge `get-state-version` | pending |
+| A10 | Redis version cache + Edge `get-state-version` | ✅ **DONE** — write path unchanged (`command-processor` + `redis-sync.ts`); read path `supabase/functions/get-state-version/` (JWT via `SUPABASE_ANON_KEY` + `auth.getUser`, Upstash `MGET`, fail-open nulls, batch ≤50, dedupe). Deno: `logic.test.ts`, `upstash-mget.test.ts`, `redis-sync.test.ts`. Deploy: set `verify_jwt` per project policy (handler always validates JWT). |
 | A11 | Realtime publication + client filter docs | pending |
 
 Phase 2 should **not** try to close A-GAP-1–7 by relying on these existing;
@@ -332,7 +332,23 @@ timing-sensitive flakes.
 
 ---
 
-*Last updated: reflects Stream A through **A9** sweeper (`009_command_sweeper` +
-`010_command_sweeper_schedule`, SQL-only + pg_cron), `sweeper_test.sql`, remote
-`SELECT sweeper_run()` sanity check. Prior A7–A8 notes remain (A‑GAP‑12 … A‑GAP‑14).
-Next infra: **A10** Redis read path / `get-state-version`, **A11** Realtime.*
+*Last updated: reflects Stream A through **A10** (`get-state-version` Edge Function +
+`redis-sync` extraction + Deno tests). **A11** Realtime next.*
+
+### New gaps identified during A10
+
+**A-GAP-15 — `get-state-version`: no per-game membership check**
+
+Any authenticated user can poll `state_version` for any `game_id` they can guess (UUID
+entropy makes enumeration impractical; leakage is metadata-only). Tighten in Phase 2 if
+needed: join `games_players` for `auth.uid()` before returning versions.
+
+**Priority:** Low unless threat model requires hiding game existence entirely.
+
+**A-GAP-16 — MCP / live smoke for `get-state-version` not automated in repo**
+
+Deploy + Upstash `SET` + HTTP POST against the deployed URL is still a manual or CI-secret
+step. Unit tests cover handler + Upstash MGET shape; async JWT↔Auth integration is the same
+class as **A-GAP-14**.
+
+**Priority:** Medium until first staging environment with secrets.
