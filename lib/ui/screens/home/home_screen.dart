@@ -48,11 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  bool _dimCard(MockHomeGame g) {
-    return g.status == GameStatusBadge.joined ||
-        g.status == GameStatusBadge.notJoined;
-  }
-
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered.toList();
@@ -145,8 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: g.title,
                       description: g.description,
                       status: g.status,
-                      playerInitials: g.playerInitials,
-                      dimmed: _dimCard(g),
+                      playerCount: g.playerInitials.length,
+                      maxPlayers: g.maxPlayers,
                       onOpen: () => widget.onOpenGame?.call(g.id),
                     );
                   },

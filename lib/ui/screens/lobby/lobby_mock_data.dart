@@ -46,7 +46,7 @@ GameLobbyViewData _dataFromHomeGame(MockHomeGame g) {
     joiningCodeRaw: _codeForId(g.id),
     isPublic: g.isPublic,
     isRanked: true,
-    maxPlayers: 16,
+    maxPlayers: g.maxPlayers,
     players: players,
     isTimed: true,
     tradingTimeRemaining: const Duration(minutes: 60),

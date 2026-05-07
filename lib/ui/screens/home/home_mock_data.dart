@@ -11,6 +11,7 @@ class MockHomeGame {
     required this.isJoined,
     required this.isAdmin,
     required this.playerInitials,
+    required this.maxPlayers,
   });
 
   final String id;
@@ -21,8 +22,12 @@ class MockHomeGame {
   final bool isJoined;
   final bool isAdmin;
 
-  /// Single-letter initials for avatar stack (already uppercased).
+  /// Single-letter initials (used by lobby mock fallbacks; length may exceed
+  /// displayed avatars when wiring real data).
   final List<String> playerInitials;
+
+  /// Maximum players allowed in the room (capacity).
+  final int maxPlayers;
 }
 
 /// Hardcoded games mirroring the HTML mock variety (joined/public/admin).
@@ -37,6 +42,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isJoined: true,
     isAdmin: false,
     playerInitials: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+    maxPlayers: 12,
   ),
   MockHomeGame(
     id: 'g2',
@@ -48,6 +54,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isJoined: true,
     isAdmin: true,
     playerInitials: ['J', 'K'],
+    maxPlayers: 8,
   ),
   MockHomeGame(
     id: 'g3',
@@ -58,6 +65,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isJoined: true,
     isAdmin: false,
     playerInitials: [],
+    maxPlayers: 12,
   ),
   MockHomeGame(
     id: 'g4',
@@ -68,6 +76,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isJoined: false,
     isAdmin: false,
     playerInitials: [],
+    maxPlayers: 20,
   ),
   MockHomeGame(
     id: 'g5',
@@ -78,6 +87,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isJoined: true,
     isAdmin: true,
     playerInitials: ['X'],
+    maxPlayers: 8,
   ),
 ];
 

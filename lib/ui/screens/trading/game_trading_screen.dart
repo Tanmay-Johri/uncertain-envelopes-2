@@ -921,7 +921,7 @@ class _AddTimeDialogState extends State<_AddTimeDialog> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Max 600 min (10 hours) · steps of 5 min',
+            'Max 600 min (10 hours)',
             style: AppTypography.microLabel.copyWith(
               color: AppColors.textTertiary,
               fontSize: 10,

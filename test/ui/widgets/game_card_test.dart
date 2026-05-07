@@ -16,7 +16,8 @@ void main() {
               title: 'Forex Masters',
               description: 'A long description that should ellipsize in one line',
               status: GameStatusBadge.active,
-              playerInitials: ['A', 'B'],
+              playerCount: 2,
+              maxPlayers: 12,
             ),
           ),
         ),
@@ -24,6 +25,7 @@ void main() {
       expect(find.text('Forex Masters'), findsOneWidget);
       expect(find.textContaining('A long description'), findsOneWidget);
       expect(find.text('ACTIVE'), findsOneWidget);
+      expect(find.text('2/12 players'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
     });
 
@@ -37,7 +39,8 @@ void main() {
               title: 'T',
               description: 'D',
               status: GameStatusBadge.ready,
-              playerInitials: const ['X'],
+              playerCount: 1,
+              maxPlayers: 8,
               onOpen: () => taps++,
             ),
           ),
@@ -48,8 +51,7 @@ void main() {
       expect(taps, 1);
     });
 
-    testWidgets('shows overflow stack when more than three players',
-        (tester) async {
+    testWidgets('shows player count versus capacity', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
@@ -58,15 +60,16 @@ void main() {
               title: 'Big',
               description: 'Many players',
               status: GameStatusBadge.active,
-              playerInitials: ['A', 'B', 'C', 'D', 'E'],
+              playerCount: 7,
+              maxPlayers: 12,
             ),
           ),
         ),
       );
-      expect(find.text('+3'), findsOneWidget);
+      expect(find.text('7/12 players'), findsOneWidget);
     });
 
-    testWidgets('empty players shows placeholder copy', (tester) async {
+    testWidgets('zero players shows 0/N', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
@@ -75,12 +78,13 @@ void main() {
               title: 'Solo',
               description: 'No one here',
               status: GameStatusBadge.joined,
-              playerInitials: [],
+              playerCount: 0,
+              maxPlayers: 12,
             ),
           ),
         ),
       );
-      expect(find.text('no players yet'), findsOneWidget);
+      expect(find.text('0/12 players'), findsOneWidget);
     });
 
     testWidgets('rapid taps on card surface all invoke onOpen', (tester) async {
@@ -93,7 +97,8 @@ void main() {
               title: 'T',
               description: 'D',
               status: GameStatusBadge.active,
-              playerInitials: const ['Z'],
+              playerCount: 1,
+              maxPlayers: 4,
               onOpen: () => taps++,
             ),
           ),
