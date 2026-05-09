@@ -185,12 +185,12 @@ void main() {
     expect(container.read(authControllerProvider).hasError, false);
   });
 
-  test('unoverridden authRepositoryProvider throws UnimplementedError', () {
+  test('default authRepositoryProvider is a fresh InMemoryAuthRepository', () {
     final bareContainer = ProviderContainer();
     addTearDown(bareContainer.dispose);
-    expect(
-      () => bareContainer.read(authRepositoryProvider),
-      throwsA(isA<UnimplementedError>()),
-    );
+    final a = bareContainer.read(authRepositoryProvider);
+    final b = bareContainer.read(authRepositoryProvider);
+    expect(a, isA<InMemoryAuthRepository>());
+    expect(identical(a, b), isTrue);
   });
 }

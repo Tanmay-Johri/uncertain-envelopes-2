@@ -2,21 +2,27 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/models/player.dart';
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/in_memory_auth_repository.dart';
+import '../data/repositories/supabase_auth_repository.dart';
+import '../services/supabase_auth_gateway.dart';
+import '_environment.dart';
 
 part 'auth_provider.g.dart';
 
-/// Injection point for the [AuthRepository] implementation. `main()` and
-/// tests must override this provider — there is no sensible default
-/// because the concrete impl needs a live `SupabaseClient`.
+/// Global [AuthRepository]. Defaults to [InMemoryAuthRepository]; set
+/// `USE_REAL_BACKEND=true` at compile time for [SupabaseAuthRepository].
 @Riverpod(keepAlive: true)
 AuthRepository authRepository(Ref ref) {
-  throw UnimplementedError(
-    'authRepositoryProvider must be overridden (in main() with '
-    'SupabaseAuthRepository, or in tests with InMemoryAuthRepository).',
-  );
+  if (useRealBackend) {
+    return SupabaseAuthRepository(
+      gateway: RealSupabaseAuthGateway(Supabase.instance.client),
+    );
+  }
+  return InMemoryAuthRepository();
 }
 
 /// Top-level auth controller. The exposed state is the currently logged-in

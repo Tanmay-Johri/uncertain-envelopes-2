@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'core/router/app_router.dart';
+import 'core/router/app_router_provider.dart';
 import 'core/theme/app_theme.dart';
 
-class UncertainEnvelopesApp extends StatelessWidget {
+class UncertainEnvelopesApp extends ConsumerWidget {
   /// If [router] is provided it is used as-is (useful for tests that want
-  /// to start at a specific deep-link). Otherwise the default router is
-  /// built from [buildAppRouter].
-  UncertainEnvelopesApp({super.key, GoRouter? router})
-      : _router = router ?? buildAppRouter();
+  /// a custom [GoRouter]). Otherwise [appRouterProvider] supplies the
+  /// production router (auth redirects + refresh).
+  const UncertainEnvelopesApp({super.key, this.router});
 
-  final GoRouter _router;
+  final GoRouter? router;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = router ?? ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'uncertain-envelopes-2',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      routerConfig: _router,
+      routerConfig: config,
     );
   }
 }

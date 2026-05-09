@@ -46,6 +46,9 @@ DECLARE
   v_ver_before     integer;
   v_ver_after      integer;
   v_count          integer;
+  v_order_leave_id uuid;
+  v_order_kick_id  uuid;
+  v_ord_status     order_status;
 BEGIN
   -- -------------------------------------------------------------------------
   -- Build main game G (max_players=3, admin=alice)
@@ -203,6 +206,24 @@ BEGIN
     RETURNING command_id INTO v_cmd_id;
   BEGIN PERFORM process_leave_game(v_cmd_id); RAISE EXCEPTION 'FAIL: leave null player'; EXCEPTION WHEN SQLSTATE 'UE001' THEN NULL; END;
 
+  -- A-GAP-5: leave_game closes the player's open orders in this game
+  INSERT INTO orders (
+    created_by_player_id, game_id, type, quantity_initial, quantity_current,
+    price_per_stock, status
+  ) VALUES (
+    v_bob, v_game_id, 'limit_buy', 1, 1, 9, 'order_resting'
+  ) RETURNING order_id INTO v_order_leave_id;
+  INSERT INTO commands (command_game_id, command_type, player_id)
+    VALUES (v_game_id, 'leave_game', v_bob)
+    RETURNING command_id INTO v_cmd_id;
+  PERFORM process_leave_game(v_cmd_id);
+  SELECT status INTO v_ord_status FROM orders WHERE order_id = v_order_leave_id;
+  ASSERT v_ord_status = 'game_ended', 'A-GAP-5 leave: bob resting order must be game_ended';
+  INSERT INTO commands (command_game_id, command_type, player_id)
+    VALUES (v_game_id, 'join_game', v_bob)
+    RETURNING command_id INTO v_cmd_id;
+  PERFORM process_join_game(v_cmd_id);
+
   -- =========================================================================
   -- process_kick_player
   -- =========================================================================
@@ -213,12 +234,20 @@ BEGIN
   PERFORM process_join_game(v_cmd_id);
   -- G is now full again (3/3). Don't add dan, keep him for non-member tests.
 
-  -- Happy: alice kicks carol
+  -- Happy: alice kicks carol (A-GAP-5: carol has a resting order closed)
+  INSERT INTO orders (
+    created_by_player_id, game_id, type, quantity_initial, quantity_current,
+    price_per_stock, status
+  ) VALUES (
+    v_carol, v_game_id, 'limit_sell', 2, 2, 11, 'order_resting'
+  ) RETURNING order_id INTO v_order_kick_id;
   SELECT state_version INTO v_ver_before FROM games WHERE game_id = v_game_id;
   INSERT INTO commands (command_game_id, command_type, player_id, payload)
     VALUES (v_game_id, 'kick_player', v_alice, jsonb_build_object('target_player_id', v_carol))
     RETURNING command_id INTO v_cmd_id;
   PERFORM process_kick_player(v_cmd_id);
+  SELECT status INTO v_ord_status FROM orders WHERE order_id = v_order_kick_id;
+  ASSERT v_ord_status = 'game_ended', 'A-GAP-5 kick: carol resting order must be game_ended';
   SELECT count(*) INTO v_count FROM games_players WHERE map_game_id = v_game_id AND map_player_id = v_carol;
   ASSERT v_count = 0, 'kick happy: carol row still present';
   SELECT state_version INTO v_ver_after FROM games WHERE game_id = v_game_id;

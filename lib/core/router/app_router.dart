@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
+import '../../ui/screens/auth/auth_route_screen.dart';
 import '../../ui/screens/history/game_history_mock_data.dart';
 import '../../ui/screens/history/game_history_screen.dart';
-import '../../ui/screens/auth/auth_screen.dart';
 import '../../ui/screens/profile/profile_mock_data.dart';
 import '../../ui/screens/profile/profile_screen.dart';
 import '../../ui/screens/profile/profile_view_data.dart';
@@ -18,6 +18,7 @@ import '../../ui/screens/trading/game_trading_screen.dart';
 import '../../ui/screens/trading/trading_mock_data.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
+import '../../ui/widgets/game_realtime_session_scope.dart';
 
 /// Route paths for the whole app. Centralising them avoids typo-style
 /// navigation bugs. Parametric routes expose helpers instead of raw
@@ -47,9 +48,19 @@ abstract final class _ShellIndex {
 ///
 /// [initialLocation] is exposed so tests can deep-link to any route
 /// without having to wire up a Flutter engine navigator.
-GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
+///
+/// When [redirect] and [refreshListenable] are omitted (the default), no
+/// auth redirect runs — used by router unit tests. Production uses
+/// [appRouterProvider] which passes auth-aware values.
+GoRouter buildAppRouter({
+  String initialLocation = AppRoutes.home,
+  Listenable? refreshListenable,
+  GoRouterRedirect? redirect,
+}) {
   return GoRouter(
     initialLocation: initialLocation,
+    refreshListenable: refreshListenable,
+    redirect: redirect,
     routes: [
       GoRoute(
         path: AppRoutes.auth,
@@ -63,10 +74,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
           final initialTab = tabParam == 'signup'
               ? AuthTab.signUp
               : AuthTab.logIn;
-          return AuthScreen(
-            key: ValueKey('auth-${initialTab.name}'),
-            initialTab: initialTab,
-          );
+          return AuthRouteScreen(initialTab: initialTab);
         },
       ),
       GoRoute(
@@ -89,44 +97,53 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
         builder: (context, _) =>
             GameHistoryScreen(entries: kMockGameHistory()),
       ),
-      GoRoute(
-        path: '/game/:id/lobby',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          final scenario = mockLobbyScenarioForGameId(id);
-          return GameLobbyScreen(
-            data: scenario.data,
-            phase: scenario.phase,
-            currentPlayerId: scenario.currentPlayerId,
-            isViewerAdmin: scenario.isViewerAdmin,
-            onStartGame: () => context.go(AppRoutes.gameTrading(id)),
-            onEndGame: () {},
-            onEnterGame: () => context.go(AppRoutes.gameTrading(id)),
-            onJoinGame: () {},
-            onLeaveGame: () {},
-            onKickPlayer: (_) {},
-          );
+      ShellRoute(
+        builder: (context, state, child) {
+          final id = state.pathParameters['id'];
+          if (id == null || id.isEmpty) return child;
+          return GameRealtimeSessionScope(gameId: id, child: child);
         },
-      ),
-      GoRoute(
-        path: '/game/:id/trading',
-        builder: (_, state) {
-          final id = state.pathParameters['id']!;
-          final scenario = mockTradingScenarioForGameId(id);
-          return GameTradingScreen(
-            gameId: id,
-            data: scenario.data,
-            onEndGameFromMenu: () {},
-            onAddTime: (_) {},
-          );
-        },
-      ),
-      GoRoute(
-        path: '/game/:id/results',
-        builder: (_, state) {
-          final id = state.pathParameters['id']!;
-          return GameResultsMockRouteHost(gameId: id);
-        },
+        routes: [
+          GoRoute(
+            path: '/game/:id/lobby',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              final scenario = mockLobbyScenarioForGameId(id);
+              return GameLobbyScreen(
+                data: scenario.data,
+                phase: scenario.phase,
+                currentPlayerId: scenario.currentPlayerId,
+                isViewerAdmin: scenario.isViewerAdmin,
+                onStartGame: () => context.go(AppRoutes.gameTrading(id)),
+                onEndGame: () {},
+                onEnterGame: () => context.go(AppRoutes.gameTrading(id)),
+                onJoinGame: () {},
+                onLeaveGame: () {},
+                onKickPlayer: (_) {},
+              );
+            },
+          ),
+          GoRoute(
+            path: '/game/:id/trading',
+            builder: (_, state) {
+              final id = state.pathParameters['id']!;
+              final scenario = mockTradingScenarioForGameId(id);
+              return GameTradingScreen(
+                gameId: id,
+                data: scenario.data,
+                onEndGameFromMenu: () {},
+                onAddTime: (_) {},
+              );
+            },
+          ),
+          GoRoute(
+            path: '/game/:id/results',
+            builder: (_, state) {
+              final id = state.pathParameters['id']!;
+              return GameResultsMockRouteHost(gameId: id);
+            },
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

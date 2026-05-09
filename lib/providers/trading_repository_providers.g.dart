@@ -6,7 +6,7 @@ part of 'trading_repository_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$orderRepositoryHash() => r'b6567172ad7fe4fce57611ed3d99d768bbeefe94';
+String _$orderRepositoryHash() => r'9c238a43838967b4630ab9a474a66b529696b3c7';
 
 /// See also [orderRepository].
 @ProviderFor(orderRepository)
@@ -24,7 +24,7 @@ final orderRepositoryProvider = Provider<OrderRepository>.internal(
 // ignore: unused_element
 typedef OrderRepositoryRef = ProviderRef<OrderRepository>;
 String _$executionRepositoryHash() =>
-    r'db3a4cc33636bff06749c7699291c076725aadfc';
+    r'dcb3901621a906b553ddcc1a90f186c50f677013';
 
 /// See also [executionRepository].
 @ProviderFor(executionRepository)

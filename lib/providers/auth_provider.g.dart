@@ -6,11 +6,10 @@ part of 'auth_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authRepositoryHash() => r'0e668786fe1c0aebd45ec4e26e247a421b00eab8';
+String _$authRepositoryHash() => r'3e703181f022a50f891ed8cb27c996b13cdda794';
 
-/// Injection point for the [AuthRepository] implementation. `main()` and
-/// tests must override this provider — there is no sensible default
-/// because the concrete impl needs a live `SupabaseClient`.
+/// Global [AuthRepository]. Defaults to [InMemoryAuthRepository]; set
+/// `USE_REAL_BACKEND=true` at compile time for [SupabaseAuthRepository].
 ///
 /// Copied from [authRepository].
 @ProviderFor(authRepository)

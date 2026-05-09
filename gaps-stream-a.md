@@ -417,3 +417,16 @@ projects and does not assert per-row fan-out.
 row as another session (or SQL), assert callback payload.
 
 **Priority:** Medium for confidence; low for “tables are published” correctness.
+
+---
+
+## Append-only Phase 2 log
+
+- **2026-05-09 — A-GAP-5 resolved:** Added `supabase/migrations/012_leave_kick_close_orders.sql`
+  so `process_leave_game` and `process_kick_player` set affected players’ non-terminal
+  orders in that game to `game_ended` after removing their `games_players` row. SQL
+  regression: `supabase/tests/lobby_procs_test.sql` (leave + kick cases).
+
+- **2026-05-09 — A-GAP-5 on Supabase (remote):** Applied the same migration to
+  hosted project `agohjlgjjxbtfjdgqixa` via Supabase MCP (`leave_kick_close_orders`,
+  version `20260509121904`); `list_migrations` shows it after `enable_realtime`.

@@ -276,3 +276,42 @@ All three are merge-safe: none require schema changes to Stream B's
 existing code. They only add new files (plus one additive method on
 `CommandRepository` for B-GAP-1, which cannot collide with the other
 streams because those streams do not touch that file).
+
+---
+
+## Append-only Phase 2 log
+
+- **2026-05-09 — B-GAP-3a (subscriber code landed, wiring deferred):**
+  Added `lib/services/supabase_realtime_subscriber.dart` implementing
+  `RealtimeSubscriber` with the four-table `postgres_changes` bindings
+  described above, payload→`RealtimeEvent` mapping (preserving
+  `newRecord`/`oldRecord`), and reconnect-on-channel-failure. Unit tests:
+  `test/services/supabase_realtime_subscriber_test.dart`. Live
+  integration against Supabase remains Phase 2C / INT3; the per-game
+  `GameRealtimeService` lifecycle provider (plan 2B.10) is not hooked yet.
+
+- **2026-05-09 — B-GAP-3b (reader code landed, wiring deferred):** Added
+  `lib/services/supabase_version_query.dart` implementing `SupabaseVersionReader` with
+  null-on-error semantics; tests `test/services/supabase_version_query_test.dart`.
+  Not yet passed into `CompositeVersionPoller` from app wiring (plan 2B.10).
+
+- **2026-05-09 — Plan 2B.10 (game realtime lifecycle wired):** Added
+  `lib/providers/game_realtime_session_provider.dart` (`gameRealtimeSessionProvider`)
+  wiring `GameRealtimeService` to `SupabaseRealtimeSubscriber`,
+  `CompositeVersionPoller` (`UpstashRedisVersionReader` +
+  `SupabaseVersionQuery(Supabase.instance.client)`), and
+  `RiverpodRealtimeTarget`. Active only when `useRealBackend` is true,
+  `gameId` is non-empty, and `Supabase.instance.isInitialized`. Router
+  wraps `/game/:id/{lobby,trading,results}` in a `ShellRoute` whose builder
+  mounts `lib/ui/widgets/game_realtime_session_scope.dart` so lobby→trading
+  reuses one session. Tests: `test/providers/game_realtime_session_provider_test.dart`;
+  `test/core/router/app_router_test.dart` pumps `ProviderScope` for game routes.
+
+- **2026-05-09 — Plan 2B.1 (auth + redirect guards):** Added
+  `lib/ui/screens/auth/auth_route_screen.dart` (wires `AuthScreen` to
+  `authControllerProvider`, SnackBar on `AuthException`); `lib/core/router/app_router_provider.dart`
+  (`appRouterProvider` + `appRouterInitialLocationProvider`) with GoRouter
+  `redirect` + `refreshListenable` on auth changes; `buildAppRouter` accepts optional
+  `redirect` / `refreshListenable` for tests. `UncertainEnvelopesApp` is a `ConsumerWidget`
+  watching `appRouterProvider`. Tests: `test/core/router/app_router_test.dart` (auth redirect
+  group), `test/widget_test.dart` (pre-seeded in-memory session).

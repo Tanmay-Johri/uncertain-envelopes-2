@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uncertain_envelopes_2/core/router/app_router.dart';
+import 'package:uncertain_envelopes_2/core/router/app_router_provider.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
+import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
@@ -21,7 +25,9 @@ Future<GoRouter> _pumpAppWith(
 }) async {
   final router = buildAppRouter(initialLocation: initialLocation);
   await tester.pumpWidget(
-    MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
+    ProviderScope(
+      child: MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
+    ),
   );
   // One-shot pumps: trading screen live dot repeats opacity forever, so
   // pumpAndSettle would time out waiting for animations to finish.
@@ -227,7 +233,12 @@ void main() {
         (tester) async {
       final router = buildAppRouter(initialLocation: '/blah');
       await tester.pumpWidget(
-        MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
+        ProviderScope(
+          child: MaterialApp.router(
+            theme: buildAppTheme(),
+            routerConfig: router,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -263,6 +274,56 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(GameLobbyScreen), findsOneWidget);
       expect(find.text('Forex Masters'), findsWidgets);
+    });
+  });
+
+  group('appRouterProvider auth redirects', () {
+    testWidgets('unauthenticated user at /home is redirected to /auth',
+        (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: buildAppTheme(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginForm), findsOneWidget);
+    });
+
+    testWidgets('authenticated user at /auth is redirected to /home shell',
+        (tester) async {
+      final repo = InMemoryAuthRepository();
+      await repo.signUp(
+        email: 'routerauth@test.co',
+        password: 'password12',
+        username: 'routerauth',
+      );
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repo),
+          appRouterInitialLocationProvider.overrideWithValue(AppRoutes.auth),
+        ],
+      );
+      addTearDown(container.dispose);
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: buildAppTheme(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppShell), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
     });
   });
 }
