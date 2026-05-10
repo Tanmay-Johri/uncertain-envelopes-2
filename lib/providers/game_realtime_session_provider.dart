@@ -8,6 +8,7 @@ import '../core/constants/app_constants.dart';
 import '../services/game_realtime_service.dart';
 import '../services/riverpod_realtime_target.dart';
 import '../services/supabase_realtime_subscriber.dart';
+import 'trading_provider.dart';
 import '../services/supabase_version_query.dart';
 import '../services/version_poller.dart';
 import '_environment.dart';
@@ -25,6 +26,8 @@ void gameRealtimeSession(Ref ref, String gameId) {
   if (gameId.isEmpty) return;
   if (!Supabase.instance.isInitialized) return;
 
+  ref.watch(pendingCreateOrderCommandsProvider(gameId));
+
   final target = RiverpodRealtimeTarget(ref: ref, gameId: gameId);
   final subscriber = SupabaseRealtimeSubscriber(Supabase.instance.client);
   final poller = CompositeVersionPoller(
@@ -40,9 +43,7 @@ void gameRealtimeSession(Ref ref, String gameId) {
     target: target,
     subscriber: subscriber,
     poller: poller,
-    pollInterval: Duration(
-      seconds: AppConstants.versionPollIntervalSeconds,
-    ),
+    pollInterval: Duration(seconds: AppConstants.versionPollIntervalSeconds),
   );
 
   ref.onDispose(() {

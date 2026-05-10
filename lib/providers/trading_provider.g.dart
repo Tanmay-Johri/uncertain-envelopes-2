@@ -177,28 +177,32 @@ class _OrderBookProviderElement extends AutoDisposeProviderElement<OrderBook>
   String get gameId => (origin as OrderBookProvider).gameId;
 }
 
-String _$personalOrdersHash() => r'9161a57474f4857ed088f9e34994de68dd57ad7b';
+String _$personalOrdersHash() => r'f771d7fe97ba0e103d545d63b9bac16ace88f17e';
 
 /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+/// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+/// rows (B-GAP-1 / B-GAP-1b). Newest first.
 ///
 /// Copied from [personalOrders].
 @ProviderFor(personalOrders)
 const personalOrdersProvider = PersonalOrdersFamily();
 
 /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+/// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+/// rows (B-GAP-1 / B-GAP-1b). Newest first.
 ///
 /// Copied from [personalOrders].
 class PersonalOrdersFamily extends Family<AsyncValue<List<Order>>> {
   /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+  /// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+  /// rows (B-GAP-1 / B-GAP-1b). Newest first.
   ///
   /// Copied from [personalOrders].
   const PersonalOrdersFamily();
 
   /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+  /// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+  /// rows (B-GAP-1 / B-GAP-1b). Newest first.
   ///
   /// Copied from [personalOrders].
   PersonalOrdersProvider call({
@@ -231,12 +235,14 @@ class PersonalOrdersFamily extends Family<AsyncValue<List<Order>>> {
 }
 
 /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+/// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+/// rows (B-GAP-1 / B-GAP-1b). Newest first.
 ///
 /// Copied from [personalOrders].
 class PersonalOrdersProvider extends AutoDisposeFutureProvider<List<Order>> {
   /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+  /// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+  /// rows (B-GAP-1 / B-GAP-1b). Newest first.
   ///
   /// Copied from [personalOrders].
   PersonalOrdersProvider({required String gameId, required String playerId})
@@ -1135,6 +1141,191 @@ class _ExecutionsProviderElement
 
   @override
   String get gameId => (origin as ExecutionsProvider).gameId;
+}
+
+String _$pendingCreateOrderCommandsHash() =>
+    r'ed3a030af2aceab07154f6e8c49b57a66d5a0488';
+
+abstract class _$PendingCreateOrderCommands
+    extends BuildlessAutoDisposeAsyncNotifier<List<Command>> {
+  late final String gameId;
+
+  FutureOr<List<Command>> build(String gameId);
+}
+
+/// Non-terminal `create_order` commands for [gameId] (all players).
+///
+/// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+/// then updated by [GameRealtimeService] `commands` realtime events and
+/// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+///
+/// Copied from [PendingCreateOrderCommands].
+@ProviderFor(PendingCreateOrderCommands)
+const pendingCreateOrderCommandsProvider = PendingCreateOrderCommandsFamily();
+
+/// Non-terminal `create_order` commands for [gameId] (all players).
+///
+/// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+/// then updated by [GameRealtimeService] `commands` realtime events and
+/// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+///
+/// Copied from [PendingCreateOrderCommands].
+class PendingCreateOrderCommandsFamily
+    extends Family<AsyncValue<List<Command>>> {
+  /// Non-terminal `create_order` commands for [gameId] (all players).
+  ///
+  /// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+  /// then updated by [GameRealtimeService] `commands` realtime events and
+  /// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+  ///
+  /// Copied from [PendingCreateOrderCommands].
+  const PendingCreateOrderCommandsFamily();
+
+  /// Non-terminal `create_order` commands for [gameId] (all players).
+  ///
+  /// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+  /// then updated by [GameRealtimeService] `commands` realtime events and
+  /// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+  ///
+  /// Copied from [PendingCreateOrderCommands].
+  PendingCreateOrderCommandsProvider call(String gameId) {
+    return PendingCreateOrderCommandsProvider(gameId);
+  }
+
+  @override
+  PendingCreateOrderCommandsProvider getProviderOverride(
+    covariant PendingCreateOrderCommandsProvider provider,
+  ) {
+    return call(provider.gameId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'pendingCreateOrderCommandsProvider';
+}
+
+/// Non-terminal `create_order` commands for [gameId] (all players).
+///
+/// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+/// then updated by [GameRealtimeService] `commands` realtime events and
+/// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+///
+/// Copied from [PendingCreateOrderCommands].
+class PendingCreateOrderCommandsProvider
+    extends
+        AutoDisposeAsyncNotifierProviderImpl<
+          PendingCreateOrderCommands,
+          List<Command>
+        > {
+  /// Non-terminal `create_order` commands for [gameId] (all players).
+  ///
+  /// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+  /// then updated by [GameRealtimeService] `commands` realtime events and
+  /// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+  ///
+  /// Copied from [PendingCreateOrderCommands].
+  PendingCreateOrderCommandsProvider(String gameId)
+    : this._internal(
+        () => PendingCreateOrderCommands()..gameId = gameId,
+        from: pendingCreateOrderCommandsProvider,
+        name: r'pendingCreateOrderCommandsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$pendingCreateOrderCommandsHash,
+        dependencies: PendingCreateOrderCommandsFamily._dependencies,
+        allTransitiveDependencies:
+            PendingCreateOrderCommandsFamily._allTransitiveDependencies,
+        gameId: gameId,
+      );
+
+  PendingCreateOrderCommandsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.gameId,
+  }) : super.internal();
+
+  final String gameId;
+
+  @override
+  FutureOr<List<Command>> runNotifierBuild(
+    covariant PendingCreateOrderCommands notifier,
+  ) {
+    return notifier.build(gameId);
+  }
+
+  @override
+  Override overrideWith(PendingCreateOrderCommands Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: PendingCreateOrderCommandsProvider._internal(
+        () => create()..gameId = gameId,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        gameId: gameId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeAsyncNotifierProviderElement<
+    PendingCreateOrderCommands,
+    List<Command>
+  >
+  createElement() {
+    return _PendingCreateOrderCommandsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PendingCreateOrderCommandsProvider &&
+        other.gameId == gameId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, gameId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin PendingCreateOrderCommandsRef
+    on AutoDisposeAsyncNotifierProviderRef<List<Command>> {
+  /// The parameter `gameId` of this provider.
+  String get gameId;
+}
+
+class _PendingCreateOrderCommandsProviderElement
+    extends
+        AutoDisposeAsyncNotifierProviderElement<
+          PendingCreateOrderCommands,
+          List<Command>
+        >
+    with PendingCreateOrderCommandsRef {
+  _PendingCreateOrderCommandsProviderElement(super.provider);
+
+  @override
+  String get gameId => (origin as PendingCreateOrderCommandsProvider).gameId;
 }
 
 // ignore_for_file: type=lint

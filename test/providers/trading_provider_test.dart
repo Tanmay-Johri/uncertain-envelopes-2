@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uncertain_envelopes_2/data/enums/command_status.dart';
 import 'package:uncertain_envelopes_2/data/enums/end_condition.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_state.dart';
@@ -324,6 +325,9 @@ void main() {
         quantityInitial: 4,
         pricePerStock: 55,
       );
+      await container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .refresh();
       final mine = await container.read(
         personalOrdersProvider(gameId: 'g-1', playerId: 'p-me').future,
       );
@@ -331,6 +335,67 @@ void main() {
       expect(mine.single.orderId.startsWith('cmd:'), isTrue);
       expect(mine.single.quantityInitial, 4);
       expect(mine.single.status, OrderStatus.inQueue);
+    });
+  });
+
+  group('PendingCreateOrderCommands notifier', () {
+    test('mergeRealtime removes row when command reaches terminal status',
+        () async {
+      games.seedGame(_gameTrading());
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(pendingCreateOrderCommandsProvider('g-1').future);
+
+      await commands.submitCreateOrder(
+        gameId: 'g-1',
+        playerId: 'p-me',
+        type: OrderType.limitBuy,
+        quantityInitial: 2,
+        pricePerStock: 10,
+      );
+      await container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .refresh();
+      final pendingRow = container
+          .read(pendingCreateOrderCommandsProvider('g-1'))
+          .valueOrNull!
+          .single;
+
+      container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .mergeRealtime(
+            pendingRow.copyWith(commandStatus: CommandStatus.processed),
+          );
+      expect(
+        container.read(pendingCreateOrderCommandsProvider('g-1')).valueOrNull,
+        isEmpty,
+      );
+    });
+
+    test('removeByCommandId evicts row', () async {
+      games.seedGame(_gameTrading());
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(pendingCreateOrderCommandsProvider('g-1').future);
+
+      final cmdId = await commands.submitCreateOrder(
+        gameId: 'g-1',
+        playerId: 'p-me',
+        type: OrderType.marketBuy,
+        quantityInitial: 1,
+        pricePerStock: null,
+      );
+      await container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .refresh();
+
+      container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .removeByCommandId(cmdId);
+      expect(
+        container.read(pendingCreateOrderCommandsProvider('g-1')).valueOrNull,
+        isEmpty,
+      );
     });
   });
 

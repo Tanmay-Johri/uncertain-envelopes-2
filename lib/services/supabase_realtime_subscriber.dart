@@ -148,6 +148,17 @@ class SupabaseRealtimeSubscriber implements RealtimeSubscriber {
         ),
         callback: emit,
       )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'commands',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'command_game_id',
+          value: gameId,
+        ),
+        callback: emit,
+      )
       ..subscribe((status, err) {
         if (!_acceptEvents) return;
         if (status == RealtimeSubscribeStatus.subscribed) {

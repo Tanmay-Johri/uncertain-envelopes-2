@@ -117,7 +117,12 @@ class GameTradingRouteScreen extends ConsumerWidget {
                   ? draft.limitPrice
                   : null,
             );
-            await ref.read(ordersProvider(gameId).notifier).refresh();
+            await Future.wait([
+              ref.read(ordersProvider(gameId).notifier).refresh(),
+              ref
+                  .read(pendingCreateOrderCommandsProvider(gameId).notifier)
+                  .refresh(),
+            ]);
           },
         );
       },

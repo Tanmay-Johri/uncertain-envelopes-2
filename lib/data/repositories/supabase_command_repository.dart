@@ -36,4 +36,9 @@ class SupabaseCommandRepository extends BaseCommandRepository {
       playerId: playerId,
     );
   }
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(String gameId) {
+    return _gateway.fetchPendingCreateOrderCommandsForGame(gameId);
+  }
 }

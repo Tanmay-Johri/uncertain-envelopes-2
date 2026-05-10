@@ -69,6 +69,27 @@ void main() {
         isEmpty,
       );
     });
+
+    test('fetchPendingCreateOrderCommandsForGame returns all players',
+        () async {
+      final repo = InMemoryCommandRepository();
+      await repo.submitCreateOrder(
+        gameId: 'g-a',
+        playerId: 'p1',
+        type: OrderType.limitBuy,
+        quantityInitial: 1,
+        pricePerStock: 5,
+      );
+      await repo.submitCreateOrder(
+        gameId: 'g-a',
+        playerId: 'p2',
+        type: OrderType.limitSell,
+        quantityInitial: 2,
+        pricePerStock: 6,
+      );
+      final all = await repo.fetchPendingCreateOrderCommandsForGame('g-a');
+      expect(all.map((c) => c.playerId).toSet(), {'p1', 'p2'});
+    });
   });
 
   group('SupabaseCommandRepository (fake gateway)', () {
@@ -369,6 +390,12 @@ class _FakeCommandGateway implements SupabaseCommandGateway {
     required String gameId,
     required String playerId,
   }) async =>
+      const [];
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(
+    String gameId,
+  ) async =>
       const [];
 
   @override

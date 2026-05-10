@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models/command.dart';
 import '../data/models/execution.dart';
 import '../data/models/game.dart';
 import '../data/models/game_player.dart';
@@ -57,11 +58,26 @@ class RiverpodRealtimeTarget implements GameRealtimeTarget {
   }
 
   @override
+  void applyPendingCreateOrderCommandUpsert(Command command) {
+    ref
+        .read(pendingCreateOrderCommandsProvider(gameId).notifier)
+        .mergeRealtime(command);
+  }
+
+  @override
+  void applyPendingCreateOrderCommandRemoval(String commandId) {
+    ref
+        .read(pendingCreateOrderCommandsProvider(gameId).notifier)
+        .removeByCommandId(commandId);
+  }
+
+  @override
   Future<void> refreshAll() async {
     await Future.wait([
       ref.read(currentGameProvider(gameId).notifier).refresh(),
       ref.read(ordersProvider(gameId).notifier).refresh(),
       ref.read(executionsProvider(gameId).notifier).refresh(),
+      ref.read(pendingCreateOrderCommandsProvider(gameId).notifier).refresh(),
     ]);
   }
 }

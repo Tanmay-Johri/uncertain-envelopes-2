@@ -10,7 +10,10 @@ import 'package:uncertain_envelopes_2/data/enums/game_state.dart';
 import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
 import 'package:uncertain_envelopes_2/data/enums/lobby_status.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_status.dart';
+import 'package:uncertain_envelopes_2/data/enums/command_status.dart';
+import 'package:uncertain_envelopes_2/data/enums/command_type.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_type.dart';
+import 'package:uncertain_envelopes_2/data/models/command.dart';
 import 'package:uncertain_envelopes_2/data/models/execution.dart';
 import 'package:uncertain_envelopes_2/data/models/game.dart';
 import 'package:uncertain_envelopes_2/data/models/game_player.dart';
@@ -85,6 +88,43 @@ Map<String, dynamic> _execRow({
       quantity: 1,
       executionPrice: 100,
       executedAt: DateTime.utc(2026, 1, 1, 10),
+    ).toJson();
+
+Command _createOrderCmd({
+  String id = 'cmd-1',
+  String gameId = 'g-1',
+  String playerId = 'p-1',
+  CommandStatus status = CommandStatus.pending,
+}) =>
+    Command(
+      commandId: id,
+      commandGameId: gameId,
+      commandCreatedAt: DateTime.utc(2026, 1, 1, 11),
+      playerId: playerId,
+      commandType: CommandType.createOrder,
+      payload: <String, dynamic>{
+        'type': OrderType.limitBuy.wireValue,
+        'quantity_initial': 3,
+        'price_per_stock': 10.0,
+      },
+      commandStatus: status,
+      claimToken: null,
+      claimedAt: null,
+      attemptCount: 0,
+      finishedAt: null,
+    );
+
+Map<String, dynamic> _createOrderCommandRow({
+  String id = 'cmd-1',
+  String gameId = 'g-1',
+  String playerId = 'p-1',
+  CommandStatus status = CommandStatus.pending,
+}) =>
+    _createOrderCmd(
+      id: id,
+      gameId: gameId,
+      playerId: playerId,
+      status: status,
     ).toJson();
 
 void main() {
@@ -193,6 +233,82 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(target.orderUpserts.single.orderId, 'o-1');
       expect(target.orderRemovals.single, 'o-1');
+    });
+
+    test('commands INSERT create_order -> applyPendingCreateOrderCommandUpsert',
+        () async {
+      subscriber.emit(RealtimeEvent(
+        type: RealtimeEventType.insert,
+        table: 'commands',
+        newRow: _createOrderCommandRow(id: 'cmd-x'),
+        oldRow: null,
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(target.pendingCommandUpserts.single.commandId, 'cmd-x');
+    });
+
+    test('commands UPDATE processed -> still routed as upsert (target decides)',
+        () async {
+      subscriber.emit(RealtimeEvent(
+        type: RealtimeEventType.update,
+        table: 'commands',
+        newRow: _createOrderCommandRow(
+          id: 'cmd-x',
+          status: CommandStatus.processed,
+        ),
+        oldRow: _createOrderCommandRow(id: 'cmd-x'),
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(target.pendingCommandUpserts.single.commandStatus,
+          CommandStatus.processed);
+    });
+
+    test('commands DELETE -> applyPendingCreateOrderCommandRemoval', () async {
+      subscriber.emit(RealtimeEvent(
+        type: RealtimeEventType.delete,
+        table: 'commands',
+        newRow: null,
+        oldRow: {
+          'command_id': 'cmd-z',
+          'command_game_id': 'g-1',
+        },
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(target.pendingCommandRemovals.single, 'cmd-z');
+    });
+
+    test('commands create_order for another game is ignored', () async {
+      subscriber.emit(RealtimeEvent(
+        type: RealtimeEventType.insert,
+        table: 'commands',
+        newRow: _createOrderCommandRow(id: 'cmd-a', gameId: 'g-other'),
+        oldRow: null,
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(target.pendingCommandUpserts, isEmpty);
+    });
+
+    test('commands join_game row is ignored', () async {
+      subscriber.emit(RealtimeEvent(
+        type: RealtimeEventType.insert,
+        table: 'commands',
+        newRow: Command(
+          commandId: 'cmd-j',
+          commandGameId: 'g-1',
+          commandCreatedAt: DateTime.utc(2026, 1, 1, 12),
+          playerId: 'p-1',
+          commandType: CommandType.joinGame,
+          payload: const {},
+          commandStatus: CommandStatus.pending,
+          claimToken: null,
+          claimedAt: null,
+          attemptCount: 0,
+          finishedAt: null,
+        ).toJson(),
+        oldRow: null,
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(target.pendingCommandUpserts, isEmpty);
     });
 
     test('executions non-insert events ignored (table is append-only)',
@@ -525,6 +641,8 @@ class _FakeTarget implements GameRealtimeTarget {
   final List<Order> orderUpserts = [];
   final List<String> orderRemovals = [];
   final List<Execution> executionInserts = [];
+  final List<Command> pendingCommandUpserts = [];
+  final List<String> pendingCommandRemovals = [];
   int refreshCount = 0;
 
   int get everythingSeen =>
@@ -533,7 +651,9 @@ class _FakeTarget implements GameRealtimeTarget {
       playerRemovals.length +
       orderUpserts.length +
       orderRemovals.length +
-      executionInserts.length;
+      executionInserts.length +
+      pendingCommandUpserts.length +
+      pendingCommandRemovals.length;
 
   @override
   int? get currentVersion => version;
@@ -559,6 +679,14 @@ class _FakeTarget implements GameRealtimeTarget {
   @override
   void applyExecutionInsert(Execution execution) =>
       executionInserts.add(execution);
+
+  @override
+  void applyPendingCreateOrderCommandUpsert(Command command) =>
+      pendingCommandUpserts.add(command);
+
+  @override
+  void applyPendingCreateOrderCommandRemoval(String commandId) =>
+      pendingCommandRemovals.add(commandId);
 
   @override
   Future<void> refreshAll() async {

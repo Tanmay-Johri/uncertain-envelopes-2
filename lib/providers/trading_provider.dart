@@ -100,6 +100,62 @@ class Executions extends _$Executions {
   }
 }
 
+/// Non-terminal `create_order` commands for [gameId] (all players).
+///
+/// Seeded from [CommandRepository.fetchPendingCreateOrderCommandsForGame],
+/// then updated by [GameRealtimeService] `commands` realtime events and
+/// [RiverpodRealtimeTarget.refreshAll] (B-GAP-1b).
+@riverpod
+class PendingCreateOrderCommands extends _$PendingCreateOrderCommands {
+  @override
+  Future<List<Command>> build(String gameId) {
+    final repo = ref.watch(commandRepositoryProvider);
+    return repo.fetchPendingCreateOrderCommandsForGame(gameId);
+  }
+
+  /// Applies INSERT/UPDATE payloads from Supabase Realtime (or tests).
+  void mergeRealtime(Command cmd) {
+    if (cmd.commandGameId != gameId) return;
+    if (cmd.commandType != CommandType.createOrder) return;
+    if (cmd.playerId == null) return;
+
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    if (cmd.commandStatus.isTerminal) {
+      final next =
+          current.where((c) => c.commandId != cmd.commandId).toList();
+      state = AsyncValue.data(List.unmodifiable(next));
+      return;
+    }
+
+    final replaced = <Command>[
+      for (final c in current)
+        if (c.commandId != cmd.commandId) c,
+      cmd,
+    ]..sort((a, b) => b.commandCreatedAt.compareTo(a.commandCreatedAt));
+    state = AsyncValue.data(List.unmodifiable(replaced));
+  }
+
+  void removeByCommandId(String commandId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncValue.data(
+      List.unmodifiable(
+        current.where((c) => c.commandId != commandId).toList(),
+      ),
+    );
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    final repo = ref.read(commandRepositoryProvider);
+    state = await AsyncValue.guard(
+      () => repo.fetchPendingCreateOrderCommandsForGame(gameId),
+    );
+  }
+}
+
 /// Aggregated resting-order book: bids desc by price, asks asc by price.
 ///
 /// Only orders with status [OrderStatus.orderResting] and a non-null
@@ -175,7 +231,8 @@ Order? orderFromPendingCreateCommand(Command cmd, String playerId) {
 }
 
 /// Orders belonging to [playerId] within [gameId], merged with non-terminal
-/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
+/// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder
+/// rows (B-GAP-1 / B-GAP-1b). Newest first.
 @riverpod
 Future<List<Order>> personalOrders(
   Ref ref, {
@@ -183,11 +240,15 @@ Future<List<Order>> personalOrders(
   required String playerId,
 }) async {
   final realOrders = await ref.watch(ordersProvider(gameId).future);
-  final repo = ref.watch(commandRepositoryProvider);
-  final pending = await repo.fetchPendingCreateOrderCommands(
-    gameId: gameId,
-    playerId: playerId,
-  );
+  final pendingAll =
+      ref.watch(pendingCreateOrderCommandsProvider(gameId)).valueOrNull ??
+      const <Command>[];
+  final pending = pendingAll
+      .where(
+        (c) =>
+            c.playerId == playerId && c.commandType == CommandType.createOrder,
+      )
+      .toList();
 
   final mineReal = realOrders
       .where((o) => o.createdByPlayerId == playerId)

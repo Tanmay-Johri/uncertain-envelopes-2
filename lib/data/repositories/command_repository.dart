@@ -110,6 +110,12 @@ abstract class CommandRepository {
     required String gameId,
     required String playerId,
   });
+
+  /// Non-terminal `create_order` commands for [gameId] (all players).
+  ///
+  /// Used to seed [pendingCreateOrderCommandsProvider] and the realtime merge
+  /// buffer (B-GAP-1b).
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(String gameId);
 }
 
 /// Shared implementation of every `submit*` convenience method. Subclasses

@@ -67,6 +67,19 @@ class InMemoryCommandRepository extends BaseCommandRepository {
     ];
   }
 
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(
+    String gameId,
+  ) async {
+    return [
+      for (final c in _trackedCommands)
+        if (c.commandType == CommandType.createOrder &&
+            c.commandGameId == gameId &&
+            !c.commandStatus.isTerminal)
+          c,
+    ];
+  }
+
   /// Moves a tracked `create_order` command to a new status (tests only).
   void setCreateOrderCommandStatusForTest(
     String commandId,

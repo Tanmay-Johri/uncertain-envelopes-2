@@ -18,6 +18,8 @@ abstract class SupabaseCommandGateway {
     required String gameId,
     required String playerId,
   });
+
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(String gameId);
 }
 
 class RealSupabaseCommandGateway implements SupabaseCommandGateway {
@@ -53,6 +55,26 @@ class RealSupabaseCommandGateway implements SupabaseCommandGateway {
         .select()
         .eq('command_game_id', gameId)
         .eq('player_id', playerId)
+        .eq('command_type', CommandType.createOrder.wireValue)
+        .or('command_status.eq.pending,command_status.eq.claimed,'
+            'command_status.eq.failed')
+        .order('command_created_at', ascending: false);
+
+    final list = rows as List<dynamic>;
+    return [
+      for (final raw in list)
+        Command.fromJson(Map<String, dynamic>.from(raw as Map)),
+    ];
+  }
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommandsForGame(
+    String gameId,
+  ) async {
+    final rows = await _client
+        .from('commands')
+        .select()
+        .eq('command_game_id', gameId)
         .eq('command_type', CommandType.createOrder.wireValue)
         .or('command_status.eq.pending,command_status.eq.claimed,'
             'command_status.eq.failed')

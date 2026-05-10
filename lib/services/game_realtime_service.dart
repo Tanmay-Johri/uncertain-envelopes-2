@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../data/enums/command_type.dart';
+import '../data/models/command.dart';
 import '../data/models/execution.dart';
 import '../data/models/game.dart';
 import '../data/models/game_player.dart';
@@ -21,6 +23,12 @@ abstract class GameRealtimeTarget {
   void applyOrderUpsert(Order order);
   void applyOrderRemoval(String orderId);
   void applyExecutionInsert(Execution execution);
+
+  /// INSERT/UPDATE on `commands` for `create_order` rows (B-GAP-1b).
+  void applyPendingCreateOrderCommandUpsert(Command command);
+
+  /// DELETE on `commands`, or explicit eviction by id.
+  void applyPendingCreateOrderCommandRemoval(String commandId);
 
   /// Full-snapshot refresh from Postgres. Called on a version mismatch
   /// (the PRD "repair path") and on realtime disconnect->reconnect.
@@ -151,6 +159,22 @@ class GameRealtimeService {
         final ex = Execution.fromJson(row);
         if (ex.executionsGameId != gameId) return;
         target.applyExecutionInsert(ex);
+        break;
+      case 'commands':
+        if (event.type == RealtimeEventType.delete) {
+          final cid = event.oldRow?['command_id'] as String?;
+          if (cid == null) return;
+          final gid = event.oldRow?['command_game_id'] as String?;
+          if (gid != null && gid != gameId) return;
+          target.applyPendingCreateOrderCommandRemoval(cid);
+          return;
+        }
+        final row = event.newRow;
+        if (row == null) return;
+        final cmd = Command.fromJson(row);
+        if (cmd.commandGameId != gameId) return;
+        if (cmd.commandType != CommandType.createOrder) return;
+        target.applyPendingCreateOrderCommandUpsert(cmd);
         break;
     }
   }

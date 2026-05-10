@@ -11,16 +11,17 @@ Tracked gap IDs: `B-GAP-1`, `B-GAP-2`, `B-GAP-3`.
 
 ## B-GAP-1 — `personalOrdersProvider` does not show "in queue" placeholders
 
-**Status (2026-05-09):** **Partially closed.** `CommandRepository.fetchPendingCreateOrderCommands`
-is implemented (in-memory + Supabase gateway query). `personalOrdersProvider` now merges
-non-terminal `create_order` commands as synthetic `Order` rows (`order_id` prefix `cmd:`),
-and the active-orders UI disables cancel for that prefix. **Still open:** realtime
-`commands` subscription + notifier hooks (`GameRealtimeService`) so placeholders appear
-and disappear without manual refresh; dedup when the processor links command → order if
-the server does not use the `cmd:` id pattern.
+**Status (2026-05-09):** **Mostly closed.** `pendingCreateOrderCommandsProvider(gameId)`
+loads non-terminal `create_order` rows for the whole game (`fetchPendingCreateOrderCommandsForGame`),
+merges into `personalOrdersProvider` (filtered by viewer), and is updated by Supabase Realtime
+on `commands` (`command_game_id` filter) via `GameRealtimeService` → `RiverpodRealtimeTarget`.
+`refreshAll` and `GameTradingRouteScreen` after submit refresh this notifier alongside `orders`.
+**Still open:** dedup when the processor materialises an `orders` row without a `cmd:` linkage
+to the originating command (if the backend never exposes that mapping).
 
-**Where:** `lib/providers/trading_provider.dart` — `personalOrdersProvider`
-(docstring already notes this gap).
+**Where:** `lib/providers/trading_provider.dart` — `pendingCreateOrderCommandsProvider`,
+`personalOrdersProvider`; `lib/services/game_realtime_service.dart`,
+`lib/services/supabase_realtime_subscriber.dart`, `lib/services/riverpod_realtime_target.dart`.
 
 **What the PRD wants (prd-uncertain-envelopes-2.md §3 create_order,
 §Implementation Notes 15):**
@@ -412,4 +413,16 @@ streams because those streams do not touch that file).
   `tradingViewDataProvider` consumes merged list; `ActiveOrdersWidget` hides cancel for
   `cmd:` ids. Tests: `command_repository_test`, `trading_provider_test`,
   `trading_view_data_provider_test` (shared command repo override). Verification:
+  `flutter analyze` (0 issues), `flutter test` (all passed).
+
+- **2026-05-09 — B-GAP-1b (commands realtime + pending notifier):** Added
+  `CommandRepository.fetchPendingCreateOrderCommandsForGame` / gateway query (game-wide
+  pending `create_order`). `@riverpod class PendingCreateOrderCommands` in
+  `trading_provider.dart` (`mergeRealtime`, `removeByCommandId`, `refresh`); `personalOrdersProvider`
+  reads merged pending from that notifier. `SupabaseRealtimeSubscriber` subscribes to `commands`
+  filtered by `command_game_id`. `GameRealtimeTarget` gains `applyPendingCreateOrderCommandUpsert` /
+  `Removal`; `GameRealtimeService` routes `commands` INSERT/UPDATE/DELETE. `RiverpodRealtimeTarget.refreshAll`
+  refreshes pending; `gameRealtimeSessionProvider` watches pending when `useRealBackend` so the buffer
+  loads under the game shell. `GameTradingRouteScreen` refreshes pending after `submitCreateOrder`.
+  Tests: `command_repository_test`, `trading_provider_test`, `game_realtime_service_test`. Verification:
   `flutter analyze` (0 issues), `flutter test` (all passed).
