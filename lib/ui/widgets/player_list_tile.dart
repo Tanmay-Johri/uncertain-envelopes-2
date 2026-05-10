@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import 'status_badge.dart';
 
 /// One participant row in the game lobby (avatar, name, admin crown, chip).
 ///
@@ -110,25 +111,7 @@ class PlayerListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAB308),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: const Color(0xFFCA8A04)),
-                ),
-                child: Text(
-                  'JOINED',
-                  style: AppTypography.microLabel.copyWith(
-                    fontSize: 10,
-                    letterSpacing: 0.8,
-                    color: AppColors.background,
-                  ),
-                ),
-              ),
+              const StatusBadge(status: GameStatusBadge.joined),
             ],
           ),
         ),

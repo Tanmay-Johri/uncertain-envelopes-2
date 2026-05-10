@@ -7,7 +7,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/view_data/home_view_data_provider.dart';
-import '../../../providers/view_data/lobby_view_data_provider.dart';
+import '../../../providers/view_data/lobby_view_data_provider.dart'
+    show LobbyViewDataException, lobbyViewDataProvider;
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_lobby_screen.dart';
@@ -18,6 +19,12 @@ class GameLobbyRouteScreen extends ConsumerWidget {
   const GameLobbyRouteScreen({super.key, required this.gameId});
 
   final String gameId;
+
+  /// Friendly copy for lobby load failures (kicked, missing game, etc.).
+  static String _lobbyLoadErrorMessage(Object error) {
+    if (error is LobbyViewDataException) return error.message;
+    return "Can't find game";
+  }
 
   Future<void> _runCommand(
     BuildContext context,
@@ -59,7 +66,7 @@ class GameLobbyRouteScreen extends ConsumerWidget {
           ),
         ),
         body: FetchedErrorPanel(
-          message: '$e',
+          message: _lobbyLoadErrorMessage(e),
           onRetry: () => ref.invalidate(lobbyViewDataProvider(gameId)),
         ),
       ),
