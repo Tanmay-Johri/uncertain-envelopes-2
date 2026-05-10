@@ -158,12 +158,18 @@ class RealSupabaseAuthGateway implements SupabaseAuthGateway {
 
   @override
   Future<String?> lookupEmailByUsername(String username) async {
-    final row = await _client
-        .from('players')
-        .select('email')
-        .eq('username', username)
-        .maybeSingle();
-    return row?['email'] as String?;
+    final normalized = username.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    try {
+      final res = await _client.rpc<dynamic>(
+        'lookup_player_email_by_username',
+        params: {'p_username': normalized},
+      );
+      if (res == null) return null;
+      return res as String;
+    } on sb.PostgrestException {
+      return null;
+    }
   }
 
   @override

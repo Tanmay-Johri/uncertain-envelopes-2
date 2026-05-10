@@ -23,11 +23,6 @@ class AuthRouteScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AsyncValue<Player?>>(authControllerProvider, (prev, next) {
       if (!next.hasError) return;
-      if (prev != null &&
-          prev.hasError &&
-          prev.error.toString() == next.error.toString()) {
-        return;
-      }
       final err = next.error;
       final text = err is AuthException ? err.message : '$err';
       final messenger = ScaffoldMessenger.maybeOf(context);
