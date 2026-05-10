@@ -94,4 +94,11 @@ class AuthController extends _$AuthController {
       return null;
     });
   }
+
+  /// Call after [PlayerRepository.updateUsername] succeeds for the signed-in
+  /// user so in-memory auth cache matches Postgres.
+  Future<void> adoptUpdatedProfile(Player player) async {
+    await ref.read(authRepositoryProvider).adoptUpdatedProfile(player);
+    state = AsyncValue.data(player);
+  }
 }

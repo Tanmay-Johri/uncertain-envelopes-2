@@ -110,6 +110,13 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     return '';
   }
 
+  String _gameIdForGameTitle(String title) {
+    for (final e in _source) {
+      if (e.gameTitle == title) return e.gameId;
+    }
+    return 'g-cross';
+  }
+
   Future<void> _openNewOrder() async {
     final games = _distinctSortedGameTitles;
     if (games.isEmpty) return;
@@ -124,6 +131,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     setState(() {
       _source = [
         PendingOrderListItem(
+          gameId: _gameIdForGameTitle(created.gameTitle),
           gameTitle: created.gameTitle,
           gameDescription: _descriptionForGameTitle(created.gameTitle),
           order: created.order.copyWith(id: id),

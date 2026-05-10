@@ -33,6 +33,7 @@ void main() {
   }
 
   PendingOrderListItem restingSell() => PendingOrderListItem(
+        gameId: 'g-crypto',
         gameTitle: 'Crypto Sim',
         gameDescription:
             'Beginner simulation. Market volatility is currently high.',
@@ -81,6 +82,7 @@ void main() {
       expect(priceSell.style?.color, AppColors.secondary);
 
       final buy = PendingOrderListItem(
+        gameId: 'g-fx',
         gameTitle: 'Fx',
         gameDescription: 'd',
         order: PersonalOrder(
@@ -102,6 +104,7 @@ void main() {
 
   testWidgets('market order shows em dash headline price', (tester) async {
     final m = PendingOrderListItem(
+      gameId: 'g-mkt',
       gameTitle: 'MKT',
       gameDescription: '',
       order: PersonalOrder(
@@ -123,6 +126,7 @@ void main() {
       'expanded market order shows dash limit row and buy market type',
       (tester) async {
     final m = PendingOrderListItem(
+      gameId: 'g-mkt',
       gameTitle: 'MKT',
       gameDescription: 'Desc',
       order: PersonalOrder(
@@ -167,6 +171,7 @@ void main() {
 
   testWidgets('filled order shows disabled cancel button', (tester) async {
     final filled = PendingOrderListItem(
+      gameId: 'g-done',
       gameTitle: 'Done',
       gameDescription: 'x',
       order: PersonalOrder(

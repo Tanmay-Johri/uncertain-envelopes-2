@@ -3,14 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/screens/_placeholder_screen.dart';
 import '../../ui/screens/auth/auth_route_screen.dart';
-import '../../ui/screens/history/game_history_mock_data.dart';
-import '../../ui/screens/history/game_history_screen.dart';
-import '../../ui/screens/profile/profile_mock_data.dart';
-import '../../ui/screens/profile/profile_screen.dart';
-import '../../ui/screens/profile/profile_view_data.dart';
+import '../../ui/screens/history/game_history_route_screen.dart';
+import '../../ui/screens/profile/profile_route_screen.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
-import '../../ui/screens/orders/pending_orders_screen.dart';
+import '../../ui/screens/orders/pending_orders_route_screen.dart';
 import '../../ui/screens/lobby/game_lobby_route_screen.dart';
 import '../../ui/screens/results/game_results_route_screen.dart';
 import '../../ui/screens/trading/game_trading_route_screen.dart';
@@ -77,23 +74,11 @@ GoRouter buildAppRouter({
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, _) => ProfileScreen(
-          data: mockProfileViewDataDefault(),
-          onGameHistoryTap: () => context.go(AppRoutes.history),
-          onSignOut: () {},
-          onDeleteAccount: () {},
-          onUsernameCommit: (lowercaseUsername) async {
-            if (lowercaseUsername == 'taken') {
-              return ProfileUsernameSubmitResult.taken;
-            }
-            return ProfileUsernameSubmitResult.success;
-          },
-        ),
+        builder: (context, _) => const ProfileRouteScreen(),
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (context, _) =>
-            GameHistoryScreen(entries: kMockGameHistory()),
+        builder: (context, _) => const GameHistoryRouteScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -159,7 +144,7 @@ GoRouter buildAppRouter({
             routes: [
               GoRoute(
                 path: AppRoutes.orders,
-                builder: (context, _) => const PendingOrdersScreen(),
+                builder: (context, _) => const PendingOrdersRouteScreen(),
               ),
             ],
           ),

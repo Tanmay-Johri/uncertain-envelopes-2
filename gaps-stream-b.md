@@ -426,3 +426,15 @@ streams because those streams do not touch that file).
   loads under the game shell. `GameTradingRouteScreen` refreshes pending after `submitCreateOrder`.
   Tests: `command_repository_test`, `trading_provider_test`, `game_realtime_service_test`. Verification:
   `flutter analyze` (0 issues), `flutter test` (all passed).
+
+- **2026-05-09 — Plan 2B.7–2B.9 (profile, pending orders, game history):** Added
+  `profileViewDataProvider` + `ProfileRouteScreen` (username → `PlayerRepository.updateUsername` +
+  `AuthRepository.adoptUpdatedProfile` / `AuthController.adoptUpdatedProfile`, sign-out/delete → auth
+  + `go` `/auth`). `pendingOrdersViewDataProvider` + `PendingOrdersRouteScreen` (cross-game pending
+  orders + cancel via `submitCancelOrder` + invalidate). `gameHistoryViewDataProvider` +
+  `GameHistoryRouteScreen` (terminal joined games → `GameHistoryEntry`). `PendingOrderListItem` gains
+  `gameId`. Extracted `personalOrderFromOrder` to `lib/core/trading/personal_order_from_order.dart`.
+  Router tests override the three new providers with existing mocks. Tests:
+  `profile_view_data_provider_test`, `pending_orders_view_data_provider_test`,
+  `game_history_view_data_provider_test`, `in_memory_auth_repository_test` (adopt), router + widget
+  updates. Verification: `flutter analyze` (0 issues), `flutter test` (all passed).

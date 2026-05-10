@@ -191,5 +191,20 @@ void main() {
       expect(p.username, 'user3');
       expect(await repo.getCurrentPlayer(), p);
     });
+
+    test('adoptUpdatedProfile syncs session + email index for username edits',
+        () async {
+      final p = await repo.signUp(
+        email: 'a@x.com',
+        password: 'pw',
+        username: 'alice',
+      );
+      final updated = p.copyWith(username: 'alicia');
+      await repo.adoptUpdatedProfile(updated);
+      expect((await repo.getCurrentPlayer())!.username, 'alicia');
+      final p2 =
+          await repo.logIn(emailOrUsername: 'a@x.com', password: 'pw');
+      expect(p2.username, 'alicia');
+    });
   });
 }

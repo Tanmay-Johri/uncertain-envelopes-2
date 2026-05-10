@@ -40,21 +40,25 @@ class PendingOrdersFilterState {
 @immutable
 class PendingOrderListItem {
   const PendingOrderListItem({
+    required this.gameId,
     required this.gameTitle,
     required this.gameDescription,
     required this.order,
   });
 
+  final String gameId;
   final String gameTitle;
   final String gameDescription;
   final PersonalOrder order;
 
   PendingOrderListItem copyWith({
+    String? gameId,
     String? gameTitle,
     String? gameDescription,
     PersonalOrder? order,
   }) {
     return PendingOrderListItem(
+      gameId: gameId ?? this.gameId,
       gameTitle: gameTitle ?? this.gameTitle,
       gameDescription: gameDescription ?? this.gameDescription,
       order: order ?? this.order,

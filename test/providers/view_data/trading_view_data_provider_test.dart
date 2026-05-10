@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
+import 'package:uncertain_envelopes_2/core/trading/personal_order_from_order.dart';
 import 'package:uncertain_envelopes_2/data/enums/end_condition.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_state.dart';

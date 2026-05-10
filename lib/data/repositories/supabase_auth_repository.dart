@@ -134,4 +134,10 @@ class SupabaseAuthRepository implements AuthRepository {
     );
     return controller.stream;
   }
+
+  @override
+  Future<void> adoptUpdatedProfile(Player player) async {
+    // Session row is read from Postgres on each [getCurrentPlayer]; auth
+    // user id stream does not fire on username-only writes.
+  }
 }

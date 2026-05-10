@@ -10,6 +10,7 @@ final _sampleRowsBaseUtc = DateTime.utc(2018, 6, 1, 14, 0);
 /// `design-uncertain-envelopes-2/admin_game_trading_dashboard_4/code.html`.
 List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNewestFirst([
       PendingOrderListItem(
+        gameId: 'g-forex',
         gameTitle: 'Forex Masters',
         gameDescription:
             'High-liquidity currency pairs. Spreads are tight during London open.',
@@ -25,6 +26,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
         ),
       ),
       PendingOrderListItem(
+        gameId: 'g-crypto',
         gameTitle: 'Crypto Sim 2024',
         gameDescription:
             'Beginner level currency trading simulation. Market volatility is currently high.',
@@ -40,6 +42,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
         ),
       ),
       PendingOrderListItem(
+        gameId: 'g-commodity',
         gameTitle: 'Commodity Tycoon',
         gameDescription:
             'Futures-style envelope contracts on imaginary commodities.',
@@ -55,6 +58,7 @@ List<PendingOrderListItem> kMockPendingOrders() => pendingOrderListItemsSortedNe
         ),
       ),
       PendingOrderListItem(
+        gameId: 'g-startup',
         gameTitle: 'Start-up Equity',
         gameDescription: 'Angel rounds and dilution as a trading metaphor.',
         order: PersonalOrder(

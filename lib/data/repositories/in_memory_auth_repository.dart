@@ -84,6 +84,17 @@ class InMemoryAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> adoptUpdatedProfile(Player player) async {
+    if (_current?.playerId != player.playerId) return;
+    _setCurrent(player);
+    final email = player.email;
+    final rec = _byEmail[email];
+    if (rec != null) {
+      _byEmail[email] = _PlayerRecord(player: player, password: rec.password);
+    }
+  }
+
+  @override
   Stream<Player?> watchCurrentPlayer() {
     // Build a per-subscription stream that replays the current value on
     // subscribe and then forwards every state change. An `async*` body

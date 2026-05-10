@@ -24,7 +24,13 @@ import 'package:uncertain_envelopes_2/ui/screens/results/results_mock_data.dart'
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/game_history_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/pending_orders_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/profile_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/ui/screens/history/game_history_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_mock_data.dart';
+import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
 List<Override> _lobbyMockOverridesForRouterTests() {
@@ -97,6 +103,15 @@ Future<GoRouter> _pumpAppWith(
     ProviderScope(
       overrides: [
         homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+        profileViewDataProvider.overrideWith(
+          (ref) async => mockProfileViewDataDefault(),
+        ),
+        pendingOrdersViewDataProvider.overrideWith(
+          (ref) async => kMockPendingOrders(),
+        ),
+        gameHistoryViewDataProvider.overrideWith(
+          (ref) async => kMockGameHistory(),
+        ),
         ..._lobbyMockOverridesForRouterTests(),
         ..._tradingMockOverridesForRouterTests(),
         ..._resultsMockOverridesForRouterTests(),

@@ -10,6 +10,7 @@ PendingOrderListItem _row(
   DateTime? createdAt,
 }) {
   return PendingOrderListItem(
+    gameId: 'g-$gameTitle',
     gameTitle: gameTitle,
     gameDescription: 'd',
     order: PersonalOrder(

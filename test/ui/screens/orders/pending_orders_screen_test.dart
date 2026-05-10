@@ -12,6 +12,7 @@ void main() {
 
   List<PendingOrderListItem> twoGamesTwoSides() => [
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game A',
           gameDescription: '',
           order: PersonalOrder(
@@ -26,6 +27,7 @@ void main() {
           ),
         ),
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game B',
           gameDescription: '',
           order: PersonalOrder(
@@ -43,6 +45,7 @@ void main() {
 
   List<PendingOrderListItem> multiRowSameGame() => [
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game A',
           gameDescription: '',
           order: PersonalOrder(
@@ -57,6 +60,7 @@ void main() {
           ),
         ),
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game A',
           gameDescription: '',
           order: PersonalOrder(
@@ -71,6 +75,7 @@ void main() {
           ),
         ),
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game B',
           gameDescription: '',
           order: PersonalOrder(
@@ -90,6 +95,7 @@ void main() {
   /// the newer `createdAt` so the screen should show it **above** `older`.
   List<PendingOrderListItem> twoCreatedAtOlderFirst(DateTime earlier) => [
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game Older',
           gameDescription: '',
           order: PersonalOrder(
@@ -104,6 +110,7 @@ void main() {
           ),
         ),
         PendingOrderListItem(
+          gameId: 'g-test',
           gameTitle: 'Game Later',
           gameDescription: '',
           order: PersonalOrder(
@@ -377,6 +384,7 @@ void main() {
         home: PendingOrdersScreen(
           items: [
             PendingOrderListItem(
+              gameId: 'g-test',
               gameTitle: 'G',
               gameDescription: '',
               order: PersonalOrder(
@@ -525,6 +533,7 @@ void main() {
         home: PendingOrdersScreen(
           items: [
             PendingOrderListItem(
+              gameId: 'g-forex',
               gameTitle: 'Forex Masters',
               gameDescription: '',
               order: PersonalOrder(

@@ -1,0 +1,86 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:uncertain_envelopes_2/data/enums/end_condition.dart';
+import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
+import 'package:uncertain_envelopes_2/data/enums/game_state.dart';
+import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
+import 'package:uncertain_envelopes_2/data/enums/order_status.dart';
+import 'package:uncertain_envelopes_2/data/enums/order_type.dart';
+import 'package:uncertain_envelopes_2/data/models/game.dart';
+import 'package:uncertain_envelopes_2/data/models/order.dart';
+import 'package:uncertain_envelopes_2/data/models/player.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_order_repository.dart';
+import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
+import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
+import 'package:uncertain_envelopes_2/providers/trading_repository_providers.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/pending_orders_view_data_provider.dart';
+
+void main() {
+  test('pendingOrdersViewData joins game metadata to orders', () async {
+    final auth = InMemoryAuthRepository();
+    final commands = InMemoryCommandRepository();
+    final games = InMemoryGameRepository(commandRepository: commands);
+    final orders = InMemoryOrderRepository();
+    final t = DateTime.utc(2026, 2, 1, 12);
+    auth.setSessionPlayerForTest(
+      Player(
+        playerId: 'p1',
+        username: 'u1',
+        createdAt: t,
+        email: 'e@test.com',
+      ),
+    );
+    games.seedGame(
+      Game(
+        gameId: 'g-x',
+        gameName: 'My Game',
+        gameDescription: 'Desc',
+        gameCreatedAt: t,
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.casual,
+        gameMaxPlayers: 4,
+        joiningCode: 'ABCDE',
+        endCondition: EndCondition.endless,
+        gameState: GameState.tradingStarted,
+        adminPlayerId: 'p1',
+        stateVersion: 1,
+        updatedAt: t,
+        startTime: t,
+      ),
+    );
+    orders.seedOrders([
+      Order(
+        orderId: 'o1',
+        createdByPlayerId: 'p1',
+        gameId: 'g-x',
+        type: OrderType.limitBuy,
+        quantityInitial: 2,
+        quantityCurrent: 2,
+        pricePerStock: 50,
+        status: OrderStatus.orderResting,
+        orderCreatedAt: t,
+        orderUpdatedAt: t,
+      ),
+    ]);
+
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        gameRepositoryProvider.overrideWithValue(games),
+        orderRepositoryProvider.overrideWithValue(orders),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(authControllerProvider.future);
+    final list = await container.read(pendingOrdersViewDataProvider.future);
+
+    expect(list.single.gameId, 'g-x');
+    expect(list.single.gameTitle, 'My Game');
+    expect(list.single.gameDescription, 'Desc');
+    expect(list.single.order.id, 'o1');
+  });
+}

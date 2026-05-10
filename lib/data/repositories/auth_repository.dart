@@ -81,4 +81,10 @@ abstract class AuthRepository {
   /// Emits the current player (or null) whenever the auth state changes.
   /// Must emit the current value synchronously on subscription.
   Stream<Player?> watchCurrentPlayer();
+
+  /// After a successful `players`-row mutation (e.g. username), adopt the
+  /// updated profile into the session snapshot so [getCurrentPlayer] and
+  /// streams stay coherent. In-memory: replaces cached [Player] when ids
+  /// match. Supabase: no-op (next [getCurrentPlayer] reads Postgres).
+  Future<void> adoptUpdatedProfile(Player player);
 }
