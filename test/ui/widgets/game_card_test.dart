@@ -15,7 +15,7 @@ void main() {
             body: GameCard(
               title: 'Forex Masters',
               description: 'A long description that should ellipsize in one line',
-              status: GameStatusBadge.active,
+              status: GameStatusBadge.playing,
               playerCount: 2,
               maxPlayers: 12,
             ),
@@ -24,7 +24,7 @@ void main() {
       );
       expect(find.text('Forex Masters'), findsOneWidget);
       expect(find.textContaining('A long description'), findsOneWidget);
-      expect(find.text('ACTIVE'), findsOneWidget);
+      expect(find.text('PLAYING'), findsOneWidget);
       expect(find.text('2/12 players'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
     });
@@ -38,7 +38,7 @@ void main() {
             body: GameCard(
               title: 'T',
               description: 'D',
-              status: GameStatusBadge.ready,
+              status: GameStatusBadge.joined,
               playerCount: 1,
               maxPlayers: 8,
               onOpen: () => taps++,
@@ -59,7 +59,7 @@ void main() {
             body: GameCard(
               title: 'Big',
               description: 'Many players',
-              status: GameStatusBadge.active,
+              status: GameStatusBadge.playing,
               playerCount: 7,
               maxPlayers: 12,
             ),
@@ -96,7 +96,7 @@ void main() {
             body: GameCard(
               title: 'T',
               description: 'D',
-              status: GameStatusBadge.active,
+              status: GameStatusBadge.playing,
               playerCount: 1,
               maxPlayers: 4,
               onOpen: () => taps++,

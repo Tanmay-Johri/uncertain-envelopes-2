@@ -10,7 +10,6 @@ import '../../data/models/order.dart';
 import '../../data/models/order_book.dart' as book_model;
 import '../../ui/screens/trading/trading_view_data.dart';
 import '../auth_provider.dart';
-import '../clock_provider.dart';
 import '../game_provider.dart';
 import '../trading_provider.dart';
 import 'lobby_view_data_provider.dart';
@@ -73,9 +72,15 @@ double _resolveMarketPrice({
 }
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
+///
+/// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+/// executions, or auth change. The countdown ticks locally inside
+/// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+/// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+/// trading screen from flickering once per second while still updating
+/// instantly whenever real backend data changes.
 @riverpod
 Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
-  ref.watch(timerTickStreamProvider);
   final viewer = await ref.watch(authControllerProvider.future);
   if (viewer == null) {
     throw const TradingViewDataException(
@@ -104,8 +109,11 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
       personalOrdersSortedNewestFirst(mineOrders.map(personalOrderFromOrder).toList());
 
   final priceHistory = ref.watch(executionHistoryProvider(gameId));
-  final chartElapsed = ref.watch(chartSessionElapsedProvider(gameId));
-  final secondsRemaining = ref.watch(gameSecondsRemainingProvider(gameId));
+  // ref.read so timer ticks do not re-run this future (fixes trading flicker).
+  // chartSessionElapsed and secondsRemaining both depend on timerTickStream;
+  // we snapshot them at build time and let the UI tick locally.
+  final chartElapsed = ref.read(chartSessionElapsedProvider(gameId));
+  final secondsRemaining = ref.read(gameSecondsRemainingProvider(gameId));
 
   GamePlayer? me;
   for (final p in session.players) {

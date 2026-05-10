@@ -16,46 +16,46 @@ Color _textColor(WidgetTester tester, String label) {
 
 void main() {
   group('StatusBadge labels', () {
-    testWidgets('renders ACTIVE for active', (tester) async {
+    testWidgets('renders PLAYING for playing', (tester) async {
       await _pump(
         tester,
-        const StatusBadge(status: GameStatusBadge.active),
+        const StatusBadge(status: GameStatusBadge.playing),
       );
-      expect(find.text('ACTIVE'), findsOneWidget);
+      expect(find.text('PLAYING'), findsOneWidget);
     });
 
-    testWidgets('renders JOINED, READY, NOT JOINED', (tester) async {
+    testWidgets('renders JOINED, ENDED, NOT JOINED', (tester) async {
       await _pump(
         tester,
         const Column(
           children: [
             StatusBadge(status: GameStatusBadge.joined),
-            StatusBadge(status: GameStatusBadge.ready),
+            StatusBadge(status: GameStatusBadge.ended),
             StatusBadge(status: GameStatusBadge.notJoined),
           ],
         ),
       );
       expect(find.text('JOINED'), findsOneWidget);
-      expect(find.text('READY'), findsOneWidget);
+      expect(find.text('ENDED'), findsOneWidget);
       expect(find.text('NOT JOINED'), findsOneWidget);
     });
   });
 
   group('StatusBadge colors', () {
-    testWidgets('ACTIVE uses green foreground', (tester) async {
+    testWidgets('PLAYING uses green foreground', (tester) async {
       await _pump(
         tester,
-        const StatusBadge(status: GameStatusBadge.active),
+        const StatusBadge(status: GameStatusBadge.playing),
       );
-      expect(_textColor(tester, 'ACTIVE'), const Color(0xFF4ADE80));
+      expect(_textColor(tester, 'PLAYING'), const Color(0xFF4ADE80));
     });
 
-    testWidgets('READY uses blue foreground', (tester) async {
+    testWidgets('ENDED uses light slate foreground', (tester) async {
       await _pump(
         tester,
-        const StatusBadge(status: GameStatusBadge.ready),
+        const StatusBadge(status: GameStatusBadge.ended),
       );
-      expect(_textColor(tester, 'READY'), const Color(0xFF60A5FA));
+      expect(_textColor(tester, 'ENDED'), const Color(0xFFE2E8F0));
     });
 
     testWidgets('JOINED uses yellow foreground on tinted chip', (tester) async {

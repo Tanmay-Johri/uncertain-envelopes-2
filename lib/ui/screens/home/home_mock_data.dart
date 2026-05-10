@@ -12,6 +12,7 @@ class MockHomeGame {
     required this.isAdmin,
     required this.playerInitials,
     required this.maxPlayers,
+    this.openEnvelopeResults = false,
   });
 
   final String id;
@@ -21,6 +22,9 @@ class MockHomeGame {
   final bool isPublic;
   final bool isJoined;
   final bool isAdmin;
+
+  /// When true, home opens results/envelope route instead of lobby.
+  final bool openEnvelopeResults;
 
   /// Single-letter initials (used by lobby mock fallbacks; length may exceed
   /// displayed avatars when wiring real data).
@@ -37,7 +41,7 @@ const List<MockHomeGame> kMockHomeGames = [
     title: 'Forex Masters',
     description:
         'High stakes currency trading simulation for advanced players. Real-time market volatility enabled.',
-    status: GameStatusBadge.active,
+    status: GameStatusBadge.playing,
     isPublic: true,
     isJoined: true,
     isAdmin: false,
@@ -49,7 +53,7 @@ const List<MockHomeGame> kMockHomeGames = [
     title: 'Crypto Basics 101',
     description:
         'Beginner level cryptocurrency trading simulation. Learn the ropes without the risk.',
-    status: GameStatusBadge.ready,
+    status: GameStatusBadge.joined,
     isPublic: true,
     isJoined: true,
     isAdmin: true,
@@ -82,7 +86,7 @@ const List<MockHomeGame> kMockHomeGames = [
     id: 'g5',
     title: 'Private League Alpha',
     description: 'Invite-only ranked session.',
-    status: GameStatusBadge.active,
+    status: GameStatusBadge.playing,
     isPublic: false,
     isJoined: true,
     isAdmin: true,

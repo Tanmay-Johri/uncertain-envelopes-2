@@ -16,7 +16,7 @@
 
 **Global gaps vs plan “iron rules”**
 
-- **Golden / pixel contract:** Trading goldens landed (`game_trading_screen_golden_test.dart` + `test/ui/screens/trading/goldens/`). Plan §2B **per-screen** pre-slice goldens for every INT1 screen remain **Todo**.
+- **Golden / pixel contract:** Trading goldens + **INT1 mock goldens** (`int1_mock_screen_goldens_test.dart` + `test/ui/screens/goldens/{auth,home,create,lobby,results,profile,pending_orders,game_history}_*.png`). Plan §2B **mock-vs-adapter** parity per screen (beyond trading minimal harness) is still only fully exercised for **trading** + these **mock** baselines.
 - **Browser MCP per slice:** Process requirement; not tracked in this file.
 - **STOP before commit:** Process; actual git history may batch slices.
 
@@ -38,7 +38,7 @@
 
 | ID | Status | Evidence / notes |
 |----|--------|-------------------|
-| **2B recipe** Pre-slice goldens per screen | **Partial** | Trading goldens only — see **2B.5**; other screens still **Todo**. |
+| **2B recipe** Pre-slice goldens per screen | **Partial** | Mock baselines: `int1_mock_screen_goldens_test.dart` (8 screens) + trading files. **Mock vs adapter** field parity tests exist per screen where the plan required them (see `test/providers/view_data/`); trading uses `GoldenTradingMinimalHarness` for PNG parity. |
 | **2B.1** Auth + redirects | **Done** (shape differs) | `AuthRouteScreen` + `authControllerProvider`; `lib/core/router/app_router_provider.dart` redirect; tests in `test/core/router/app_router_test.dart`, `test/ui/screens/auth/`. Plan’s optional `authViewDataProvider` file **not** present — functionality via controller + SnackBar errors. |
 | **2B.2** Home + join by code | **Done** | `lib/providers/view_data/home_view_data_provider.dart`; `test/providers/view_data/home_view_data_provider_test.dart`; `home_screen_test.dart`. |
 | **2B.3** Create game submit | **Done** | `CreateGameScreen` with `onSubmit == null` uses `ref.read(gameRepositoryProvider).createGameAndReturnGameId(...)` then `context.go(AppRoutes.gameLobby(...))` — see `lib/ui/screens/create_game/create_game_screen.dart`; router uses `const CreateGameScreen()`. |
@@ -79,7 +79,7 @@
 
 | ID | Status | Evidence / notes |
 |----|--------|-------------------|
-| **2E** Scenarios + doc | **Partial** | `INT3_RESULTS.md` exists but **preconditions and scenario tables are empty** → **Manual** execution + fill rows + sign-off still **Todo**. |
+| **2E** Scenarios + doc | **Partial** | `INT3_RESULTS.md` has **how-to run**, preconditions checkboxes, and per-scenario **Expected** columns — table cells still **empty** until a human runs INT3. |
 
 ---
 
@@ -87,15 +87,15 @@
 
 | ID | Status | Evidence / notes |
 |----|--------|-------------------|
-| **POL1** Web responsive + breakpoint goldens | **Partial** | `MaxWidthCenteredLayout` + `AppLayout.maxContentWidth` in `MaterialApp.router` builder (`lib/app.dart`); tests `max_width_centered_layout_test.dart`. Breakpoint **goldens** deferred (per team). |
-| **POL2** iOS + Android pass | **Manual** | Safe area / keyboard — not proven from Dart-only artifacts. |
-| **POL3** Error / loading / empty + retry on fetched screens | **Partial** | `FetchedErrorPanel` + invalidate retry: `game_lobby_route_screen.dart`, `game_trading_route_screen.dart`, `game_results_route_screen.dart`, `profile_route_screen.dart`, `pending_orders_route_screen.dart`, `game_history_route_screen.dart`; home list error uses `ValueKey('home-game-list-retry')`. **Not** using `FetchedErrorPanel` on auth (errors → **SnackBar**; user retries by resubmitting). **Create game:** local form — **N/A** for “fetch error” in plan sense. **Bootstrap failure:** `SupabaseBootstrapGate` has its own retry UI. **Sweep:** confirm any remaining `AsyncValue.error` branches on shell-only or rare routes. |
+| **POL1** Web responsive + breakpoint goldens | **Partial** | `MaxWidthCenteredLayout` in app builder; **layout goldens** at 375 / 768 / 1280: `test/ui/widgets/max_width_centered_layout_golden_test.dart` + `test/ui/widgets/goldens/max_width_layout_*.png`. Full-screen breakpoint goldens per top-level route still optional. |
+| **POL2** iOS + Android pass | **Partial** | Code: `SafeArea` + scroll `keyboardDismissBehavior` + `MediaQuery.viewInsetsOf(context).bottom` padding on auth (`auth_route_screen`), home join strip (`home_screen`), create game (`create_game_screen`), new-order modal (`new_order_modal`). **Manual:** notch/home-indicator + keyboard on real devices/simulators still required for full sign-off. |
+| **POL3** Error / loading / empty + retry on fetched screens | **Partial** | `FetchedErrorPanel` + invalidate on route shells (lobby, trading, results, profile, pending orders, history). `AsyncRouteLoadingBody` for loading branches. **404:** `RouteNotFoundScreen` + `Go home` (`app_router.dart`); router test taps home → `AppShell` + `HomeScreen`. **Auth:** `recoverFromSubmitError` + tests. **Home join:** inline error + `home-join-retry`. **Create game:** repository error + `create-game-submit-retry`; widget test `create_game_screen_test.dart` (POL3 group). **Shared:** `async_route_loading_body_test.dart`. Remaining sweeps: any orphan `AsyncValue.error` branches; optional widget tests for modal/home retry. |
 
 ---
 
 ## Product decisions (plan table — verify / record)
 
-These must be **explicitly decided** and traced in `gaps-stream-*.md` or PRD — do **not** infer from code alone:
+These must be **explicitly decided** and traced in `gaps-stream-*.md`, **`PRODUCT_DECISIONS.md`**, or PRD — do **not** infer from code alone:
 
 | Topic | Plan ref |
 |-------|----------|
@@ -131,3 +131,4 @@ dart run build_runner build --delete-conflicting-outputs
 |------|--------|
 | 2026-05-09 | Initial checklist generated from plan + repo scan. |
 | 2026-05-09 | POL1: `MaxWidthCenteredLayout` + `AppLayout.maxContentWidth` (no breakpoint goldens yet). |
+| 2026-05-10 | INT1 mock goldens (8 screens); POL1 max-width goldens (3 breakpoints); `INT3_RESULTS.md` expanded; `PRODUCT_DECISIONS.md` added. |

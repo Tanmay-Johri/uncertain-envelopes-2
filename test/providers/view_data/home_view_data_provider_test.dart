@@ -21,6 +21,8 @@ Game _game({
   GameSecurity security = GameSecurity.public,
   GameState state = GameState.created,
   String admin = 'p-admin',
+  DateTime? endTimeActual,
+  DateTime? updatedAt,
 }) {
   return Game(
     gameId: id,
@@ -34,13 +36,14 @@ Game _game({
     gameState: state,
     adminPlayerId: admin,
     stateVersion: 1,
-    updatedAt: DateTime.utc(2026, 1, 1, 10),
+    endTimeActual: endTimeActual,
+    updatedAt: updatedAt ?? DateTime.utc(2026, 1, 1, 10),
   );
 }
 
 void main() {
   group('mockHomeGamesFromRepositorySnapshot', () {
-    test('trading_started + joined maps to active', () {
+    test('trading_started + joined maps to playing', () {
       final g = _game(id: 'g1', state: GameState.tradingStarted);
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
@@ -48,12 +51,12 @@ void main() {
         playerInitialsByGameId: {'g1': ['A', 'B']},
         viewerPlayerId: 'p-view',
       );
-      expect(tiles.single.status, GameStatusBadge.active);
+      expect(tiles.single.status, GameStatusBadge.playing);
       expect(tiles.single.isJoined, isTrue);
       expect(tiles.single.playerInitials.length, 2);
     });
 
-    test('created + joined + viewer is admin maps to ready', () {
+    test('created + joined + viewer is admin maps to joined', () {
       final g = _game(id: 'g1', state: GameState.created, admin: 'p-me');
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
@@ -61,7 +64,7 @@ void main() {
         playerInitialsByGameId: const {},
         viewerPlayerId: 'p-me',
       );
-      expect(tiles.single.status, GameStatusBadge.ready);
+      expect(tiles.single.status, GameStatusBadge.joined);
     });
 
     test('created + joined + viewer not admin maps to joined', () {
@@ -86,6 +89,63 @@ void main() {
       expect(tiles.single.status, GameStatusBadge.notJoined);
       expect(tiles.single.isJoined, isFalse);
       expect(tiles.single.isPublic, isTrue);
+    });
+
+    test('joined trading_ended within 10m maps to ended + envelope navigation', () {
+      final now = DateTime.utc(2026, 6, 1, 12);
+      final end = now.subtract(const Duration(minutes: 3));
+      final g = _game(
+        id: 'g1',
+        state: GameState.tradingEnded,
+        endTimeActual: end,
+        updatedAt: end,
+      );
+      final tiles = mockHomeGamesFromRepositorySnapshot(
+        joinedGames: [g],
+        publicGames: const [],
+        playerInitialsByGameId: const {},
+        viewerPlayerId: 'p-me',
+        nowUtc: now,
+      );
+      expect(tiles.single.status, GameStatusBadge.ended);
+      expect(tiles.single.openEnvelopeResults, isTrue);
+    });
+
+    test('joined ended >10m ago is omitted from tiles', () {
+      final now = DateTime.utc(2026, 6, 1, 12);
+      final end = now.subtract(const Duration(minutes: 15));
+      final g = _game(
+        id: 'g1',
+        state: GameState.tradingEnded,
+        endTimeActual: end,
+        updatedAt: end,
+      );
+      final tiles = mockHomeGamesFromRepositorySnapshot(
+        joinedGames: [g],
+        publicGames: const [],
+        playerInitialsByGameId: const {},
+        viewerPlayerId: 'p-me',
+        nowUtc: now,
+      );
+      expect(tiles, isEmpty);
+    });
+
+    test('public not joined + ended game is omitted', () {
+      final now = DateTime.utc(2026, 6, 1, 12);
+      final end = now.subtract(const Duration(minutes: 2));
+      final g = _game(
+        id: 'g1',
+        state: GameState.tradingEnded,
+        endTimeActual: end,
+      );
+      final tiles = mockHomeGamesFromRepositorySnapshot(
+        joinedGames: const [],
+        publicGames: [g],
+        playerInitialsByGameId: const {},
+        viewerPlayerId: 'p-me',
+        nowUtc: now,
+      );
+      expect(tiles, isEmpty);
     });
   });
 
@@ -142,7 +202,7 @@ void main() {
 
       expect(tiles.map((t) => t.id).toList(), ['gj', 'gp']);
       expect(tiles[0].isJoined, isTrue);
-      expect(tiles[0].status, GameStatusBadge.active);
+      expect(tiles[0].status, GameStatusBadge.playing);
       expect(tiles[1].isJoined, isFalse);
       expect(tiles[1].status, GameStatusBadge.notJoined);
     });

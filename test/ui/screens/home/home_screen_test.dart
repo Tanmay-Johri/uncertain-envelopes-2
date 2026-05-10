@@ -134,7 +134,7 @@ void main() {
                 id: 'x',
                 title: 'Solo',
                 description: 'd',
-                status: GameStatusBadge.active,
+                status: GameStatusBadge.playing,
                 isPublic: false,
                 isJoined: false,
                 isAdmin: false,
@@ -164,8 +164,8 @@ void main() {
       expect(find.text('Penny Stocks Derby'), findsNothing);
     });
 
-    testWidgets('tapping game card invokes onOpenGame with id', (tester) async {
-      String? openedId;
+    testWidgets('tapping game card invokes onOpenGame with tile', (tester) async {
+      MockHomeGame? opened;
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
@@ -175,7 +175,7 @@ void main() {
                 id: 'z9',
                 title: 'Tap target',
                 description: 'd',
-                status: GameStatusBadge.active,
+                status: GameStatusBadge.playing,
                 isPublic: true,
                 isJoined: true,
                 isAdmin: false,
@@ -183,14 +183,14 @@ void main() {
                 maxPlayers: 6,
               ),
             ],
-            onOpenGame: (id) => openedId = id,
+            onOpenGame: (g) => opened = g,
           ),
         ),
       );
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('game-card-z9')));
       await tester.pump();
-      expect(openedId, 'z9');
+      expect(opened?.id, 'z9');
     });
   });
 

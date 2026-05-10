@@ -32,8 +32,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   /// [gameRepositoryProvider] for the signed-in player.
   final ValueChanged<String>? onEnterGame;
 
-  /// Called with a game id when the user opens a row from the list.
-  final ValueChanged<String>? onOpenGame;
+  /// Called when the user opens a row from the list (live list passes full tile).
+  final ValueChanged<MockHomeGame>? onOpenGame;
 
   /// When set, this list is shown instead of [homeViewDataProvider].
   final List<MockHomeGame>? games;
@@ -268,7 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       status: g.status,
                       playerCount: g.playerInitials.length,
                       maxPlayers: g.maxPlayers,
-                      onOpen: () => widget.onOpenGame?.call(g.id),
+                      onOpen: () => widget.onOpenGame?.call(g),
                     );
                   },
                 ),

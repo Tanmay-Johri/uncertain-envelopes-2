@@ -126,8 +126,11 @@ GoRouter buildAppRouter({
               GoRoute(
                 path: AppRoutes.home,
                 builder: (context, _) => HomeScreen(
-                  onOpenGame: (id) =>
-                      GoRouter.of(context).go(AppRoutes.gameLobby(id)),
+                  onOpenGame: (game) => GoRouter.of(context).go(
+                    game.openEnvelopeResults
+                        ? AppRoutes.gameResults(game.id)
+                        : AppRoutes.gameLobby(game.id),
+                  ),
                 ),
               ),
             ],

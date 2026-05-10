@@ -86,7 +86,12 @@ class _GameTradingRouteScreenState
     );
 
     final async = ref.watch(tradingViewDataProvider(widget.gameId));
+    // `skipLoadingOnReload: true` keeps the previous trading dashboard visible
+    // while the provider refetches due to backend deltas (orders / executions /
+    // session updates). Without this, every refresh briefly drops back to the
+    // loading scaffold and the screen flickers.
     return async.when(
+      skipLoadingOnReload: true,
       loading: () => const Scaffold(
         key: ValueKey('game-trading-loading'),
         backgroundColor: AppColors.background,
