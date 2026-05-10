@@ -34,6 +34,7 @@ class GameTradingScreen extends StatefulWidget {
     this.onEndGameFromMenu,
     this.onAddTime,
     this.submitCancelOrderCommand,
+    this.onSubmitNewOrder,
   });
 
   final GameTradingViewData data;
@@ -50,6 +51,10 @@ class GameTradingScreen extends StatefulWidget {
   /// Completes when the backend acks that the `cancel_order` command **row**
   /// was created. Defaults to [defaultSubmitCancelOrderCommandAck] in state.
   final Future<void> Function(String orderId)? submitCancelOrderCommand;
+
+  /// When set, new orders from [NewOrderModal] are submitted through the repo
+  /// instead of optimistic local-only rows.
+  final Future<void> Function(PersonalOrder draft)? onSubmitNewOrder;
 
   @override
   State<GameTradingScreen> createState() => _GameTradingScreenState();
@@ -139,8 +144,9 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     BuildContext context,
     String orderId,
   ) async {
-    final submit = widget.submitCancelOrderCommand ??
-        defaultSubmitCancelOrderCommandAck;
+    final customSubmit = widget.submitCancelOrderCommand;
+    final submit =
+        customSubmit ?? defaultSubmitCancelOrderCommandAck;
     try {
       await submit(orderId).timeout(AppConstants.cancelOrderCommandAckTimeout);
     } on TimeoutException {
@@ -160,7 +166,9 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     }
 
     if (!mounted) return;
-    _scheduleMockWorkerOrderCancelled(orderId);
+    if (customSubmit == null) {
+      _scheduleMockWorkerOrderCancelled(orderId);
+    }
   }
 
   void _showCancelCommandAckFailedBanner(BuildContext context) {
@@ -215,6 +223,21 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
       bidAskMidpointListenable: _bidAskMidpointNotifier,
     );
     if (!mounted || created == null) return;
+    if (widget.onSubmitNewOrder != null) {
+      try {
+        await widget.onSubmitNewOrder!(created);
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not submit order'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+      return;
+    }
     setState(() {
       _personalOrders = [
         ..._personalOrders,
@@ -243,7 +266,7 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
             child: NeonButton(
               key: const ValueKey('game-trading-new-order'),
               label: 'Create new order',
-              onPressed: () => _openNewOrder(context),
+              onPressed: () => unawaited(_openNewOrder(context)),
             ),
           ),
         ),

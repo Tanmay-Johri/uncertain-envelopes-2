@@ -359,3 +359,22 @@ streams because those streams do not touch that file).
   `test/providers/view_data/lobby_view_data_provider_test.dart`,
   `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
   `flutter test` (all passed).
+
+- **2026-05-09 — Plan 2B.5 (trading dashboard provider + route host):** Added
+  `lib/providers/view_data/trading_view_data_provider.dart` (`tradingViewDataProvider`):
+  builds `GameTradingViewData` from `currentGameProvider`, `ordersProvider`,
+  `executionsProvider`, `orderBookProvider`, `executionHistoryProvider`,
+  `chartSessionElapsedProvider`, `gameSecondsRemainingProvider`, and timer tick;
+  maps `Order` → `PersonalOrder` via `personalOrderFromOrder`, executions →
+  `TradeLogEntry` with `lobbyDisplayUsername`. `lib/ui/screens/trading/game_trading_route_screen.dart`
+  watches the provider (loading/error scaffolds), wires `submitEndTrading`,
+  `submitAddTime`, `submitCancelOrder`, `submitCreateOrder` + `ordersProvider.refresh`,
+  and passes `submitCancelOrderCommand` so the mock post-ack worker does not run.
+  `GameTradingScreen` gains optional `onSubmitNewOrder`; cancel flow runs
+  `_scheduleMockWorkerOrderCancelled` only when `submitCancelOrderCommand` is null.
+  `app_router.dart` trading route uses the route screen; router tests add
+  `tradingViewDataProvider(id)` overrides with `Future.value(mockTradingScenarioForGameId(id).data)`.
+  Tests: `test/providers/view_data/trading_view_data_provider_test.dart`,
+  `test/ui/screens/trading/game_trading_screen_test.dart` (custom cancel path),
+  `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
+  `flutter test` (all passed).

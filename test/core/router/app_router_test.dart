@@ -15,10 +15,12 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/lobby_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/game_lobby_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/lobby_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/results/game_results_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
@@ -42,6 +44,25 @@ List<Override> _lobbyMockOverridesForRouterTests() {
   ];
 }
 
+List<Override> _tradingMockOverridesForRouterTests() {
+  const ids = <String>[
+    'g1',
+    'g1pre',
+    'g2',
+    'g3',
+    'g4',
+    'g5',
+    'abc',
+    '550e8400-e29b-41d4-a716-446655440000',
+  ];
+  return [
+    for (final id in ids)
+      tradingViewDataProvider(id).overrideWith(
+        (ref) => Future.value(mockTradingScenarioForGameId(id).data),
+      ),
+  ];
+}
+
 Future<GoRouter> _pumpAppWith(
   WidgetTester tester, {
   String initialLocation = AppRoutes.home,
@@ -52,6 +73,7 @@ Future<GoRouter> _pumpAppWith(
       overrides: [
         homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
         ..._lobbyMockOverridesForRouterTests(),
+        ..._tradingMockOverridesForRouterTests(),
       ],
       child: MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
     ),

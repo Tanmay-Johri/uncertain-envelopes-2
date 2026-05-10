@@ -457,6 +457,43 @@ void main() {
         expect(find.text('Cancelled'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'custom cancel submit ack does not run mock worker completion timer',
+      (tester) async {
+        final s = mockTradingScenarioForGameId('g1');
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAppTheme(),
+            home: TickerMode(
+              enabled: false,
+              child: GameTradingScreen(
+                data: s.data,
+                submitCancelOrderCommand: (_) async {},
+              ),
+            ),
+          ),
+        );
+
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('active-order-po_g1_rest')),
+        );
+        await tester.tap(find.byKey(const ValueKey('active-order-po_g1_rest')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel'));
+        await tester.pump();
+        expect(find.text('Cancelling'), findsOneWidget);
+
+        await tester.pump(const Duration(milliseconds: 1900));
+        await tester.pumpAndSettle();
+        expect(find.text('Cancelled'), findsNothing);
+        expect(find.text('Cancelling'), findsOneWidget);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------

@@ -13,8 +13,7 @@ import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/orders/pending_orders_screen.dart';
 import '../../ui/screens/lobby/game_lobby_route_screen.dart';
 import '../../ui/screens/results/game_results_mock_route_host.dart';
-import '../../ui/screens/trading/game_trading_screen.dart';
-import '../../ui/screens/trading/trading_mock_data.dart';
+import '../../ui/screens/trading/game_trading_route_screen.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
 import '../../ui/widgets/game_realtime_session_scope.dart';
@@ -114,13 +113,7 @@ GoRouter buildAppRouter({
             path: '/game/:id/trading',
             builder: (_, state) {
               final id = state.pathParameters['id']!;
-              final scenario = mockTradingScenarioForGameId(id);
-              return GameTradingScreen(
-                gameId: id,
-                data: scenario.data,
-                onEndGameFromMenu: () {},
-                onAddTime: (_) {},
-              );
+              return GameTradingRouteScreen(gameId: id);
             },
           ),
           GoRoute(
