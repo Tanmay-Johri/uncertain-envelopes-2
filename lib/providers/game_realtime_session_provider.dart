@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/constants/app_constants.dart';
 import '../services/game_realtime_service.dart';
+import '../services/game_realtime_session_binding.dart';
 import '../services/riverpod_realtime_target.dart';
 import '../services/supabase_realtime_subscriber.dart';
 import 'trading_provider.dart';
@@ -46,9 +45,5 @@ void gameRealtimeSession(Ref ref, String gameId) {
     pollInterval: Duration(seconds: AppConstants.versionPollIntervalSeconds),
   );
 
-  ref.onDispose(() {
-    unawaited(service.dispose());
-  });
-
-  unawaited(service.start());
+  bindGameRealtimeServiceToRef(ref, service);
 }

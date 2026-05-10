@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/game_realtime_session_provider.dart';
+import '../../providers/game_realtime_service_provider.dart';
 
 /// Keeps [gameRealtimeSessionProvider] alive for [gameId] for the subtree.
 ///

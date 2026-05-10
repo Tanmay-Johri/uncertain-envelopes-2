@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -19,6 +20,7 @@ import 'package:uncertain_envelopes_2/data/models/game.dart';
 import 'package:uncertain_envelopes_2/data/models/game_player.dart';
 import 'package:uncertain_envelopes_2/data/models/order.dart';
 import 'package:uncertain_envelopes_2/services/game_realtime_service.dart';
+import 'package:uncertain_envelopes_2/services/game_realtime_session_binding.dart';
 import 'package:uncertain_envelopes_2/services/realtime_event.dart';
 import 'package:uncertain_envelopes_2/services/version_poller.dart';
 
@@ -506,6 +508,37 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(target.refreshCount, greaterThanOrEqualTo(1));
       await svc.dispose();
+    });
+  });
+
+  group('bindGameRealtimeServiceToRef', () {
+    test('disposes service when owning ProviderContainer is disposed', () async {
+      late GameRealtimeService svc;
+      final subscriber = _FakeSubscriber();
+      final harness = Provider<int>((ref) {
+        svc = GameRealtimeService(
+          gameId: 'g-1',
+          target: _FakeTarget(version: 1),
+          subscriber: subscriber,
+          poller: _FakePoller(version: 1),
+          pollInterval: const Duration(hours: 1),
+        );
+        bindGameRealtimeServiceToRef(ref, svc);
+        return 0;
+      });
+      final container = ProviderContainer();
+      try {
+        container.read(harness);
+        await Future<void>.delayed(Duration.zero);
+        expect(svc.isRunning, isTrue);
+        expect(subscriber.disconnectCalls, 0);
+      } finally {
+        container.dispose();
+      }
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(svc.isRunning, isFalse);
+      expect(subscriber.disconnectCalls, 1);
     });
   });
 

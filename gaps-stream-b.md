@@ -301,13 +301,15 @@ streams because those streams do not touch that file).
   described above, payload→`RealtimeEvent` mapping (preserving
   `newRecord`/`oldRecord`), and reconnect-on-channel-failure. Unit tests:
   `test/services/supabase_realtime_subscriber_test.dart`. Live
-  integration against Supabase remains Phase 2C / INT3; the per-game
-  `GameRealtimeService` lifecycle provider (plan 2B.10) is not hooked yet.
+  integration against Supabase remains Phase 2C / INT3. Per-game
+  `GameRealtimeService` lifecycle is wired via `gameRealtimeSessionProvider`
+  (see Plan 2B.10 log entry below).
 
 - **2026-05-09 — B-GAP-3b (reader code landed, wiring deferred):** Added
   `lib/services/supabase_version_query.dart` implementing `SupabaseVersionReader` with
   null-on-error semantics; tests `test/services/supabase_version_query_test.dart`.
-  Not yet passed into `CompositeVersionPoller` from app wiring (plan 2B.10).
+  `SupabaseVersionQuery` is composed into `CompositeVersionPoller` from
+  `gameRealtimeSessionProvider` (see Plan 2B.10 log entry).
 
 - **2026-05-09 — Plan 2B.10 (game realtime lifecycle wired):** Added
   `lib/providers/game_realtime_session_provider.dart` (`gameRealtimeSessionProvider`)
@@ -320,6 +322,16 @@ streams because those streams do not touch that file).
   mounts `lib/ui/widgets/game_realtime_session_scope.dart` so lobby→trading
   reuses one session. Tests: `test/providers/game_realtime_session_provider_test.dart`;
   `test/core/router/app_router_test.dart` pumps `ProviderScope` for game routes.
+
+- **2026-05-10 — Plan 2B.10 (binding + discoverability):** Extracted
+  `lib/services/game_realtime_session_binding.dart` (`bindGameRealtimeServiceToRef`)
+  so Riverpod teardown → `GameRealtimeService.dispose` is a single tested unit;
+  `game_realtime_session_provider.dart` delegates to it. Added
+  `lib/providers/game_realtime_service_provider.dart` as the plan-facing barrel
+  (re-exports session provider + binding). `GameRealtimeSessionScope` imports that
+  barrel. Test: `bindGameRealtimeServiceToRef` group in
+  `test/services/game_realtime_service_test.dart`. Corrected stale B-GAP-3a/3b
+  log lines that still claimed lifecycle / poller wiring was deferred.
 
 - **2026-05-09 — Plan 2B.1 (auth + redirect guards):** Added
   `lib/ui/screens/auth/auth_route_screen.dart` (wires `AuthScreen` to
