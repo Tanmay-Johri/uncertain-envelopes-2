@@ -83,8 +83,16 @@ sealed class GameRepositoryException implements Exception {
 }
 
 class GameNotFoundException extends GameRepositoryException {
-  const GameNotFoundException(String code)
+  /// Five-letter code lookup failed ([joinByCode], home screen).
+  const GameNotFoundException.joiningCode(String code)
       : super('No game found with joining code "$code"');
+
+  /// [fetchGame] returned null — wrong code messaging would confuse users
+  /// when the id is a UUID (RLS race after join, or game deleted).
+  const GameNotFoundException.gameUnavailable(String gameId)
+      : super(
+          'Game is not available yet or no longer exists.',
+        );
 }
 
 class CreateGameCommandFailedException extends GameRepositoryException {

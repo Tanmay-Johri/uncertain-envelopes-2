@@ -10,6 +10,11 @@ abstract class SupabaseGameGateway {
   Future<List<Map<String, dynamic>>> fetchJoinedGameRows(String playerId);
   Future<Map<String, dynamic>?> lookupGameRowByCode(String code);
 
+  /// Returns the `game_id` for [code] without triggering RLS on `games`.
+  /// Used by `joinByCode` so non-members can resolve **private** games.
+  /// Returns `null` when no active game has that code.
+  Future<String?> lookupGameIdByJoiningCode(String code);
+
   /// Row for [createGameAndReturnGameId] polling: `command_status`,
   /// `command_game_id`.
   Future<Map<String, dynamic>?> fetchCommandStatusRow(String commandId);
@@ -71,6 +76,17 @@ class RealSupabaseGameGateway implements SupabaseGameGateway {
         .eq('joining_code', code.toUpperCase())
         .maybeSingle();
     return row;
+  }
+
+  @override
+  Future<String?> lookupGameIdByJoiningCode(String code) async {
+    final result = await _client.rpc<dynamic>(
+      'lookup_game_id_by_joining_code',
+      params: {'p_code': code.toUpperCase()},
+    );
+    if (result == null) return null;
+    if (result is String) return result.isEmpty ? null : result;
+    return null;
   }
 
   @override

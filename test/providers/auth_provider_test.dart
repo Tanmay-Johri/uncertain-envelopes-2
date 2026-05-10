@@ -128,6 +128,11 @@ void main() {
     final s = container.read(authControllerProvider);
     expect(s.hasError, true);
     expect(s.error, isA<AuthInvalidCredentialsException>());
+
+    await notifier.recoverFromSubmitError();
+    final recovered = container.read(authControllerProvider);
+    expect(recovered.hasError, false);
+    expect(recovered.valueOrNull, isNull);
   });
 
   test(

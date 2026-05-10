@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,6 +160,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   int _maxPlayers = CreateGamePlayerLimits.defaultMaxPlayers;
   CreateGameEndCondition _endCondition = CreateGameEndCondition.timed;
   int _durationMinutes = CreateGameDurationLimits.defaultMinutes;
+  String? _submitRepositoryError;
 
   static const _inputFill = AppColors.surfaceContainer;
 
@@ -306,6 +309,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 draft.durationMinutes != null
             ? draft.durationMinutes! * 60
             : null;
+    setState(() => _submitRepositoryError = null);
     try {
       final gameId = await ref.read(gameRepositoryProvider).createGameAndReturnGameId(
             adminPlayerId: player.playerId,
@@ -321,9 +325,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       context.go(AppRoutes.gameLobby(gameId));
     } on GameRepositoryException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      setState(() => _submitRepositoryError = e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitRepositoryError = '$e');
     }
   }
 
@@ -340,17 +345,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Scaffold(
       key: const ValueKey('create-game-screen'),
       backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.xxxxl,
-        ),
-        child: Form(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xxxxl + bottomInset,
+          ),
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -768,17 +776,39 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 ),
               ],
               const SizedBox(height: AppSpacing.xxl),
+              if (_submitRepositoryError != null) ...[
+                Text(
+                  _submitRepositoryError!,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                NeonButton(
+                  key: const ValueKey('create-game-submit-retry'),
+                  label: 'Retry',
+                  variant: NeonButtonVariant.outline,
+                  expand: false,
+                  trailingIcon: Icons.refresh,
+                  onPressed: () {
+                    unawaited(_handleSubmit());
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               NeonButton(
                 key: const ValueKey('create-game-submit'),
                 label: 'Create Game',
                 onPressed: () {
-                  _handleSubmit();
+                  unawaited(_handleSubmit());
                 },
               ),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

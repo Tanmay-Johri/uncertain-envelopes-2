@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/view_data/pending_orders_view_data_provider.dart';
+import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'pending_orders_screen.dart';
 import 'pending_orders_view_data.dart';
@@ -21,7 +22,8 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
     return async.when(
       loading: () => const Scaffold(
         key: ValueKey('pending-orders-route-loading'),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: AsyncRouteLoadingBody(message: 'Loading pending orders…'),
       ),
       error: (e, _) => Scaffold(
         key: const ValueKey('pending-orders-route-error'),

@@ -12,8 +12,10 @@ import 'package:uncertain_envelopes_2/data/models/player.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_player_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
+import 'package:uncertain_envelopes_2/providers/player_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/lobby_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/lobby_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/lobby/lobby_view_data.dart';
@@ -136,10 +138,21 @@ void main() {
         ),
       );
 
+      final players = InMemoryPlayerRepository()
+        ..seedPlayer(
+          Player(
+            playerId: 'viewer-1',
+            username: 'viewer',
+            createdAt: DateTime.utc(2026, 1, 1),
+            email: 'v@test.com',
+          ),
+        );
+
       final container = ProviderContainer(
         overrides: [
           authRepositoryProvider.overrideWithValue(authRepo),
           gameRepositoryProvider.overrideWithValue(games),
+          playerRepositoryProvider.overrideWithValue(players),
         ],
       );
       addTearDown(container.dispose);
@@ -154,8 +167,82 @@ void main() {
       expect(scenario.currentPlayerId, 'viewer-1');
       expect(scenario.isViewerAdmin, isTrue);
       expect(scenario.data.players.length, 1);
-      expect(scenario.data.players.single.username, lobbyDisplayUsername('viewer-1'));
+      expect(
+        scenario.data.players.single.username,
+        'viewer',
+        reason:
+            'lobby must show real `players.username`, not the UUID-derived '
+            'fallback (regression: bug 3 — "Player e70b").',
+      );
     });
+
+    test(
+      'falls back to lobbyDisplayUsername when profile fetch yields no row '
+      '(adversarial: row present in games_players but no players row).',
+      () async {
+        final commands = InMemoryCommandRepository();
+        final games = InMemoryGameRepository(commandRepository: commands);
+        final authRepo = InMemoryAuthRepository();
+        authRepo.setSessionPlayerForTest(
+          Player(
+            playerId: 'viewer-1',
+            username: 'viewer',
+            createdAt: DateTime.utc(2026, 1, 1),
+            email: 'v@test.com',
+          ),
+        );
+        final now = DateTime.utc(2026, 1, 1, 12);
+        games.seedGame(
+          Game(
+            gameId: 'gx',
+            gameName: 'X',
+            gameCreatedAt: now,
+            gameSecurity: GameSecurity.private,
+            isRanked: IsRanked.casual,
+            gameMaxPlayers: 4,
+            joiningCode: 'AAAAA',
+            endCondition: EndCondition.endless,
+            gameState: GameState.created,
+            adminPlayerId: 'viewer-1',
+            stateVersion: 0,
+            updatedAt: now,
+          ),
+        );
+        games.seedGamePlayer(
+          GamePlayer(
+            gamesPlayersRowId: 'gpx',
+            mapGameId: 'gx',
+            mapPlayerId: 'orphan-99999999-aaaa-bbbb-cccc-deadbeefcafe',
+            lobbyStatus: LobbyStatus.playing,
+            joinedAt: now,
+            isAdmin: false,
+            deltaCash: 0,
+            deltaEnvelopes: 0,
+            pnl: 0,
+          ),
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(authRepo),
+            gameRepositoryProvider.overrideWithValue(games),
+            playerRepositoryProvider.overrideWithValue(
+              InMemoryPlayerRepository(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(authControllerProvider.future);
+        final scenario =
+            await container.read(lobbyViewDataProvider('gx').future);
+
+        expect(
+          scenario.data.players.single.username,
+          startsWith('Player '),
+        );
+      },
+    );
 
     test('router-style lobby override returns mock without hitting auth', () {
       final container = ProviderContainer(

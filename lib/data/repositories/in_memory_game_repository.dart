@@ -215,7 +215,7 @@ class InMemoryGameRepository implements GameRepository {
     required String playerId,
   }) async {
     final game = await lookupGameByCode(code);
-    if (game == null) throw GameNotFoundException(code);
+    if (game == null) throw GameNotFoundException.joiningCode(code);
     final cmdId = await _commands.submitJoinGame(
       gameId: game.gameId,
       playerId: playerId,

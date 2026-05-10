@@ -13,6 +13,7 @@ import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
 import '../../../providers/trading_provider.dart';
 import '../../../providers/view_data/trading_view_data_provider.dart';
+import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_trading_screen.dart';
 
@@ -88,7 +89,8 @@ class _GameTradingRouteScreenState
     return async.when(
       loading: () => const Scaffold(
         key: ValueKey('game-trading-loading'),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: AsyncRouteLoadingBody(message: 'Loading trading dashboard…'),
       ),
       error: (e, _) => Scaffold(
         key: const ValueKey('game-trading-error'),

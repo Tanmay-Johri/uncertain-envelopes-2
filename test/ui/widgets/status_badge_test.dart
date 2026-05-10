@@ -58,12 +58,12 @@ void main() {
       expect(_textColor(tester, 'READY'), const Color(0xFF60A5FA));
     });
 
-    testWidgets('JOINED uses yellow foreground', (tester) async {
+    testWidgets('JOINED uses dark foreground on solid yellow chip', (tester) async {
       await _pump(
         tester,
         const StatusBadge(status: GameStatusBadge.joined),
       );
-      expect(_textColor(tester, 'JOINED'), const Color(0xFFFACC15));
+      expect(_textColor(tester, 'JOINED'), const Color(0xFF1F1F1F));
     });
 
     testWidgets('NOT JOINED uses slate foreground', (tester) async {

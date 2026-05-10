@@ -6,7 +6,7 @@ part of 'profile_view_data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$profileViewDataHash() => r'211a677a947dd36d6b0728d5525ac99877415f46';
+String _$profileViewDataHash() => r'7fd0b7ddafaa82ae6e724ec13ad44435a478e022';
 
 /// Profile header fields for [ProfileScreen] (Phase 2B.7).
 ///

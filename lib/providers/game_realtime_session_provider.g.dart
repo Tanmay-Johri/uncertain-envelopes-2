@@ -7,7 +7,7 @@ part of 'game_realtime_session_provider.dart';
 // **************************************************************************
 
 String _$gameRealtimeSessionHash() =>
-    r'c89f33f8a5e4a7176efc50bf6b77abf07652d833';
+    r'56e75b72725e23bf076a2543a8bcdd0d940c174f';
 
 /// Copied from Dart SDK
 class _SystemHash {

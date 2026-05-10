@@ -132,12 +132,15 @@ class SupabaseGameRepository implements GameRepository {
     required String code,
     required String playerId,
   }) async {
-    final game = await lookupGameByCode(code);
-    if (game == null) throw GameNotFoundException(code);
+    // RLS on `games` blocks non-members reading **private** rows, so we
+    // resolve `game_id` via a SECURITY DEFINER RPC (migration 015) instead
+    // of [lookupGameByCode] which returns null for not-yet-members.
+    final gameId = await _gateway.lookupGameIdByJoiningCode(code);
+    if (gameId == null) throw GameNotFoundException.joiningCode(code);
     final commandId = await _commands.submitJoinGame(
-      gameId: game.gameId,
+      gameId: gameId,
       playerId: playerId,
     );
-    return JoinByCodeResult(gameId: game.gameId, commandId: commandId);
+    return JoinByCodeResult(gameId: gameId, commandId: commandId);
   }
 }

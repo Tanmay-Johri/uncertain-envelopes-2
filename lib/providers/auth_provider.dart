@@ -101,4 +101,14 @@ class AuthController extends _$AuthController {
     await ref.read(authRepositoryProvider).adoptUpdatedProfile(player);
     state = AsyncValue.data(player);
   }
+
+  /// Clears a failed [logIn]/[signUp]/[signOut] [AsyncValue.error] and reloads
+  /// the session from the repository so the auth UI can render again (POL3).
+  Future<void> recoverFromSubmitError() async {
+    if (!state.hasError) return;
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).getCurrentPlayer(),
+    );
+  }
 }

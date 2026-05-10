@@ -38,7 +38,12 @@ class AuthRouteScreen extends ConsumerWidget {
               password: sub.password,
             );
         if (!context.mounted) return;
-        final s = ref.read(authControllerProvider);
+        var s = ref.read(authControllerProvider);
+        if (s.hasError) {
+          await ref.read(authControllerProvider.notifier).recoverFromSubmitError();
+          if (!context.mounted) return;
+          s = ref.read(authControllerProvider);
+        }
         if (s.hasValue && s.value != null) {
           context.go(AppRoutes.home);
         }
@@ -50,7 +55,12 @@ class AuthRouteScreen extends ConsumerWidget {
               username: sub.username,
             );
         if (!context.mounted) return;
-        final s = ref.read(authControllerProvider);
+        var s = ref.read(authControllerProvider);
+        if (s.hasError) {
+          await ref.read(authControllerProvider.notifier).recoverFromSubmitError();
+          if (!context.mounted) return;
+          s = ref.read(authControllerProvider);
+        }
         if (s.hasValue && s.value != null) {
           context.go(AppRoutes.home);
         }

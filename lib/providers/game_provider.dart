@@ -25,12 +25,20 @@ class CurrentGame extends _$CurrentGame {
     GameRepository repo,
     String gameId,
   ) async {
-    final game = await repo.fetchGame(gameId);
-    if (game == null) {
-      throw GameNotFoundException(gameId);
+    // After join_game / create_game the processor may lag briefly; RLS can
+    // hide `games` until membership exists — retry without surfacing a
+    // misleading "joining code" error that shows a UUID.
+    const maxAttempts = 28;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final game = await repo.fetchGame(gameId);
+      if (game != null) {
+        final players = await repo.fetchGamePlayers(gameId);
+        return GameSessionState(game: game, players: players);
+      }
+      final delayMs = attempt < 8 ? 80 : 160;
+      await Future<void>.delayed(Duration(milliseconds: delayMs));
     }
-    final players = await repo.fetchGamePlayers(gameId);
-    return GameSessionState(game: game, players: players);
+    throw GameNotFoundException.gameUnavailable(gameId);
   }
 
   /// Re-fetches the whole snapshot from the repository. Used on

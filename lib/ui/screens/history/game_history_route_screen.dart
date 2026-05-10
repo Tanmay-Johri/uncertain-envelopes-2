@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/view_data/game_history_view_data_provider.dart';
+import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_history_screen.dart';
 
@@ -18,7 +19,8 @@ class GameHistoryRouteScreen extends ConsumerWidget {
     return async.when(
       loading: () => const Scaffold(
         key: ValueKey('game-history-route-loading'),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: AsyncRouteLoadingBody(message: 'Loading game history…'),
       ),
       error: (e, _) => Scaffold(
         key: const ValueKey('game-history-route-error'),

@@ -6,7 +6,9 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
+import '../../../providers/view_data/home_view_data_provider.dart';
 import '../../../providers/view_data/lobby_view_data_provider.dart';
+import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_lobby_screen.dart';
 
@@ -34,9 +36,11 @@ class GameLobbyRouteScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(lobbyViewDataProvider(gameId));
     return async.when(
+      skipLoadingOnReload: true,
       loading: () => const Scaffold(
         key: ValueKey('game-lobby-loading'),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: AsyncRouteLoadingBody(message: 'Loading lobby…'),
       ),
       error: (e, _) => Scaffold(
         key: const ValueKey('game-lobby-error'),
@@ -83,6 +87,9 @@ class GameLobbyRouteScreen extends ConsumerWidget {
           }),
           onLeaveGame: () => _runCommand(context, ref, () async {
             await cmds.submitLeaveGame(gameId: gameId, playerId: playerId);
+            await ref.read(homeViewDataProvider.notifier).silentRefresh();
+            if (!context.mounted) return;
+            context.go(AppRoutes.home);
           }),
           onKickPlayer: (targetPlayerId) => _runCommand(context, ref, () async {
             await cmds.submitKickPlayer(
@@ -90,6 +97,7 @@ class GameLobbyRouteScreen extends ConsumerWidget {
               adminPlayerId: playerId,
               targetPlayerId: targetPlayerId,
             );
+            await ref.read(homeViewDataProvider.notifier).silentRefresh();
           }),
         );
       },

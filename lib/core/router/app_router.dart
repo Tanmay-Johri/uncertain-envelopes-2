@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../ui/screens/_placeholder_screen.dart';
+import '../../ui/screens/route_not_found_screen.dart';
 import '../../ui/screens/auth/auth_route_screen.dart';
 import '../../ui/screens/history/game_history_route_screen.dart';
 import '../../ui/screens/profile/profile_route_screen.dart';
@@ -151,10 +151,8 @@ GoRouter buildAppRouter({
         ],
       ),
     ],
-    errorBuilder: (_, state) => PlaceholderScreen(
-      routeName: 'NOT FOUND',
-      subtitle: state.uri.toString(),
-    ),
+    errorBuilder: (_, state) =>
+        RouteNotFoundScreen(uriText: state.uri.toString()),
   );
 }
 

@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/data/enums/end_condition.dart';
+import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
+import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
 import 'package:uncertain_envelopes_2/data/models/player.dart';
+import 'package:uncertain_envelopes_2/data/repositories/game_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
@@ -48,6 +52,59 @@ Future<void> _pump(WidgetTester tester) async {
     _providerWrappedCreateGameApp(const CreateGameScreen()),
   );
   await tester.pump();
+}
+
+/// Same auth/session as [_providerWrappedCreateGameApp] but injects a custom
+/// [GameRepository] (e.g. simulated create failures).
+Future<void> _pumpCreateGameWithGameRepo(
+  WidgetTester tester,
+  GameRepository gameRepo,
+) async {
+  final auth = InMemoryAuthRepository();
+  auth.setSessionPlayerForTest(
+    Player(
+      playerId: 'test-player',
+      username: 'tester',
+      createdAt: DateTime.utc(2026, 1, 1),
+      email: 't@test.com',
+    ),
+  );
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        gameRepositoryProvider.overrideWithValue(gameRepo),
+      ],
+      child: MaterialApp(
+        theme: buildAppTheme(),
+        home: const CreateGameScreen(),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(CreateGameScreen)),
+  );
+  await container.read(authControllerProvider.future);
+}
+
+class _ThrowOnCreateGameRepository extends InMemoryGameRepository {
+  _ThrowOnCreateGameRepository()
+      : super(commandRepository: InMemoryCommandRepository());
+
+  @override
+  Future<String> createGameAndReturnGameId({
+    required String adminPlayerId,
+    required String gameName,
+    String? gameDescription,
+    required GameSecurity gameSecurity,
+    required IsRanked isRanked,
+    required int gameMaxPlayers,
+    required EndCondition endCondition,
+    int? totalDecidedDurationSeconds,
+  }) async {
+    throw const CreateGameCommandFailedException('Simulated create failure');
+  }
 }
 
 /// Tall surface so CREATE GAME is in the hit-testable viewport (default ~600px
@@ -643,6 +700,26 @@ void main() {
       await _tapCreateGameSubmit(tester);
       await _tapCreateGameSubmit(tester);
       expect(calls, 2);
+    });
+  });
+
+  group('CreateGameScreen (POL3 repository error)', () {
+    testWidgets('createGame failure shows message and Retry', (tester) async {
+      _bindTallSurfaceForSubmit(tester);
+      await _pumpCreateGameWithGameRepo(
+        tester,
+        _ThrowOnCreateGameRepository(),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('create-game-name-field')),
+        'Broken Repo Game',
+      );
+      await _tapCreateGameSubmit(tester);
+      expect(find.text('Simulated create failure'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('create-game-submit-retry')),
+        findsOneWidget,
+      );
     });
   });
 }

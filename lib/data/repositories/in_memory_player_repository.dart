@@ -29,6 +29,18 @@ class InMemoryPlayerRepository implements PlayerRepository {
   Future<Player?> fetchProfile(String playerId) async => _players[playerId];
 
   @override
+  Future<Map<String, Player>> fetchProfilesByIds(
+    List<String> playerIds,
+  ) async {
+    final out = <String, Player>{};
+    for (final id in playerIds) {
+      final p = _players[id];
+      if (p != null) out[id] = p;
+    }
+    return out;
+  }
+
+  @override
   Future<Player> updateUsername({
     required String playerId,
     required String newUsername,

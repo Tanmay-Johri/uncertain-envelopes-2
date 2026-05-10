@@ -40,6 +40,11 @@ abstract class PlayerRepository {
   /// Returns the profile for [playerId], or null when it does not exist.
   Future<Player?> fetchProfile(String playerId);
 
+  /// Bulk profile fetch keyed by `player_id`. Missing ids are simply absent
+  /// from the returned map. Used by the lobby to map UUIDs → usernames in
+  /// one round-trip rather than N calls to [fetchProfile].
+  Future<Map<String, Player>> fetchProfilesByIds(List<String> playerIds);
+
   /// Updates a player's username. Normalises to lowercase before storing
   /// (PRD §players.username). Throws [UsernameAlreadyInUseException] when
   /// the new username is already taken (case-insensitive) and

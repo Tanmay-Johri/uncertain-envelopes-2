@@ -10,6 +10,8 @@ import 'package:uncertain_envelopes_2/ui/widgets/game_card.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/neon_button.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/status_badge.dart';
 
+import '../../../support/home_view_data_fakes.dart';
+
 void main() {
   group('HomeScreen (joining code strip)', () {
     testWidgets('renders title and code input', (tester) async {
@@ -144,7 +146,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('No games match your filters.'), findsOneWidget);
+      expect(find.text('No games to show.'), findsOneWidget);
     });
 
     testWidgets('rapid tab toggles stay consistent', (tester) async {
@@ -199,10 +201,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            homeViewDataProvider.overrideWith((ref) async {
-              await Future<void>.delayed(const Duration(milliseconds: 40));
-              return const <MockHomeGame>[];
-            }),
+            homeViewDataProvider.overrideWith(HomeViewDataDelayedEmpty.new),
           ],
           child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
         ),
@@ -217,9 +216,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            homeViewDataProvider.overrideWith(
-              (ref) async => throw StateError('network'),
-            ),
+            homeViewDataProvider.overrideWith(HomeViewDataThrowsNetwork.new),
           ],
           child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
         ),
@@ -235,17 +232,10 @@ void main() {
     testWidgets('retry refetches homeViewData after provider error', (
       tester,
     ) async {
-      var calls = 0;
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            homeViewDataProvider.overrideWith((ref) async {
-              calls++;
-              if (calls == 1) {
-                throw StateError('offline');
-              }
-              return const <MockHomeGame>[];
-            }),
+            homeViewDataProvider.overrideWith(HomeViewDataRetryOnce.new),
           ],
           child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
         ),
@@ -259,8 +249,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('home-game-list-retry')));
       await tester.pumpAndSettle();
 
-      expect(calls, 2);
-      expect(find.text('No games match your filters.'), findsOneWidget);
+      expect(find.text('No games to show.'), findsOneWidget);
     });
   });
 }

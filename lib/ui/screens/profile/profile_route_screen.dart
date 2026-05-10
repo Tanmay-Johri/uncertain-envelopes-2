@@ -10,6 +10,7 @@ import '../../../data/repositories/player_repository.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/player_repository_provider.dart';
 import '../../../providers/view_data/profile_view_data_provider.dart';
+import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'profile_screen.dart';
 import 'profile_view_data.dart';
@@ -25,7 +26,8 @@ class ProfileRouteScreen extends ConsumerWidget {
     return async.when(
       loading: () => const Scaffold(
         key: ValueKey('profile-route-loading'),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: AsyncRouteLoadingBody(message: 'Loading profile…'),
       ),
       error: (e, _) => Scaffold(
         key: const ValueKey('profile-route-error'),

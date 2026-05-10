@@ -42,6 +42,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -67,11 +68,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           _scrollVerticalPadding * 2)
                       .clamp(0.0, double.infinity);
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(
                       AppSpacing.xxl,
                       _scrollVerticalPadding,
                       AppSpacing.xxl,
-                      _scrollVerticalPadding,
+                      _scrollVerticalPadding + bottomInset,
                     ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(

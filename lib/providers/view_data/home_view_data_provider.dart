@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../data/enums/game_security.dart';
@@ -87,25 +86,44 @@ Future<Map<String, List<String>>> _initialsByGame(
 }
 
 /// Joined + public discovery rows for the signed-in player (Phase 2B.2).
-@riverpod
-Future<List<MockHomeGame>> homeViewData(Ref ref) async {
-  final player = await ref.watch(authControllerProvider.future);
-  if (player == null) return const [];
+///
+/// [silentRefresh] updates the list **without** going through [AsyncLoading],
+/// so periodic / resume refreshes do not flash the loading skeleton.
+@Riverpod(keepAlive: true)
+class HomeViewData extends _$HomeViewData {
+  @override
+  Future<List<MockHomeGame>> build() async => _load();
 
-  final repo = ref.watch(gameRepositoryProvider);
-  final joined = await repo.fetchJoinedGames(player.playerId);
-  final public = await repo.fetchPublicGames();
+  /// Background refresh (timer / resume / post-command). Keeps prior data
+  /// visible while fetching — no loading flicker on success.
+  Future<void> silentRefresh() async {
+    try {
+      final next = await _load();
+      state = AsyncValue.data(next);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 
-  final joinedIds = joined.map((g) => g.gameId).toSet();
-  final publicOnly =
-      public.where((g) => !joinedIds.contains(g.gameId)).toList();
-  final forInitials = [...joined, ...publicOnly];
-  final initialsMap = await _initialsByGame(repo, forInitials);
+  Future<List<MockHomeGame>> _load() async {
+    final player = await ref.watch(authControllerProvider.future);
+    if (player == null) return const [];
 
-  return mockHomeGamesFromRepositorySnapshot(
-    joinedGames: joined,
-    publicGames: publicOnly,
-    playerInitialsByGameId: initialsMap,
-    viewerPlayerId: player.playerId,
-  );
+    final repo = ref.watch(gameRepositoryProvider);
+    final joined = await repo.fetchJoinedGames(player.playerId);
+    final public = await repo.fetchPublicGames();
+
+    final joinedIds = joined.map((g) => g.gameId).toSet();
+    final publicOnly =
+        public.where((g) => !joinedIds.contains(g.gameId)).toList();
+    final forInitials = [...joined, ...publicOnly];
+    final initialsMap = await _initialsByGame(repo, forInitials);
+
+    return mockHomeGamesFromRepositorySnapshot(
+      joinedGames: joined,
+      publicGames: publicOnly,
+      playerInitialsByGameId: initialsMap,
+      viewerPlayerId: player.playerId,
+    );
+  }
 }

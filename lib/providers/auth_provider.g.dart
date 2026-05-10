@@ -26,7 +26,7 @@ final authRepositoryProvider = Provider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = ProviderRef<AuthRepository>;
-String _$authControllerHash() => r'5ceca97d5c1d442e1d3084a3bbb154e9bb65e2ce';
+String _$authControllerHash() => r'0c42969ad76781be32409c686b1b4abb4e797d80';
 
 /// Top-level auth controller. The exposed state is the currently logged-in
 /// [Player] (or null when logged out) wrapped in [AsyncValue]. Actions

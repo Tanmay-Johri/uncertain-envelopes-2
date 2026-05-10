@@ -347,16 +347,27 @@ class _NewOrderModalState extends State<NewOrderModal> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final maxH = MediaQuery.sizeOf(context).height * 0.88;
     return Dialog(
       key: const ValueKey('new-order-dialog'),
       backgroundColor: AppColors.surfaceContainer,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.outline),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: Column(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxH),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.xxl,
+            AppSpacing.xxl,
+            AppSpacing.xxl,
+            AppSpacing.xxl + bottomInset,
+          ),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -636,6 +647,7 @@ class _NewOrderModalState extends State<NewOrderModal> {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -185,6 +185,16 @@ class _FakePlayerGateway implements SupabasePlayerGateway {
       rows[playerId];
 
   @override
+  Future<List<Map<String, dynamic>>> fetchPlayerRowsByIds(
+    List<String> playerIds,
+  ) async {
+    return [
+      for (final id in playerIds)
+        if (rows[id] != null) rows[id]!,
+    ];
+  }
+
+  @override
   Future<Map<String, dynamic>> updatePlayerUsername({
     required String playerId,
     required String newUsername,

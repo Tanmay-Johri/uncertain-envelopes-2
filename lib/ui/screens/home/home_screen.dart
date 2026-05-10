@@ -23,7 +23,7 @@ enum _HomeListTab { joined, public }
 ///
 /// When [games] is non-null, that list is used (widget tests / overrides).
 /// When [games] is null, tiles load from [homeViewDataProvider] (Phase 2B.2).
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.onEnterGame, this.onOpenGame, this.games});
 
   /// Called with a five-character joining code when the user taps Enter.
@@ -39,13 +39,45 @@ class HomeScreen extends StatefulWidget {
   final List<MockHomeGame>? games;
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
+  Timer? _homeListPoll;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.games == null) {
+      WidgetsBinding.instance.addObserver(this);
+      _homeListPoll = Timer.periodic(const Duration(seconds: 25), (_) {
+        unawaited(ref.read(homeViewDataProvider.notifier).silentRefresh());
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _homeListPoll?.cancel();
+    if (widget.games == null) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (widget.games != null) return;
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(homeViewDataProvider.notifier).silentRefresh());
+    }
+  }
+
   String _code = '';
   _HomeListTab _tab = _HomeListTab.joined;
   bool _adminOnly = false;
+  String? _joinSubmitError;
 
   Iterable<MockHomeGame> _filtered(List<MockHomeGame> games) {
     return games.where(
@@ -59,14 +91,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _submitJoin(
     BuildContext context,
-    WidgetRef? ref,
     String code,
   ) async {
+    setState(() => _joinSubmitError = null);
     if (widget.onEnterGame != null) {
       widget.onEnterGame!.call(code);
       return;
     }
-    if (ref == null) return;
+    if (widget.games != null) return;
 
     final player = ref.read(authControllerProvider).valueOrNull;
     if (player == null) {
@@ -84,34 +116,33 @@ class _HomeScreenState extends State<HomeScreen> {
       context.go(AppRoutes.gameLobby(result.gameId));
     } on GameNotFoundException catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      setState(() => _joinSubmitError = e.message);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      setState(() => _joinSubmitError = '$e');
     }
   }
 
   Widget _buildContent({
     required BuildContext context,
     required List<MockHomeGame> games,
-    WidgetRef? ref,
     bool listLoading = false,
     String? listError,
   }) {
     final filtered = _filtered(games).toList();
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
       key: const ValueKey('home-screen'),
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
             AppSpacing.xxl,
             AppSpacing.md,
             AppSpacing.xxl,
-            AppSpacing.xxxxl,
+            AppSpacing.xxxxl + bottomInset,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,10 +164,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 expand: true,
                 onPressed: () {
                   if (_code.length == 5) {
-                    unawaited(_submitJoin(context, ref, _code));
+                    unawaited(_submitJoin(context, _code));
                   }
                 },
               ),
+              if (_joinSubmitError != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  key: const ValueKey('home-join-error-message'),
+                  _joinSubmitError!,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sectionGap),
               _TabBar(tab: _tab, onChanged: (t) => setState(() => _tab = t)),
               const SizedBox(height: AppSpacing.md),
@@ -168,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppColors.error,
                         ),
                       ),
-                      if (ref != null) ...[
+                      if (widget.games == null) ...[
                         const SizedBox(height: AppSpacing.md),
                         NeonButton(
                           key: const ValueKey('home-game-list-retry'),
@@ -176,7 +218,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           variant: NeonButtonVariant.outline,
                           expand: false,
                           trailingIcon: Icons.refresh,
-                          onPressed: () => ref.invalidate(homeViewDataProvider),
+                          onPressed: () => unawaited(
+                            ref
+                                .read(homeViewDataProvider.notifier)
+                                .silentRefresh(),
+                          ),
                         ),
                       ],
                     ],
@@ -199,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: AppSpacing.xxxl,
                   ),
                   child: Text(
-                    'No games match your filters.',
+                    'No games to show.',
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
@@ -237,29 +283,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final injected = widget.games;
     if (injected != null) {
-      return _buildContent(context: context, games: injected, ref: null);
+      return _buildContent(context: context, games: injected);
     }
 
-    return Consumer(
-      builder: (context, ref, _) {
-        final async = ref.watch(homeViewDataProvider);
-        return async.when(
-          data: (games) =>
-              _buildContent(context: context, games: games, ref: ref),
-          loading: () => _buildContent(
-            context: context,
-            games: const [],
-            ref: ref,
-            listLoading: true,
-          ),
-          error: (e, _) => _buildContent(
-            context: context,
-            games: const [],
-            ref: ref,
-            listError: '$e',
-          ),
-        );
-      },
+    final async = ref.watch(homeViewDataProvider);
+    return async.when(
+      data: (games) => _buildContent(context: context, games: games),
+      loading: () => _buildContent(
+        context: context,
+        games: const [],
+        listLoading: true,
+      ),
+      error: (e, _) => _buildContent(
+        context: context,
+        games: const [],
+        listError: '$e',
+      ),
     );
   }
 }

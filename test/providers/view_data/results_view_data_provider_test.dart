@@ -12,9 +12,10 @@ import 'package:uncertain_envelopes_2/data/models/player.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_player_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
-import 'package:uncertain_envelopes_2/providers/view_data/lobby_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/providers/player_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/results_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/results/results_mock_data.dart';
 
@@ -151,10 +152,21 @@ void main() {
         ),
       );
 
+      final players = InMemoryPlayerRepository()
+        ..seedPlayer(
+          Player(
+            playerId: 'viewer-1',
+            username: 'viewer',
+            createdAt: DateTime.utc(2026, 1, 1),
+            email: 'v@test.com',
+          ),
+        );
+
       final container = ProviderContainer(
         overrides: [
           authRepositoryProvider.overrideWithValue(authRepo),
           gameRepositoryProvider.overrideWithValue(games),
+          playerRepositoryProvider.overrideWithValue(players),
         ],
       );
       addTearDown(container.dispose);
@@ -165,7 +177,13 @@ void main() {
       expect(data.gameTitle, 'Seeded Results');
       expect(data.isViewerAdmin, isTrue);
       expect(data.envelopePriceUsd, 2);
-      expect(data.players.single.displayName, lobbyDisplayUsername('viewer-1'));
+      expect(
+        data.players.single.displayName,
+        'viewer',
+        reason:
+            'results screen must surface real `players.username` (bug 3 — '
+            '"Player e70b" — applies to results too).',
+      );
     });
 
     test('router-style override returns mock without hitting auth', () async {

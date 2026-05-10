@@ -6,7 +6,7 @@ part of 'lobby_view_data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$lobbyViewDataHash() => r'1fa85b0f6333ee2e2b18a3c9cbc0c31b8b2b5b79';
+String _$lobbyViewDataHash() => r'8a2ae5bee7867a8726819d049865b3ebd27aeaea';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -31,20 +31,40 @@ class _SystemHash {
 
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
+/// Does **not** subscribe to the timer tick so the future runs only when
+/// session data changes (auth / realtime / membership). The countdown is
+/// rendered by the `CountdownTimer` widget which ticks locally from a
+/// one-shot seconds-remaining snapshot read here.
+///
 /// Copied from [lobbyViewData].
 @ProviderFor(lobbyViewData)
 const lobbyViewDataProvider = LobbyViewDataFamily();
 
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
+/// Does **not** subscribe to the timer tick so the future runs only when
+/// session data changes (auth / realtime / membership). The countdown is
+/// rendered by the `CountdownTimer` widget which ticks locally from a
+/// one-shot seconds-remaining snapshot read here.
+///
 /// Copied from [lobbyViewData].
 class LobbyViewDataFamily extends Family<AsyncValue<GameLobbyScenario>> {
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
+  ///
+  /// Does **not** subscribe to the timer tick so the future runs only when
+  /// session data changes (auth / realtime / membership). The countdown is
+  /// rendered by the `CountdownTimer` widget which ticks locally from a
+  /// one-shot seconds-remaining snapshot read here.
   ///
   /// Copied from [lobbyViewData].
   const LobbyViewDataFamily();
 
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
+  ///
+  /// Does **not** subscribe to the timer tick so the future runs only when
+  /// session data changes (auth / realtime / membership). The countdown is
+  /// rendered by the `CountdownTimer` widget which ticks locally from a
+  /// one-shot seconds-remaining snapshot read here.
   ///
   /// Copied from [lobbyViewData].
   LobbyViewDataProvider call(String gameId) {
@@ -75,10 +95,20 @@ class LobbyViewDataFamily extends Family<AsyncValue<GameLobbyScenario>> {
 
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
+/// Does **not** subscribe to the timer tick so the future runs only when
+/// session data changes (auth / realtime / membership). The countdown is
+/// rendered by the `CountdownTimer` widget which ticks locally from a
+/// one-shot seconds-remaining snapshot read here.
+///
 /// Copied from [lobbyViewData].
 class LobbyViewDataProvider
     extends AutoDisposeFutureProvider<GameLobbyScenario> {
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
+  ///
+  /// Does **not** subscribe to the timer tick so the future runs only when
+  /// session data changes (auth / realtime / membership). The countdown is
+  /// rendered by the `CountdownTimer` widget which ticks locally from a
+  /// one-shot seconds-remaining snapshot read here.
   ///
   /// Copied from [lobbyViewData].
   LobbyViewDataProvider(String gameId)

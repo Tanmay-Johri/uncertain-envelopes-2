@@ -13,6 +13,20 @@ class SupabasePlayerRepository implements PlayerRepository {
   }
 
   @override
+  Future<Map<String, Player>> fetchProfilesByIds(
+    List<String> playerIds,
+  ) async {
+    if (playerIds.isEmpty) return const {};
+    final rows = await _gateway.fetchPlayerRowsByIds(playerIds);
+    final out = <String, Player>{};
+    for (final row in rows) {
+      final player = Player.fromJson(row);
+      out[player.playerId] = player;
+    }
+    return out;
+  }
+
+  @override
   Future<Player> updateUsername({
     required String playerId,
     required String newUsername,

@@ -307,6 +307,31 @@ void main() {
         throwsA(isA<GameNotFoundException>()),
       );
     });
+
+    test(
+      'joinByCode resolves PRIVATE game via RPC when row SELECT is blocked '
+      '(RLS regression — bug 2: "No game found with joining code"). '
+      'lookupGameRowByCode returns null because the user is not yet a '
+      'member; the SECURITY DEFINER RPC must still resolve the id.',
+      () async {
+        gateway.gameIdsByCode['ZZZZZ'] = 'g-private';
+        final result = await repo.joinByCode(
+          code: 'zzzzz',
+          playerId: 'p-2',
+        );
+        expect(result.gameId, 'g-private');
+        expect(gateway.rpcCodeLookups.single, 'ZZZZZ');
+        expect(
+          gateway.codeLookups,
+          isEmpty,
+          reason: 'joinByCode must NOT use the RLS-bound row lookup',
+        );
+        expect(
+          commands.lastOfType(CommandType.joinGame)?.gameId,
+          'g-private',
+        );
+      },
+    );
   });
 }
 
@@ -340,7 +365,9 @@ class _FakeGameGateway implements SupabaseGameGateway {
   List<Map<String, dynamic>> publicRows = [];
   final Map<String, List<Map<String, dynamic>>> joinedByPlayer = {};
   final Map<String, Map<String, dynamic>> codeRows = {};
+  final Map<String, String> gameIdsByCode = {};
   final List<String> codeLookups = [];
+  final List<String> rpcCodeLookups = [];
   final List<String> calls = [];
 
   /// Per [commandId], ordered rows for [fetchCommandStatusRow]. When absent,
@@ -381,6 +408,17 @@ class _FakeGameGateway implements SupabaseGameGateway {
     codeLookups.add(code);
     calls.add('lookupGameRowByCode($code)');
     return codeRows[code];
+  }
+
+  @override
+  Future<String?> lookupGameIdByJoiningCode(String code) async {
+    final up = code.toUpperCase();
+    rpcCodeLookups.add(up);
+    calls.add('lookupGameIdByJoiningCode($up)');
+    final mapped = gameIdsByCode[up];
+    if (mapped != null) return mapped;
+    final row = codeRows[up];
+    return row?['game_id'] as String?;
   }
 
   @override

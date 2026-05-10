@@ -177,7 +177,7 @@ class _OrderBookProviderElement extends AutoDisposeProviderElement<OrderBook>
   String get gameId => (origin as OrderBookProvider).gameId;
 }
 
-String _$personalOrdersHash() => r'f771d7fe97ba0e103d545d63b9bac16ace88f17e';
+String _$personalOrdersHash() => r'251e4fab84fcf8e58f9e3752c93df17569f5e818';
 
 /// Orders belonging to [playerId] within [gameId], merged with non-terminal
 /// `create_order` commands from [pendingCreateOrderCommandsProvider] as placeholder

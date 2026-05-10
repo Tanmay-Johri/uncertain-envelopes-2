@@ -4,6 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 abstract class SupabasePlayerGateway {
   Future<Map<String, dynamic>?> fetchPlayerRow(String playerId);
 
+  /// Bulk read of `players` rows for [playerIds]. Empty list → empty result.
+  /// Caller filters / maps; this gateway does not deserialise.
+  Future<List<Map<String, dynamic>>> fetchPlayerRowsByIds(
+    List<String> playerIds,
+  );
+
   /// Updates the username field. Throws
   /// [GatewayUsernameInUseException] if the uniqueness constraint fires.
   Future<Map<String, dynamic>> updatePlayerUsername({
@@ -41,6 +47,18 @@ class RealSupabasePlayerGateway implements SupabasePlayerGateway {
         .eq('player_id', playerId)
         .maybeSingle();
     return row;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchPlayerRowsByIds(
+    List<String> playerIds,
+  ) async {
+    if (playerIds.isEmpty) return const [];
+    final rows = await _client
+        .from('players')
+        .select()
+        .inFilter('player_id', playerIds);
+    return List<Map<String, dynamic>>.from(rows);
   }
 
   @override

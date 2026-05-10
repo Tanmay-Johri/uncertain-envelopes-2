@@ -352,7 +352,7 @@ class _GameSecondsRemainingProviderElement
   String get gameId => (origin as GameSecondsRemainingProvider).gameId;
 }
 
-String _$currentGameHash() => r'af42583a9731aa7c0f5dbfecbfc25120629c579f';
+String _$currentGameHash() => r'9c1999bcbe3de26961597c1cb00c4c5391038dbe';
 
 abstract class _$CurrentGame
     extends BuildlessAutoDisposeAsyncNotifier<GameSessionState> {

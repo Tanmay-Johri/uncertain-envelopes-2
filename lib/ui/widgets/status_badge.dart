@@ -25,9 +25,9 @@ class StatusBadge extends StatelessWidget {
   static const _readyFg = Color(0xFF60A5FA); // blue-400
   static const _readyBorder = Color(0x333B82F6);
 
-  static const _joinedBg = Color(0x6671370A); // yellow-900 @ ~40%
-  static const _joinedFg = Color(0xFFFACC15); // yellow-400
-  static const _joinedBorder = Color(0x33EAB308);
+  static const _joinedBg = Color(0xFFEAB308); // amber-500 solid
+  static const _joinedFg = Color(0xFF1F1F1F); // dark text on yellow
+  static const _joinedBorder = Color(0xFFCA8A04);
 
   static const _notJoinedBg = Color(0xFF1E293B); // slate-800
   static const _notJoinedFg = Color(0xFF94A3B8); // slate-400

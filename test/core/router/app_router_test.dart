@@ -10,7 +10,6 @@ import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/data/models/game_session_state.dart';
 import 'package:uncertain_envelopes_2/providers/game_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/home_view_data_provider.dart';
-import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
@@ -35,6 +34,7 @@ import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_mock_data
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
+import '../../support/home_view_data_fakes.dart';
 import '../../support/stub_game.dart';
 
 List<Override> _lobbyMockOverridesForRouterTests() {
@@ -46,6 +46,7 @@ List<Override> _lobbyMockOverridesForRouterTests() {
     'g4',
     'g5',
     'abc',
+    'GAME1',
     '550e8400-e29b-41d4-a716-446655440000',
   ];
   return [
@@ -75,6 +76,7 @@ List<Override> _currentGameStubOverridesForRouterTests() {
     'g4',
     'g5',
     'abc',
+    'GAME1',
     '550e8400-e29b-41d4-a716-446655440000',
   ];
   return [
@@ -92,6 +94,7 @@ List<Override> _tradingMockOverridesForRouterTests() {
     'g4',
     'g5',
     'abc',
+    'GAME1',
     '550e8400-e29b-41d4-a716-446655440000',
   ];
   return [
@@ -133,7 +136,7 @@ Future<GoRouter> _pumpAppWith(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+        homeViewDataProvider.overrideWith(HomeViewDataKMockGames.new),
         profileViewDataProvider.overrideWith(
           (ref) async => mockProfileViewDataDefault(),
         ),
@@ -356,6 +359,15 @@ void main() {
       await _pumpAppWith(tester, initialLocation: '/nope/does-not-exist');
       expect(find.text('NOT FOUND'), findsOneWidget);
       expect(find.textContaining('/nope/does-not-exist'), findsOneWidget);
+      expect(find.byKey(const ValueKey('route-not-found-home')), findsOneWidget);
+    });
+
+    testWidgets('route not found Go home navigates to shell', (tester) async {
+      await _pumpAppWith(tester, initialLocation: '/nope/does-not-exist');
+      await tester.tap(find.byKey(const ValueKey('route-not-found-home')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppShell), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
     });
 
     testWidgets('empty path falls back to error builder without crash', (
@@ -411,7 +423,7 @@ void main() {
     ) async {
       final container = ProviderContainer(
         overrides: [
-          homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+          homeViewDataProvider.overrideWith(HomeViewDataKMockGames.new),
         ],
       );
       addTearDown(container.dispose);
@@ -442,7 +454,7 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(repo),
           appRouterInitialLocationProvider.overrideWithValue(AppRoutes.auth),
-          homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+          homeViewDataProvider.overrideWith(HomeViewDataKMockGames.new),
         ],
       );
       addTearDown(container.dispose);

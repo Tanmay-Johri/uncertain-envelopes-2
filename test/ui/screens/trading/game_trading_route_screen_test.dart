@@ -11,12 +11,12 @@ import 'package:uncertain_envelopes_2/providers/game_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/home_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/results_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
-import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/results/game_results_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/results/results_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 
+import '../../../support/home_view_data_fakes.dart';
 import '../../../support/stub_game.dart';
 
 class _HarnessCurrentGame extends CurrentGame {
@@ -59,7 +59,7 @@ void main() {
         ProviderScope(
           overrides: [
             authRepositoryProvider.overrideWithValue(auth),
-            homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+            homeViewDataProvider.overrideWith(HomeViewDataKMockGames.new),
             currentGameProvider(tid).overrideWith(() => harness),
             tradingViewDataProvider(tid).overrideWith(
               (ref) => Future.value(mockTradingScenarioForGameId('g1').data),

@@ -126,7 +126,7 @@ class GameLobbyScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (data.isTimed && data.tradingTimeRemaining != null) ...[
+              if (data.isTimed) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
                   child: Column(
@@ -140,21 +140,33 @@ class GameLobbyScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      if (phase == GameLobbyPhase.trading)
-                        CountdownTimer(
-                          key: const ValueKey('game-lobby-countdown'),
-                          initialRemaining: data.tradingTimeRemaining!,
-                        )
-                      else
-                        Text(
-                          formatCountdownMmSs(data.tradingTimeRemaining!),
-                          key: const ValueKey(
-                            'game-lobby-time-remaining-static',
+                      if (data.tradingTimeRemaining != null) ...[
+                        if (phase == GameLobbyPhase.trading)
+                          CountdownTimer(
+                            key: const ValueKey('game-lobby-countdown'),
+                            initialRemaining: data.tradingTimeRemaining!,
+                          )
+                        else
+                          Text(
+                            formatCountdownMmSs(data.tradingTimeRemaining!),
+                            key: const ValueKey(
+                              'game-lobby-time-remaining-static',
+                            ),
+                            style: AppTypography.monoMedium.copyWith(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              letterSpacing: 2,
+                            ),
                           ),
+                      ] else
+                        Text(
+                          '--:--',
+                          key: const ValueKey('game-lobby-time-remaining-unknown'),
                           style: AppTypography.monoMedium.copyWith(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: AppColors.textTertiary,
                             letterSpacing: 2,
                           ),
                         ),

@@ -40,8 +40,10 @@ class PlayerListTile extends StatelessWidget {
 
     final avatarBg = highlightRow
         ? AppColors.primary
-        : (isGameAdmin ? AppColors.primary.withValues(alpha: 0.2) : AppColors.surfaceContainerHigh);
-    final avatarFg = highlightRow ? AppColors.background : (isGameAdmin ? AppColors.primary : AppColors.textSecondary);
+        : AppColors.surfaceContainerHigh;
+    final avatarFg = highlightRow
+        ? AppColors.background
+        : AppColors.textSecondary;
 
     final borderColor = highlightRow ? AppColors.primary.withValues(alpha: 0.35) : AppColors.outline;
     final borderWidth = highlightRow ? 1.5 : 1.0;
@@ -114,16 +116,16 @@ class PlayerListTile extends StatelessWidget {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.outlineSubtle,
+                  color: const Color(0xFFEAB308),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: AppColors.outline),
+                  border: Border.all(color: const Color(0xFFCA8A04)),
                 ),
                 child: Text(
                   'JOINED',
                   style: AppTypography.microLabel.copyWith(
                     fontSize: 10,
                     letterSpacing: 0.8,
-                    color: AppColors.textTertiary,
+                    color: AppColors.background,
                   ),
                 ),
               ),

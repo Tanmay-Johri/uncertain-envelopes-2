@@ -223,6 +223,40 @@ void main() {
       expect(find.text('59:00'), findsOneWidget);
     });
 
+    testWidgets('timed game shows TIME REMAINING placeholder when duration unknown',
+        (tester) async {
+      final s = mockLobbyScenarioForGameId('g1');
+      final data = GameLobbyViewData(
+        gameTitle: s.data.gameTitle,
+        description: s.data.description,
+        joiningCodeRaw: s.data.joiningCodeRaw,
+        isPublic: s.data.isPublic,
+        isRanked: s.data.isRanked,
+        maxPlayers: s.data.maxPlayers,
+        players: s.data.players,
+        isTimed: true,
+        tradingTimeRemaining: null,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameLobbyScreen(
+            data: data,
+            phase: GameLobbyPhase.preStart,
+            currentPlayerId: s.currentPlayerId,
+            isViewerAdmin: s.isViewerAdmin,
+          ),
+        ),
+      );
+      expect(find.text('TIME REMAINING'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('game-lobby-time-remaining-unknown')),
+        findsOneWidget,
+      );
+      expect(find.text('--:--'), findsOneWidget);
+      expect(find.byKey(const ValueKey('game-lobby-countdown')), findsNothing);
+    });
+
     testWidgets('hides countdown when not timed', (tester) async {
       final s = mockLobbyScenarioForGameId('g1');
       final data = GameLobbyViewData(
