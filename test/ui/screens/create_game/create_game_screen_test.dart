@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/data/models/player.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
+import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
+import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.dart'
     show
         CreateGameDraft,
@@ -10,13 +17,37 @@ import 'package:uncertain_envelopes_2/ui/screens/create_game/create_game_screen.
         CreateGameScreen,
         CreateGameSecurity;
 
-Future<void> _pump(WidgetTester tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: buildAppTheme(),
-      home: const CreateGameScreen(),
+Widget _providerWrappedCreateGameApp(Widget home) {
+  final auth = InMemoryAuthRepository();
+  auth.setSessionPlayerForTest(
+    Player(
+      playerId: 'test-player',
+      username: 'tester',
+      createdAt: DateTime.utc(2026, 1, 1),
+      email: 't@test.com',
     ),
   );
+  return ProviderScope(
+    overrides: [
+      authRepositoryProvider.overrideWithValue(auth),
+      gameRepositoryProvider.overrideWithValue(
+        InMemoryGameRepository(
+          commandRepository: InMemoryCommandRepository(),
+        ),
+      ),
+    ],
+    child: MaterialApp(
+      theme: buildAppTheme(),
+      home: home,
+    ),
+  );
+}
+
+Future<void> _pump(WidgetTester tester) async {
+  await tester.pumpWidget(
+    _providerWrappedCreateGameApp(const CreateGameScreen()),
+  );
+  await tester.pump();
 }
 
 /// Tall surface so CREATE GAME is in the hit-testable viewport (default ~600px
@@ -495,10 +526,11 @@ void main() {
       _bindTallSurfaceForSubmit(tester);
       var calls = 0;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: CreateGameScreen(
-            onSubmit: (_) => calls++,
+        _providerWrappedCreateGameApp(
+          CreateGameScreen(
+            onSubmit: (_) async {
+              calls++;
+            },
           ),
         ),
       );
@@ -512,10 +544,11 @@ void main() {
       _bindTallSurfaceForSubmit(tester);
       var calls = 0;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: CreateGameScreen(
-            onSubmit: (_) => calls++,
+        _providerWrappedCreateGameApp(
+          CreateGameScreen(
+            onSubmit: (_) async {
+              calls++;
+            },
           ),
         ),
       );
@@ -533,10 +566,11 @@ void main() {
       _bindTallSurfaceForSubmit(tester);
       CreateGameDraft? last;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: CreateGameScreen(
-            onSubmit: (d) => last = d,
+        _providerWrappedCreateGameApp(
+          CreateGameScreen(
+            onSubmit: (d) async {
+              last = d;
+            },
           ),
         ),
       );
@@ -570,10 +604,11 @@ void main() {
       _bindTallSurfaceForSubmit(tester);
       CreateGameDraft? last;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: CreateGameScreen(
-            onSubmit: (d) => last = d,
+        _providerWrappedCreateGameApp(
+          CreateGameScreen(
+            onSubmit: (d) async {
+              last = d;
+            },
           ),
         ),
       );
@@ -593,10 +628,11 @@ void main() {
       _bindTallSurfaceForSubmit(tester);
       var calls = 0;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: CreateGameScreen(
-            onSubmit: (_) => calls++,
+        _providerWrappedCreateGameApp(
+          CreateGameScreen(
+            onSubmit: (_) async {
+              calls++;
+            },
           ),
         ),
       );

@@ -11,8 +11,7 @@ import '../../ui/screens/profile/profile_view_data.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/orders/pending_orders_screen.dart';
-import '../../ui/screens/lobby/game_lobby_screen.dart';
-import '../../ui/screens/lobby/lobby_mock_data.dart';
+import '../../ui/screens/lobby/game_lobby_route_screen.dart';
 import '../../ui/screens/results/game_results_mock_route_host.dart';
 import '../../ui/screens/trading/game_trading_screen.dart';
 import '../../ui/screens/trading/trading_mock_data.dart';
@@ -108,19 +107,7 @@ GoRouter buildAppRouter({
             path: '/game/:id/lobby',
             builder: (context, state) {
               final id = state.pathParameters['id']!;
-              final scenario = mockLobbyScenarioForGameId(id);
-              return GameLobbyScreen(
-                data: scenario.data,
-                phase: scenario.phase,
-                currentPlayerId: scenario.currentPlayerId,
-                isViewerAdmin: scenario.isViewerAdmin,
-                onStartGame: () => context.go(AppRoutes.gameTrading(id)),
-                onEndGame: () {},
-                onEnterGame: () => context.go(AppRoutes.gameTrading(id)),
-                onJoinGame: () {},
-                onLeaveGame: () {},
-                onKickPlayer: (_) {},
-              );
+              return GameLobbyRouteScreen(gameId: id);
             },
           ),
           GoRoute(

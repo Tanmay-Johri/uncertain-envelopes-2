@@ -109,6 +109,10 @@ class InMemoryAuthRepository implements AuthRepository {
     _controller.add(p);
   }
 
+  /// Sets the logged-in player without credential checks (widget / repo
+  /// tests that need a session).
+  void setSessionPlayerForTest(Player player) => _setCurrent(player);
+
   /// Test-only shutdown hook.
   Future<void> dispose() => _controller.close();
 }

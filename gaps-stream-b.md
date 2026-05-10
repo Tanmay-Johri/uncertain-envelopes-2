@@ -326,3 +326,36 @@ streams because those streams do not touch that file).
   `test/providers/view_data/home_view_data_provider_test.dart`,
   `test/ui/screens/home/home_screen_test.dart` (loading/error),
   `test/core/router/app_router_test.dart` (override in `_pumpAppWith` + auth group).
+
+- **2026-05-09 — Plan 2B.3 (create game → lobby):** Added
+  `GameRepository.createGameAndReturnGameId`: `InMemoryGameRepository` inserts a
+  synthetic `Game` + admin `GamePlayer` after `submitCreateGame` (joining code
+  derived from the command id); `SupabaseGameRepository` polls
+  `commands.command_status` / `command_game_id` via new
+  `SupabaseGameGateway.fetchCommandStatusRow` (implemented on
+  `RealSupabaseGameGateway`). Configurable `createGamePollInterval` /
+  `createGameMaxPollAttempts` on the Supabase repo for tests. `CreateGameScreen`
+  is a `ConsumerStatefulWidget`: when `onSubmit` is null it maps
+  `CreateGameDraft` to repository enums, calls the repo, then
+  `context.go(AppRoutes.gameLobby(gameId))`; `GameRepositoryException` → SnackBar;
+  no session → SnackBar. `InMemoryAuthRepository.setSessionPlayerForTest` for
+  widget tests. Tests: `test/data/repositories/game_repository_test.dart` (in-memory
+  create + Supabase fake-gateway poll / reject / timeout),
+  `test/ui/screens/create_game/create_game_screen_test.dart` (`ProviderScope`
+  wrapper + async `onSubmit`). Verification: `flutter analyze` (0 issues),
+  `flutter test` (all passed).
+
+- **2026-05-10 — Plan 2B.4 (lobby provider + commands):** Added
+  `lib/providers/view_data/lobby_view_data_provider.dart` (`lobbyViewDataProvider`):
+  builds `GameLobbyScenario` from `currentGameProvider` + signed-in viewer +
+  `gameSecondsRemainingProvider` + timer tick; helpers `lobbyScenarioFromSession`,
+  `lobbyDisplayUsername`, `lobbyInitials`. `lib/ui/screens/lobby/game_lobby_route_screen.dart`
+  watches the provider (loading/error UI), maps actions to `commandRepositoryProvider`
+  submit methods, `onEnterGame` → trading route; when auth is absent (e.g. router tests
+  with mock lobby overrides) command `playerId` / `adminPlayerId` fall back to
+  `scenario.currentPlayerId`. `app_router.dart` lobby route uses the route screen.
+  Router tests add `lobbyViewDataProvider(id)` overrides delegating to
+  `mockLobbyScenarioForGameId` for stable fixtures. Tests:
+  `test/providers/view_data/lobby_view_data_provider_test.dart`,
+  `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
+  `flutter test` (all passed).

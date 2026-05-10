@@ -1,9 +1,11 @@
 import 'package:collection/collection.dart';
+import 'package:uuid/uuid.dart';
 
 import '../enums/end_condition.dart';
 import '../enums/game_security.dart';
 import '../enums/game_state.dart';
 import '../enums/is_ranked.dart';
+import '../enums/lobby_status.dart';
 import '../models/game.dart';
 import '../models/game_player.dart';
 import 'command_repository.dart';
@@ -70,6 +72,102 @@ class InMemoryGameRepository implements GameRepository {
       endCondition: endCondition,
       totalDecidedDurationSeconds: totalDecidedDurationSeconds,
     );
+  }
+
+  @override
+  Future<String> createGameAndReturnGameId({
+    required String adminPlayerId,
+    required String gameName,
+    String? gameDescription,
+    required GameSecurity gameSecurity,
+    required IsRanked isRanked,
+    required int gameMaxPlayers,
+    required EndCondition endCondition,
+    int? totalDecidedDurationSeconds,
+  }) async {
+    final commandId = await submitCreateGame(
+      adminPlayerId: adminPlayerId,
+      gameName: gameName,
+      gameDescription: gameDescription,
+      gameSecurity: gameSecurity,
+      isRanked: isRanked,
+      gameMaxPlayers: gameMaxPlayers,
+      endCondition: endCondition,
+      totalDecidedDurationSeconds: totalDecidedDurationSeconds,
+    );
+    final gameId = const Uuid().v4();
+    final joiningCode = _uniqueJoiningCode(commandId);
+    final now = DateTime.now().toUtc();
+    _games[gameId] = Game(
+      gameId: gameId,
+      gameName: gameName,
+      gameDescription: gameDescription,
+      gameCreatedAt: now,
+      gameSecurity: gameSecurity,
+      isRanked: isRanked,
+      gameMaxPlayers: gameMaxPlayers,
+      joiningCode: joiningCode,
+      endCondition: endCondition,
+      totalDecidedDurationSeconds: totalDecidedDurationSeconds,
+      endTimeDecided: null,
+      startTime: null,
+      endTimeActual: null,
+      gameState: GameState.created,
+      adminPlayerId: adminPlayerId,
+      lastTradedPrice: null,
+      envelopePrice: null,
+      stateVersion: 0,
+      updatedAt: now,
+    );
+    seedGamePlayer(
+      GamePlayer(
+        gamesPlayersRowId: const Uuid().v4(),
+        mapGameId: gameId,
+        mapPlayerId: adminPlayerId,
+        lobbyStatus: LobbyStatus.playing,
+        joinedAt: now,
+        isAdmin: true,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+        pnl: 0,
+      ),
+    );
+    return gameId;
+  }
+
+  /// Deterministic 5-char code from [commandId]; retries if collision.
+  String _uniqueJoiningCode(String commandId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (var salt = 0; salt < 1000; salt++) {
+      var h = salt * 1000003;
+      for (final u in commandId.codeUnits) {
+        h = 37 * h + u;
+      }
+      final buf = StringBuffer();
+      for (var i = 0; i < 5; i++) {
+        h = h * 1103515245 + 12345;
+        buf.write(chars[h.abs() % chars.length]);
+      }
+      final code = buf.toString();
+      if (!_games.values.any((g) => g.joiningCode == code)) {
+        return code;
+      }
+    }
+    return _joiningCodeFromSeed(const Uuid().v4());
+  }
+
+  String _joiningCodeFromSeed(String seed) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var h = 0;
+    for (final u in seed.codeUnits) {
+      h = 37 * h + u;
+    }
+    final buf = StringBuffer();
+    for (var i = 0; i < 5; i++) {
+      h = h * 1103515245 + 12345;
+      buf.write(chars[h.abs() % chars.length]);
+    }
+    return buf.toString();
   }
 
   @override

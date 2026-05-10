@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../data/enums/end_condition.dart';
+import '../../../data/enums/game_security.dart';
+import '../../../data/enums/is_ranked.dart';
+import '../../../data/repositories/game_repository.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/game_repository_provider.dart';
 import '../../widgets/neon_button.dart';
 
 /// Who can discover / join the game (plan C4).
@@ -122,17 +131,20 @@ class CreateGameDraft {
 
 /// Stream C — Create Game flow (plan C4). Visual layout follows
 /// `design-uncertain-envelopes-2/.../admin_game_trading_dashboard_5/code.html`.
-class CreateGameScreen extends StatefulWidget {
+class CreateGameScreen extends ConsumerStatefulWidget {
   const CreateGameScreen({super.key, this.onSubmit});
 
   /// When non-null and the form validates, called with a single draft (C4f).
-  final ValueChanged<CreateGameDraft>? onSubmit;
+  ///
+  /// When null, the screen submits via [gameRepositoryProvider] and
+  /// navigates to the new game's lobby (requires a signed-in player).
+  final Future<void> Function(CreateGameDraft)? onSubmit;
 
   @override
-  State<CreateGameScreen> createState() => _CreateGameScreenState();
+  ConsumerState<CreateGameScreen> createState() => _CreateGameScreenState();
 }
 
-class _CreateGameScreenState extends State<CreateGameScreen> {
+class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -250,25 +262,69 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
     );
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     _commitMaxPlayersFromField();
     _commitDurationFromField();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final callback = widget.onSubmit;
-    if (callback == null) return;
-    callback(
-      CreateGameDraft(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        security: _security,
-        ranked: _ranked,
-        maxPlayers: _maxPlayers,
-        endCondition: _endCondition,
-        durationMinutes: _endCondition == CreateGameEndCondition.timed
-            ? _durationMinutes
-            : null,
-      ),
+    final draft = CreateGameDraft(
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      security: _security,
+      ranked: _ranked,
+      maxPlayers: _maxPlayers,
+      endCondition: _endCondition,
+      durationMinutes: _endCondition == CreateGameEndCondition.timed
+          ? _durationMinutes
+          : null,
     );
+    final callback = widget.onSubmit;
+    if (callback != null) {
+      await callback(draft);
+      return;
+    }
+    final player = ref.read(authControllerProvider).valueOrNull;
+    if (!mounted) return;
+    if (player == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to create a game.')),
+      );
+      return;
+    }
+    final desc = draft.description.trim();
+    final gameSecurity = switch (draft.security) {
+      CreateGameSecurity.public => GameSecurity.public,
+      CreateGameSecurity.private => GameSecurity.private,
+    };
+    final isRanked =
+        draft.ranked ? IsRanked.ranked : IsRanked.casual;
+    final endCondition = switch (draft.endCondition) {
+      CreateGameEndCondition.timed => EndCondition.timed,
+      CreateGameEndCondition.endless => EndCondition.endless,
+    };
+    final durationSeconds =
+        draft.endCondition == CreateGameEndCondition.timed &&
+                draft.durationMinutes != null
+            ? draft.durationMinutes! * 60
+            : null;
+    try {
+      final gameId = await ref.read(gameRepositoryProvider).createGameAndReturnGameId(
+            adminPlayerId: player.playerId,
+            gameName: draft.name,
+            gameDescription: desc.isEmpty ? null : desc,
+            gameSecurity: gameSecurity,
+            isRanked: isRanked,
+            gameMaxPlayers: draft.maxPlayers,
+            endCondition: endCondition,
+            totalDecidedDurationSeconds: durationSeconds,
+          );
+      if (!mounted) return;
+      context.go(AppRoutes.gameLobby(gameId));
+    } on GameRepositoryException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
   }
 
   bool get _showDuration => _endCondition == CreateGameEndCondition.timed;
@@ -715,7 +771,9 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
               NeonButton(
                 key: const ValueKey('create-game-submit'),
                 label: 'Create Game',
-                onPressed: _handleSubmit,
+                onPressed: () {
+                  _handleSubmit();
+                },
               ),
             ],
           ),

@@ -60,6 +60,28 @@ void main() {
       expect(commands.inserts.single.playerId, 'p-1');
     });
 
+    test('createGameAndReturnGameId inserts game and admin membership', () async {
+      final gameId = await repo.createGameAndReturnGameId(
+        adminPlayerId: 'p-admin',
+        gameName: 'Fresh',
+        gameDescription: 'd',
+        gameSecurity: GameSecurity.private,
+        isRanked: IsRanked.ranked,
+        gameMaxPlayers: 8,
+        endCondition: EndCondition.timed,
+        totalDecidedDurationSeconds: 120,
+      );
+      expect(gameId, isNotEmpty);
+      expect(commands.inserts.single.type, CommandType.createGame);
+      final g = await repo.fetchGame(gameId);
+      expect(g?.gameName, 'Fresh');
+      expect(g?.gameSecurity, GameSecurity.private);
+      expect(g?.joiningCode.length, 5);
+      final players = await repo.fetchGamePlayers(gameId);
+      expect(players.single.mapPlayerId, 'p-admin');
+      expect(players.single.isAdmin, isTrue);
+    });
+
     test('fetchGame returns null when not seeded', () async {
       expect(await repo.fetchGame('nope'), isNull);
     });
@@ -161,6 +183,7 @@ void main() {
       repo = SupabaseGameRepository(
         commandRepository: commands,
         gateway: gateway,
+        createGamePollInterval: Duration.zero,
       );
     });
 
@@ -176,6 +199,70 @@ void main() {
       );
       expect(commands.inserts.single.commandId, id);
       expect(gateway.calls, isEmpty); // no game-table read
+    });
+
+    test('createGameAndReturnGameId polls until processed', () async {
+      gateway.commandPollPhasesById['cmd-1'] = [
+        {'command_status': 'pending', 'command_game_id': null},
+        {'command_status': 'processed', 'command_game_id': 'g-new'},
+      ];
+      final gameId = await repo.createGameAndReturnGameId(
+        adminPlayerId: 'p-1',
+        gameName: 'N',
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.ranked,
+        gameMaxPlayers: 5,
+        endCondition: EndCondition.timed,
+        totalDecidedDurationSeconds: 600,
+      );
+      expect(gameId, 'g-new');
+      expect(
+        gateway.calls.where((c) => c.startsWith('fetchCommandStatusRow')),
+        isNotEmpty,
+      );
+    });
+
+    test('createGameAndReturnGameId throws on rejected', () async {
+      gateway.commandPollPhasesById['cmd-1'] = [
+        {'command_status': 'rejected', 'command_game_id': null},
+      ];
+      await expectLater(
+        repo.createGameAndReturnGameId(
+          adminPlayerId: 'p-1',
+          gameName: 'N',
+          gameSecurity: GameSecurity.public,
+          isRanked: IsRanked.ranked,
+          gameMaxPlayers: 5,
+          endCondition: EndCondition.timed,
+          totalDecidedDurationSeconds: 1,
+        ),
+        throwsA(isA<CreateGameCommandFailedException>()),
+      );
+    });
+
+    test('createGameAndReturnGameId times out when status stays pending',
+        () async {
+      gateway.commandPollPhasesById['cmd-1'] = List<Map<String, dynamic>>.filled(
+        20,
+        {'command_status': 'pending', 'command_game_id': null},
+      );
+      final stuck = SupabaseGameRepository(
+        commandRepository: commands,
+        gateway: gateway,
+        createGamePollInterval: Duration.zero,
+        createGameMaxPollAttempts: 4,
+      );
+      await expectLater(
+        stuck.createGameAndReturnGameId(
+          adminPlayerId: 'p-1',
+          gameName: 'N',
+          gameSecurity: GameSecurity.public,
+          isRanked: IsRanked.ranked,
+          gameMaxPlayers: 5,
+          endCondition: EndCondition.endless,
+        ),
+        throwsA(isA<CreateGameTimeoutException>()),
+      );
     });
 
     test('fetchGame decodes row from gateway', () async {
@@ -256,6 +343,11 @@ class _FakeGameGateway implements SupabaseGameGateway {
   final List<String> codeLookups = [];
   final List<String> calls = [];
 
+  /// Per [commandId], ordered rows for [fetchCommandStatusRow]. When absent,
+  /// defaults to one `pending` then `processed` with game id `g-new`.
+  final Map<String, List<Map<String, dynamic>>> commandPollPhasesById = {};
+  final Map<String, int> _commandPollIndex = {};
+
   @override
   Future<Map<String, dynamic>?> fetchGameRow(String gameId) async {
     calls.add('fetchGameRow($gameId)');
@@ -289,5 +381,19 @@ class _FakeGameGateway implements SupabaseGameGateway {
     codeLookups.add(code);
     calls.add('lookupGameRowByCode($code)');
     return codeRows[code];
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchCommandStatusRow(String commandId) async {
+    calls.add('fetchCommandStatusRow($commandId)');
+    final phases = commandPollPhasesById[commandId] ??
+        [
+          {'command_status': 'pending', 'command_game_id': null},
+          {'command_status': 'processed', 'command_game_id': 'g-new'},
+        ];
+    final i = _commandPollIndex[commandId] ?? 0;
+    final idx = i < phases.length ? i : phases.length - 1;
+    _commandPollIndex[commandId] = i + 1;
+    return phases[idx];
   }
 }

@@ -9,6 +9,10 @@ abstract class SupabaseGameGateway {
   Future<List<Map<String, dynamic>>> fetchPublicGameRows();
   Future<List<Map<String, dynamic>>> fetchJoinedGameRows(String playerId);
   Future<Map<String, dynamic>?> lookupGameRowByCode(String code);
+
+  /// Row for [createGameAndReturnGameId] polling: `command_status`,
+  /// `command_game_id`.
+  Future<Map<String, dynamic>?> fetchCommandStatusRow(String commandId);
 }
 
 class RealSupabaseGameGateway implements SupabaseGameGateway {
@@ -65,6 +69,16 @@ class RealSupabaseGameGateway implements SupabaseGameGateway {
         .from('games')
         .select()
         .eq('joining_code', code.toUpperCase())
+        .maybeSingle();
+    return row;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchCommandStatusRow(String commandId) async {
+    final row = await _client
+        .from('commands')
+        .select('command_status, command_game_id')
+        .eq('command_id', commandId)
         .maybeSingle();
     return row;
   }

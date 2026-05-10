@@ -23,6 +23,22 @@ abstract class GameRepository {
     int? totalDecidedDurationSeconds,
   });
 
+  /// Submits `create_game` and returns the new `game_id` once it exists.
+  ///
+  /// In-memory: applies the game row immediately after the command insert.
+  /// Supabase: polls `commands` until `processed` with `command_game_id` set
+  /// (or throws on rejection / timeout).
+  Future<String> createGameAndReturnGameId({
+    required String adminPlayerId,
+    required String gameName,
+    String? gameDescription,
+    required GameSecurity gameSecurity,
+    required IsRanked isRanked,
+    required int gameMaxPlayers,
+    required EndCondition endCondition,
+    int? totalDecidedDurationSeconds,
+  });
+
   /// Fetches the full game row by id, or null when it does not exist.
   Future<Game?> fetchGame(String gameId);
 
@@ -69,4 +85,12 @@ sealed class GameRepositoryException implements Exception {
 class GameNotFoundException extends GameRepositoryException {
   const GameNotFoundException(String code)
       : super('No game found with joining code "$code"');
+}
+
+class CreateGameCommandFailedException extends GameRepositoryException {
+  const CreateGameCommandFailedException(super.message);
+}
+
+class CreateGameTimeoutException extends GameRepositoryException {
+  const CreateGameTimeoutException(super.message);
 }
