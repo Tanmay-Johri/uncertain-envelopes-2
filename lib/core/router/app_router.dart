@@ -33,14 +33,12 @@ abstract final class AppRoutes {
   static String gameResults(String id) => '/game/$id/results';
 }
 
-/// Home list tap — lobby while waiting, trading while active, results once
-/// trading has stopped or the tile is in the post-game envelope window.
+/// Home list tap — lobby first for every in-progress game so the player can
+/// use **Enter game** to open trading. Only post-trading / envelope tiles open
+/// results directly.
 String homeGameEntryRoute(MockHomeGame game) {
   if (game.status == GameStatusBadge.ended || game.openEnvelopeResults) {
     return AppRoutes.gameResults(game.id);
-  }
-  if (game.status == GameStatusBadge.playing) {
-    return AppRoutes.gameTrading(game.id);
   }
   return AppRoutes.gameLobby(game.id);
 }

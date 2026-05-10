@@ -219,7 +219,7 @@ void main() {
       expect(find.byType(AppShell), findsOneWidget);
     });
 
-    testWidgets('tapping a playing home game card opens trading', (
+    testWidgets('tapping a playing home game card opens lobby', (
       tester,
     ) async {
       await _pumpAppWith(tester);
@@ -228,9 +228,9 @@ void main() {
       await tester.ensureVisible(g1);
       await tester.tap(g1);
       await tester.pump();
-      // Trading mounts [CountdownTimer] etc.; pumpAndSettle never completes.
+      // Lobby trading phase mounts [CountdownTimer]; avoid pumpAndSettle.
       await tester.pump(const Duration(seconds: 2));
-      expect(find.byType(GameTradingScreen), findsOneWidget);
+      expect(find.byType(GameLobbyScreen), findsOneWidget);
       expect(find.text('Forex Masters'), findsWidgets);
     });
 

@@ -62,7 +62,7 @@ void main() {
       );
     });
 
-    test('playing routes to trading', () {
+    test('playing routes to lobby (enter trading from lobby)', () {
       expect(
         homeGameEntryRoute(
           const MockHomeGame(
@@ -77,7 +77,7 @@ void main() {
             maxPlayers: 8,
           ),
         ),
-        AppRoutes.gameTrading('z'),
+        AppRoutes.gameLobby('z'),
       );
     });
 
