@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../providers/view_data/game_history_view_data_provider.dart';
+import '../../widgets/fetched_error_panel.dart';
 import 'game_history_screen.dart';
 
 /// Route body: loads [gameHistoryViewDataProvider] (Phase 2B.9).
@@ -36,15 +36,9 @@ class GameHistoryRouteScreen extends ConsumerWidget {
             },
           ),
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              '$e',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-          ),
+        body: FetchedErrorPanel(
+          message: '$e',
+          onRetry: () => ref.invalidate(gameHistoryViewDataProvider),
         ),
       ),
       data: (entries) => GameHistoryScreen(entries: entries),

@@ -24,12 +24,7 @@ enum _HomeListTab { joined, public }
 /// When [games] is non-null, that list is used (widget tests / overrides).
 /// When [games] is null, tiles load from [homeViewDataProvider] (Phase 2B.2).
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    this.onEnterGame,
-    this.onOpenGame,
-    this.games,
-  });
+  const HomeScreen({super.key, this.onEnterGame, this.onOpenGame, this.games});
 
   /// Called with a five-character joining code when the user taps Enter.
   ///
@@ -62,7 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _submitJoin(BuildContext context, WidgetRef? ref, String code) async {
+  Future<void> _submitJoin(
+    BuildContext context,
+    WidgetRef? ref,
+    String code,
+  ) async {
     if (widget.onEnterGame != null) {
       widget.onEnterGame!.call(code);
       return;
@@ -71,29 +70,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final player = ref.read(authControllerProvider).valueOrNull;
     if (player == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to join a game.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign in to join a game.')));
       return;
     }
 
     try {
-      final result = await ref.read(gameRepositoryProvider).joinByCode(
-            code: code.toUpperCase(),
-            playerId: player.playerId,
-          );
+      final result = await ref
+          .read(gameRepositoryProvider)
+          .joinByCode(code: code.toUpperCase(), playerId: player.playerId);
       if (!context.mounted) return;
       context.go(AppRoutes.gameLobby(result.gameId));
     } on GameNotFoundException catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
@@ -130,9 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              CodeInput(
-                onChanged: (c) => setState(() => _code = c),
-              ),
+              CodeInput(onChanged: (c) => setState(() => _code = c)),
               const SizedBox(height: AppSpacing.md),
               NeonButton(
                 label: 'Enter game',
@@ -144,18 +138,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.sectionGap),
-              _TabBar(
-                tab: _tab,
-                onChanged: (t) => setState(() => _tab = t),
-              ),
+              _TabBar(tab: _tab, onChanged: (t) => setState(() => _tab = t)),
               const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    'YOU ARE ADMIN',
-                    style: AppTypography.microLabel,
-                  ),
+                  Text('YOU ARE ADMIN', style: AppTypography.microLabel),
                   const SizedBox(width: AppSpacing.md),
                   Switch(
                     value: _adminOnly,
@@ -171,12 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
               if (listError != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                  child: Text(
-                    listError,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.error,
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        listError,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.error,
+                        ),
+                      ),
+                      if (ref != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        NeonButton(
+                          key: const ValueKey('home-game-list-retry'),
+                          label: 'Retry',
+                          variant: NeonButtonVariant.outline,
+                          expand: false,
+                          trailingIcon: Icons.refresh,
+                          onPressed: () => ref.invalidate(homeViewDataProvider),
+                        ),
+                      ],
+                    ],
                   ),
                 )
               else if (listLoading)
@@ -192,8 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               else if (filtered.isEmpty)
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xxxl,
+                  ),
                   child: Text(
                     'No games match your filters.',
                     textAlign: TextAlign.center,
@@ -240,11 +244,8 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, ref, _) {
         final async = ref.watch(homeViewDataProvider);
         return async.when(
-          data: (games) => _buildContent(
-            context: context,
-            games: games,
-            ref: ref,
-          ),
+          data: (games) =>
+              _buildContent(context: context, games: games, ref: ref),
           loading: () => _buildContent(
             context: context,
             games: const [],
@@ -264,10 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _TabBar extends StatelessWidget {
-  const _TabBar({
-    required this.tab,
-    required this.onChanged,
-  });
+  const _TabBar({required this.tab, required this.onChanged});
 
   final _HomeListTab tab;
   final ValueChanged<_HomeListTab> onChanged;

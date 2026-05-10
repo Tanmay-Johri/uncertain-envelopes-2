@@ -6,11 +6,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../data/repositories/player_repository.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/player_repository_provider.dart';
 import '../../../providers/view_data/profile_view_data_provider.dart';
+import '../../widgets/fetched_error_panel.dart';
 import 'profile_screen.dart';
 import 'profile_view_data.dart';
 
@@ -43,15 +43,9 @@ class ProfileRouteScreen extends ConsumerWidget {
             },
           ),
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              '$e',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-          ),
+        body: FetchedErrorPanel(
+          message: '$e',
+          onRetry: () => ref.invalidate(profileViewDataProvider),
         ),
       ),
       data: (data) {
@@ -78,19 +72,23 @@ class ProfileRouteScreen extends ConsumerWidget {
             }
           },
           onSignOut: () {
-            unawaited((() async {
-              await ref.read(authControllerProvider.notifier).signOut();
-              if (!context.mounted) return;
-              context.go(AppRoutes.auth);
-            })());
+            unawaited(
+              (() async {
+                await ref.read(authControllerProvider.notifier).signOut();
+                if (!context.mounted) return;
+                context.go(AppRoutes.auth);
+              })(),
+            );
           },
           onGameHistoryTap: () => context.go(AppRoutes.history),
           onDeleteAccount: () {
-            unawaited((() async {
-              await ref.read(authControllerProvider.notifier).deleteAccount();
-              if (!context.mounted) return;
-              context.go(AppRoutes.auth);
-            })());
+            unawaited(
+              (() async {
+                await ref.read(authControllerProvider.notifier).deleteAccount();
+                if (!context.mounted) return;
+                context.go(AppRoutes.auth);
+              })(),
+            );
           },
         );
       },

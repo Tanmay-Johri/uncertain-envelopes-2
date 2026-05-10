@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/view_data/pending_orders_view_data_provider.dart';
+import '../../widgets/fetched_error_panel.dart';
 import 'pending_orders_screen.dart';
 import 'pending_orders_view_data.dart';
 
@@ -26,15 +26,9 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
       error: (e, _) => Scaffold(
         key: const ValueKey('pending-orders-route-error'),
         backgroundColor: AppColors.background,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              '$e',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-          ),
+        body: FetchedErrorPanel(
+          message: '$e',
+          onRetry: () => ref.invalidate(pendingOrdersViewDataProvider),
         ),
       ),
       data: (items) {
@@ -44,23 +38,25 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
           onCancelOrder: viewer == null
               ? null
               : (orderId) {
-                  unawaited((() async {
-                    PendingOrderListItem? row;
-                    for (final e in items) {
-                      if (e.order.id == orderId) {
-                        row = e;
-                        break;
+                  unawaited(
+                    (() async {
+                      PendingOrderListItem? row;
+                      for (final e in items) {
+                        if (e.order.id == orderId) {
+                          row = e;
+                          break;
+                        }
                       }
-                    }
-                    if (row == null) return;
-                    final cmds = ref.read(commandRepositoryProvider);
-                    await cmds.submitCancelOrder(
-                      gameId: row.gameId,
-                      playerId: viewer.playerId,
-                      orderId: orderId,
-                    );
-                    ref.invalidate(pendingOrdersViewDataProvider);
-                  })());
+                      if (row == null) return;
+                      final cmds = ref.read(commandRepositoryProvider);
+                      await cmds.submitCancelOrder(
+                        gameId: row.gameId,
+                        playerId: viewer.playerId,
+                        orderId: orderId,
+                      );
+                      ref.invalidate(pendingOrdersViewDataProvider);
+                    })(),
+                  );
                 },
         );
       },

@@ -25,50 +25,54 @@ void main() {
     });
 
     testWidgets(
-        'Enter game stays tappable but only submits after five characters',
-        (tester) async {
-      String? submitted;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAppTheme(),
-          home: HomeScreen(
-            games: const [],
-            onEnterGame: (c) => submitted = c,
+      'Enter game stays tappable but only submits after five characters',
+      (tester) async {
+        String? submitted;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAppTheme(),
+            home: HomeScreen(
+              games: const [],
+              onEnterGame: (c) => submitted = c,
+            ),
           ),
-        ),
-      );
-      expect(
-        tester.widget<NeonButton>(find.byType(NeonButton).first).onPressed,
-        isNotNull,
-      );
+        );
+        expect(
+          tester.widget<NeonButton>(find.byType(NeonButton).first).onPressed,
+          isNotNull,
+        );
 
-      await tester.tap(find.byType(NeonButton));
-      await tester.pump();
-      expect(submitted, isNull);
+        await tester.tap(find.byType(NeonButton));
+        await tester.pump();
+        expect(submitted, isNull);
 
-      await tester.tap(find.byKey(const ValueKey('code_cell_0')));
-      await tester.pump();
-      await tester.enterText(find.byKey(const ValueKey('code_cell_0')), 'ABCDE');
-      await tester.pump();
-      await tester.tap(find.byType(NeonButton));
-      await tester.pump();
-      expect(submitted, 'ABCDE');
-    });
+        await tester.tap(find.byKey(const ValueKey('code_cell_0')));
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('code_cell_0')),
+          'ABCDE',
+        );
+        await tester.pump();
+        await tester.tap(find.byType(NeonButton));
+        await tester.pump();
+        expect(submitted, 'ABCDE');
+      },
+    );
 
     testWidgets('Enter game invokes onEnterGame with code', (tester) async {
       String? submitted;
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: HomeScreen(
-            games: const [],
-            onEnterGame: (c) => submitted = c,
-          ),
+          home: HomeScreen(games: const [], onEnterGame: (c) => submitted = c),
         ),
       );
       await tester.tap(find.byKey(const ValueKey('code_cell_0')));
       await tester.pump();
-      await tester.enterText(find.byKey(const ValueKey('code_cell_0')), 'ZZZZZ');
+      await tester.enterText(
+        find.byKey(const ValueKey('code_cell_0')),
+        'ZZZZZ',
+      );
       await tester.pump();
       await tester.tap(find.byType(NeonButton));
       await tester.pump();
@@ -189,8 +193,9 @@ void main() {
   });
 
   group('HomeScreen provider-driven list', () {
-    testWidgets('shows loading indicator while homeViewData resolves',
-        (tester) async {
+    testWidgets('shows loading indicator while homeViewData resolves', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -199,10 +204,7 @@ void main() {
               return const <MockHomeGame>[];
             }),
           ],
-          child: MaterialApp(
-            theme: buildAppTheme(),
-            home: const HomeScreen(),
-          ),
+          child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
         ),
       );
       await tester.pump();
@@ -219,14 +221,46 @@ void main() {
               (ref) async => throw StateError('network'),
             ),
           ],
-          child: MaterialApp(
-            theme: buildAppTheme(),
-            home: const HomeScreen(),
-          ),
+          child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('Bad state'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('home-game-list-retry')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('retry refetches homeViewData after provider error', (
+      tester,
+    ) async {
+      var calls = 0;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeViewDataProvider.overrideWith((ref) async {
+              calls++;
+              if (calls == 1) {
+                throw StateError('offline');
+              }
+              return const <MockHomeGame>[];
+            }),
+          ],
+          child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('home-game-list-retry')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('home-game-list-retry')));
+      await tester.pumpAndSettle();
+
+      expect(calls, 2);
+      expect(find.text('No games match your filters.'), findsOneWidget);
     });
   });
 }

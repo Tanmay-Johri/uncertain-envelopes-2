@@ -6,11 +6,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
 import '../../../providers/view_data/results_view_data_provider.dart';
+import '../../widgets/fetched_error_panel.dart';
 import 'game_results_screen.dart';
 
 /// Shell route body: loads [resultsViewDataProvider] and wires results actions
@@ -28,14 +28,20 @@ class GameResultsRouteScreen extends ConsumerWidget {
       await body();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
-  String _commandPlayerId(WidgetRef ref, String? viewerId, String? highlightId) {
-    final admin = ref.read(currentGameProvider(gameId)).valueOrNull?.game.adminPlayerId;
+  String _commandPlayerId(
+    WidgetRef ref,
+    String? viewerId,
+    String? highlightId,
+  ) {
+    final admin = ref
+        .read(currentGameProvider(gameId))
+        .valueOrNull
+        ?.game
+        .adminPlayerId;
     return viewerId ?? highlightId ?? admin ?? '';
   }
 
@@ -63,20 +69,18 @@ class GameResultsRouteScreen extends ConsumerWidget {
             },
           ),
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              '$e',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-          ),
+        body: FetchedErrorPanel(
+          message: '$e',
+          onRetry: () => ref.invalidate(resultsViewDataProvider(gameId)),
         ),
       ),
       data: (data) {
         final viewer = ref.read(authControllerProvider).valueOrNull;
-        final playerId = _commandPlayerId(ref, viewer?.playerId, data.highlightPlayerId);
+        final playerId = _commandPlayerId(
+          ref,
+          viewer?.playerId,
+          data.highlightPlayerId,
+        );
         final cmds = ref.read(commandRepositoryProvider);
 
         return GameResultsScreen(
@@ -85,7 +89,9 @@ class GameResultsRouteScreen extends ConsumerWidget {
           onUpdateEnvelopePrice: data.isViewerAdmin && !data.gameEnded
               ? (usd) async {
                   if (usd == null) {
-                    await ref.read(currentGameProvider(gameId).notifier).refresh();
+                    await ref
+                        .read(currentGameProvider(gameId).notifier)
+                        .refresh();
                     return;
                   }
                   await cmds.submitSetEnvelopePrice(
@@ -93,13 +99,21 @@ class GameResultsRouteScreen extends ConsumerWidget {
                     adminPlayerId: playerId,
                     envelopePrice: usd,
                   );
-                  await ref.read(currentGameProvider(gameId).notifier).refresh();
+                  await ref
+                      .read(currentGameProvider(gameId).notifier)
+                      .refresh();
                 }
               : null,
           pollCommittedEnvelopePrice: data.isViewerAdmin && !data.gameEnded
               ? () async {
-                  await ref.read(currentGameProvider(gameId).notifier).refresh();
-                  return ref.read(currentGameProvider(gameId)).valueOrNull?.game.envelopePrice;
+                  await ref
+                      .read(currentGameProvider(gameId).notifier)
+                      .refresh();
+                  return ref
+                      .read(currentGameProvider(gameId))
+                      .valueOrNull
+                      ?.game
+                      .envelopePrice;
                 }
               : null,
           onEndGame: data.gameEnded
@@ -118,7 +132,9 @@ class GameResultsRouteScreen extends ConsumerWidget {
                           adminPlayerId: playerId,
                         );
                       }
-                      await ref.read(currentGameProvider(gameId).notifier).refresh();
+                      await ref
+                          .read(currentGameProvider(gameId).notifier)
+                          .refresh();
                     }),
                   );
                 },
