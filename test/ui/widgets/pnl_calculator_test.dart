@@ -42,7 +42,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text(r'$1.00'), findsOneWidget);
+      expect(find.text(r'$100.00'), findsOneWidget);
     });
 
     testWidgets('reset snaps assumption and range to market price', (

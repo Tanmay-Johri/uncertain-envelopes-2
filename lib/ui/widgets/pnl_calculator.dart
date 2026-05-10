@@ -10,7 +10,7 @@ import '../../core/trading/projected_pnl.dart';
 import '../screens/trading/trading_stat_format.dart';
 
 /// Default envelope center when [marketPrice] is unknown (slider uses [envelopeSliderBoundsForCenter]).
-const double _kEnvelopeCenterWhenNoMarketPrice = 1.0;
+const double _kEnvelopeCenterWhenNoMarketPrice = 100.0;
 
 /// PnL calculator: adjustable envelope assumption, projected PnL (B7 formula).
 class PnlCalculator extends StatefulWidget {
