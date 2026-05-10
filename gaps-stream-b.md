@@ -349,6 +349,12 @@ streams because those streams do not touch that file).
   touch `Supabase.instance` before init). Coordinate merge with
   Stream A if they ship the same RPC name.
 
+- **2026-05-10 — B-GAP-2 remote apply:** Migration
+  `player_ranked_finalised_participations` applied to Supabase project
+  `agohjlgjjxbtfjdgqixa` (hosted version `20260510043909`). Verified: function
+  exists as `SECURITY INVOKER` (`prosecdef = false`); PostgREST RPC with anon
+  returns `[]` for a dummy `p_player_id` (no session data).
+
 - **2026-05-09 — Plan 2B.1 (auth + redirect guards):** Added
   `lib/ui/screens/auth/auth_route_screen.dart` (wires `AuthScreen` to
   `authControllerProvider`, SnackBar on `AuthException`); `lib/core/router/app_router_provider.dart`
