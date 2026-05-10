@@ -66,6 +66,7 @@ class GameLobbyScreen extends StatelessWidget {
         backgroundColor: AppColors.background.withValues(alpha: 0.95),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         leading: BackButton(
           onPressed: () {
             if (context.canPop()) {
@@ -76,9 +77,12 @@ class GameLobbyScreen extends StatelessWidget {
           },
         ),
         title: Text(
-          'Lobby',
+          'UNCERTAIN ENVELOPES',
           key: const ValueKey('game-lobby-appbar-title'),
-          style: AppTypography.screenTitle,
+          style: AppTypography.brandHeader,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ),
       body: SafeArea(
