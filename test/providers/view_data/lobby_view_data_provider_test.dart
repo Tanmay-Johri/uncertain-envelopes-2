@@ -258,4 +258,20 @@ void main() {
       expect(async.requireValue.data.gameTitle, 'Forex Masters');
     });
   });
+
+  group('displayUsernameForPlayer', () {
+    test('uses trimmed username when profile exists', () {
+      final p = Player(
+        playerId: 'p1',
+        username: '  ann  ',
+        createdAt: DateTime.utc(2026, 1, 1),
+        email: 'a@test.com',
+      );
+      expect(displayUsernameForPlayer('p1', {'p1': p}), 'ann');
+    });
+
+    test('falls back to lobby placeholder when profile missing', () {
+      expect(displayUsernameForPlayer('aa-bb-cc-dd99', {}), 'Player dd99');
+    });
+  });
 }

@@ -19,9 +19,11 @@ import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_reposi
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_execution_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_order_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_player_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/providers/command_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
+import 'package:uncertain_envelopes_2/providers/player_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/trading_repository_providers.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
@@ -141,6 +143,24 @@ void main() {
         ),
       );
 
+      final playerRepo = InMemoryPlayerRepository()
+        ..seedPlayer(
+          Player(
+            playerId: 'viewer-1',
+            username: 'alice',
+            createdAt: DateTime.utc(2026, 1, 1),
+            email: 'alice@test.com',
+          ),
+        )
+        ..seedPlayer(
+          Player(
+            playerId: 'other',
+            username: 'bob_the_seller',
+            createdAt: DateTime.utc(2026, 1, 2),
+            email: 'bob@test.com',
+          ),
+        );
+
       final container = ProviderContainer(
         overrides: [
           authRepositoryProvider.overrideWithValue(authRepo),
@@ -148,6 +168,7 @@ void main() {
           orderRepositoryProvider.overrideWithValue(orders),
           executionRepositoryProvider.overrideWithValue(executions),
           commandRepositoryProvider.overrideWithValue(commands),
+          playerRepositoryProvider.overrideWithValue(playerRepo),
         ],
       );
       addTearDown(container.dispose);
@@ -168,6 +189,8 @@ void main() {
       expect(data.tradeLogs.length, 1);
       expect(data.tradeLogs.single.price, 200);
       expect(data.tradeLogs.single.quantity, 1);
+      expect(data.tradeLogs.single.sellerName, 'bob_the_seller');
+      expect(data.tradeLogs.single.buyerName, 'alice');
     });
 
     test('marketPrice is null when no trades and incomplete book', () async {

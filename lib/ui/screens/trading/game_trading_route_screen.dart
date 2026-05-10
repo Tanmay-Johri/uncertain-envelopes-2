@@ -47,6 +47,29 @@ bool _gameStateOpensResults(GameState s) {
       s == GameState.discarded;
 }
 
+/// Best-effort post-submit refresh.
+///
+/// Realtime is the primary delivery mechanism for new pending-command tiles
+/// and order rows. The explicit refreshes called after `submitCreateOrder` are
+/// only a low-latency UI bump on top of that channel — if any of them throw
+/// (transient network blip, parser hiccup, race with realtime, auth token
+/// rotation) we **must not** propagate the failure to the caller. Letting
+/// refresh errors bubble up was the cause of the user-reported false positive
+/// where the order *was* created on the server but the UI showed
+/// "Could not submit order".
+@visibleForTesting
+Future<void> bestEffortPostSubmitRefresh(
+  List<Future<void> Function()> refreshFns,
+) async {
+  try {
+    await Future.wait(refreshFns.map((f) => f()));
+  } catch (e, st) {
+    debugPrint(
+      'post-submit refresh failed (best-effort, ignored): $e\n$st',
+    );
+  }
+}
+
 /// Shell route body: loads [tradingViewDataProvider] and wires trading actions
 /// to [commandRepositoryProvider] (Phase 2B.5).
 ///
@@ -147,6 +170,10 @@ class _GameTradingRouteScreenState
           },
           onSubmitNewOrder: (draft) async {
             final type = _orderTypeFromPersonalDraft(draft);
+            // Only `submitCreateOrder` throwing should trigger the screen's
+            // "Could not submit order" snackbar. See
+            // [bestEffortPostSubmitRefresh] for why refresh failures are
+            // swallowed instead of propagated.
             await cmds.submitCreateOrder(
               gameId: widget.gameId,
               playerId: playerId,
@@ -156,9 +183,9 @@ class _GameTradingRouteScreenState
                   ? draft.limitPrice
                   : null,
             );
-            await Future.wait([
-              ref.read(ordersProvider(widget.gameId).notifier).refresh(),
-              ref
+            await bestEffortPostSubmitRefresh([
+              () => ref.read(ordersProvider(widget.gameId).notifier).refresh(),
+              () => ref
                   .read(
                     pendingCreateOrderCommandsProvider(widget.gameId).notifier,
                   )

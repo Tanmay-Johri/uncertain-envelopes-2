@@ -36,9 +36,7 @@ GameResultsViewData buildGameResultsViewDataFromSession({
     ..sort((a, b) => a.joinedAt.compareTo(b.joinedAt));
 
   String displayNameFor(String playerId) {
-    final p = profilesByPlayerId[playerId];
-    if (p != null && p.username.trim().isNotEmpty) return p.username;
-    return lobbyDisplayUsername(playerId);
+    return displayUsernameForPlayer(playerId, profilesByPlayerId);
   }
 
   String initialsFor(String playerId) {

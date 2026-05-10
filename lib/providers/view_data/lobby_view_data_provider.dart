@@ -32,6 +32,22 @@ String lobbyDisplayUsername(String playerId) {
   return 'Player $tail';
 }
 
+/// Resolved `players.username` for [playerId], or [lobbyDisplayUsername] if missing.
+///
+/// Same rule as the lobby roster and results screen (regression: transaction log
+/// showed `Player abcd` because trading never loaded profiles).
+String displayUsernameForPlayer(
+  String playerId,
+  Map<String, Player> profilesByPlayerId,
+) {
+  final p = profilesByPlayerId[playerId];
+  if (p != null) {
+    final u = p.username.trim();
+    if (u.isNotEmpty) return u;
+  }
+  return lobbyDisplayUsername(playerId);
+}
+
 /// Two-letter initials derived from [playerId] (stable, ASCII).
 String lobbyInitials(String playerId) {
   final alnum = playerId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
@@ -79,9 +95,7 @@ GameLobbyScenario lobbyScenarioFromSession({
   }
 
   String usernameFor(String playerId) {
-    final p = profilesByPlayerId[playerId];
-    if (p != null && p.username.trim().isNotEmpty) return p.username;
-    return lobbyDisplayUsername(playerId);
+    return displayUsernameForPlayer(playerId, profilesByPlayerId);
   }
 
   String initialsFor(String playerId) {

@@ -11,6 +11,7 @@ import '../../data/models/order_book.dart' as book_model;
 import '../../ui/screens/trading/trading_view_data.dart';
 import '../auth_provider.dart';
 import '../game_provider.dart';
+import '../player_repository_provider.dart';
 import '../trading_provider.dart';
 import 'lobby_view_data_provider.dart';
 
@@ -135,10 +136,24 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
     asks: asks,
   );
 
+  final tradeParticipantIds = <String>{
+    for (final p in session.players) p.mapPlayerId,
+    for (final e in executionsAsc) ...[
+      if (ordersById[e.sellOrderId] != null)
+        ordersById[e.sellOrderId]!.createdByPlayerId,
+      if (ordersById[e.buyOrderId] != null)
+        ordersById[e.buyOrderId]!.createdByPlayerId,
+    ],
+  };
+  final profilesById =
+      await ref.read(playerRepositoryProvider).fetchProfilesByIds(
+            tradeParticipantIds.toList(),
+          );
+
   final tradeLogs = _tradeLogsFromExecutions(
     executions: executionsAsc,
     ordersById: ordersById,
-    nameForPlayer: lobbyDisplayUsername,
+    nameForPlayer: (id) => displayUsernameForPlayer(id, profilesById),
   );
 
   return GameTradingViewData(
