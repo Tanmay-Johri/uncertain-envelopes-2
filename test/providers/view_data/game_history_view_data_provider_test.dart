@@ -11,8 +11,10 @@ import 'package:uncertain_envelopes_2/data/models/player.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
+import 'package:uncertain_envelopes_2/data/repositories/in_memory_player_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
+import 'package:uncertain_envelopes_2/providers/player_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/game_history_view_data_provider.dart';
 
 void main() {
@@ -80,10 +82,29 @@ void main() {
       ),
     );
 
+    final playerRepo = InMemoryPlayerRepository()
+      ..seedPlayer(
+        Player(
+          playerId: 'p1',
+          username: 'alice_admin',
+          createdAt: t,
+          email: 'a@test.com',
+        ),
+      )
+      ..seedPlayer(
+        Player(
+          playerId: 'p2',
+          username: 'bob_peer',
+          createdAt: t,
+          email: 'b@test.com',
+        ),
+      );
+
     final container = ProviderContainer(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
         gameRepositoryProvider.overrideWithValue(games),
+        playerRepositoryProvider.overrideWithValue(playerRepo),
       ],
     );
     addTearDown(container.dispose);
@@ -93,7 +114,10 @@ void main() {
 
     expect(entries.single.id, 'g-hist');
     expect(entries.single.viewerPnl, 10);
+    expect(entries.single.adminName, 'alice_admin');
     expect(entries.single.playerResults.first.pnl, 10);
+    expect(entries.single.playerResults.first.displayName, 'alice_admin');
     expect(entries.single.playerResults.last.pnl, -5);
+    expect(entries.single.playerResults.last.displayName, 'bob_peer');
   });
 }

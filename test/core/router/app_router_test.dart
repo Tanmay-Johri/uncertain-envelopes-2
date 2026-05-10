@@ -219,16 +219,32 @@ void main() {
       expect(find.byType(AppShell), findsOneWidget);
     });
 
-    testWidgets('tapping a home game card navigates to game lobby', (
+    testWidgets('tapping a playing home game card opens trading', (
       tester,
     ) async {
       await _pumpAppWith(tester);
       await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('game-card-g1')));
+      final g1 = find.byKey(const ValueKey('game-card-g1'));
+      await tester.ensureVisible(g1);
+      await tester.tap(g1);
+      await tester.pump();
+      // Trading mounts [CountdownTimer] etc.; pumpAndSettle never completes.
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(GameTradingScreen), findsOneWidget);
+      expect(find.text('Forex Masters'), findsWidgets);
+    });
+
+    testWidgets('tapping a pre-start home game card opens lobby', (
+      tester,
+    ) async {
+      await _pumpAppWith(tester);
+      await tester.pump();
+      final g2 = find.byKey(const ValueKey('game-card-g2'));
+      await tester.ensureVisible(g2);
+      await tester.tap(g2);
       await tester.pumpAndSettle();
       expect(find.byType(GameLobbyScreen), findsOneWidget);
-      expect(find.text('Forex Masters'), findsWidgets);
-      expect(find.text('V 8 J A J'), findsOneWidget);
+      expect(find.text('Crypto Basics 101'), findsWidgets);
     });
 
     testWidgets('tapping ORDERS switches to pending orders shell branch', (

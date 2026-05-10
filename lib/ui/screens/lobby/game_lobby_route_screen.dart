@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/router/game_flow.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/models/game_session_state.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
+import '../../../providers/game_provider.dart';
 import '../../../providers/view_data/home_view_data_provider.dart';
 import '../../../providers/view_data/lobby_view_data_provider.dart'
     show LobbyViewDataException, lobbyViewDataProvider;
@@ -13,35 +16,59 @@ import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_lobby_screen.dart';
 
+/// Friendly copy for lobby load failures (kicked, missing game, etc.).
+String _lobbyLoadErrorMessage(Object error) {
+  if (error is LobbyViewDataException) return error.message;
+  return "Can't find game";
+}
+
 /// Shell route body: loads [lobbyViewDataProvider] and wires lobby actions to
 /// [commandRepositoryProvider] (Phase 2B.4).
-class GameLobbyRouteScreen extends ConsumerWidget {
+class GameLobbyRouteScreen extends ConsumerStatefulWidget {
   const GameLobbyRouteScreen({super.key, required this.gameId});
 
   final String gameId;
 
-  /// Friendly copy for lobby load failures (kicked, missing game, etc.).
-  static String _lobbyLoadErrorMessage(Object error) {
-    if (error is LobbyViewDataException) return error.message;
-    return "Can't find game";
-  }
+  @override
+  ConsumerState<GameLobbyRouteScreen> createState() =>
+      _GameLobbyRouteScreenState();
+}
 
-  Future<void> _runCommand(
-    BuildContext context,
-    WidgetRef ref,
-    Future<void> Function() body,
-  ) async {
+class _GameLobbyRouteScreenState extends ConsumerState<GameLobbyRouteScreen> {
+  Future<void> _runCommand(Future<void> Function() body) async {
     try {
       await body();
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(lobbyViewDataProvider(gameId));
+  Widget build(BuildContext context) {
+    ref.watch(currentGameProvider(widget.gameId));
+    ref.listen<AsyncValue<GameSessionState>>(
+      currentGameProvider(widget.gameId),
+      (
+        AsyncValue<GameSessionState>? previous,
+        AsyncValue<GameSessionState> next,
+      ) {
+        final session = next.asData?.value;
+        if (session == null) return;
+        if (!gameStateShowsEnvelopeFlowOnly(session.game.gameState)) return;
+        if (!context.mounted) return;
+        Future.microtask(() {
+          if (!context.mounted) return;
+          context.go(AppRoutes.gameResults(widget.gameId));
+        });
+      },
+    );
+
+    final async = ref.watch(lobbyViewDataProvider(widget.gameId));
+    final session = ref.watch(currentGameProvider(widget.gameId)).valueOrNull;
+    final backNavigatesToHome = session != null &&
+        gameStateShowsEnvelopeFlowOnly(session.game.gameState);
+
     return async.when(
       skipLoadingOnReload: true,
       loading: () => const Scaffold(
@@ -67,7 +94,7 @@ class GameLobbyRouteScreen extends ConsumerWidget {
         ),
         body: FetchedErrorPanel(
           message: _lobbyLoadErrorMessage(e),
-          onRetry: () => ref.invalidate(lobbyViewDataProvider(gameId)),
+          onRetry: () => ref.invalidate(lobbyViewDataProvider(widget.gameId)),
         ),
       ),
       data: (scenario) {
@@ -79,28 +106,32 @@ class GameLobbyRouteScreen extends ConsumerWidget {
           phase: scenario.phase,
           currentPlayerId: scenario.currentPlayerId,
           isViewerAdmin: scenario.isViewerAdmin,
-          onStartGame: () => _runCommand(context, ref, () async {
-            await cmds.submitStartGame(gameId: gameId, adminPlayerId: playerId);
-          }),
-          onEndGame: () => _runCommand(context, ref, () async {
-            await cmds.submitEndTrading(
-              gameId: gameId,
+          backNavigatesToHome: backNavigatesToHome,
+          onStartGame: () => _runCommand(() async {
+            await cmds.submitStartGame(
+              gameId: widget.gameId,
               adminPlayerId: playerId,
             );
           }),
-          onEnterGame: () => context.go(AppRoutes.gameTrading(gameId)),
-          onJoinGame: () => _runCommand(context, ref, () async {
-            await cmds.submitJoinGame(gameId: gameId, playerId: playerId);
+          onEndGame: () => _runCommand(() async {
+            await cmds.submitEndTrading(
+              gameId: widget.gameId,
+              adminPlayerId: playerId,
+            );
           }),
-          onLeaveGame: () => _runCommand(context, ref, () async {
-            await cmds.submitLeaveGame(gameId: gameId, playerId: playerId);
+          onEnterGame: () => context.go(AppRoutes.gameTrading(widget.gameId)),
+          onJoinGame: () => _runCommand(() async {
+            await cmds.submitJoinGame(gameId: widget.gameId, playerId: playerId);
+          }),
+          onLeaveGame: () => _runCommand(() async {
+            await cmds.submitLeaveGame(gameId: widget.gameId, playerId: playerId);
             await ref.read(homeViewDataProvider.notifier).silentRefresh();
             if (!context.mounted) return;
             context.go(AppRoutes.home);
           }),
-          onKickPlayer: (targetPlayerId) => _runCommand(context, ref, () async {
+          onKickPlayer: (targetPlayerId) => _runCommand(() async {
             await cmds.submitKickPlayer(
-              gameId: gameId,
+              gameId: widget.gameId,
               adminPlayerId: playerId,
               targetPlayerId: targetPlayerId,
             );

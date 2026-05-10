@@ -352,7 +352,7 @@ void main() {
       expect(find.textContaining('AdminUser'), findsWidgets);
     });
 
-    testWidgets('back navigates to this game lobby', (tester) async {
+    testWidgets('back navigates to home shell', (tester) async {
       await _pump(
         tester,
         GameResultsScreen(
@@ -361,9 +361,9 @@ void main() {
           onEndGame: ({required bool discardBecauseNoPrice}) {},
         ),
       );
-      await tester.tap(find.byTooltip('Back to lobby'));
+      await tester.tap(find.byTooltip('Back to home'));
       await tester.pumpAndSettle();
-      expect(find.text('lob-z99'), findsOneWidget);
+      expect(find.text('stub-home'), findsOneWidget);
     });
   });
 }

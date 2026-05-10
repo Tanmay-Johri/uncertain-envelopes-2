@@ -414,13 +414,13 @@ class _ResultsStickyHeader extends StatelessWidget {
                   child: IconButton(
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'Back to lobby',
+                    tooltip: 'Back to home',
                     icon: Icon(
                       Icons.arrow_back_ios_new,
                       color: AppColors.textSecondary,
                       size: 20,
                     ),
-                    onPressed: () => context.go(AppRoutes.gameLobby(gameId)),
+                    onPressed: () => context.go(AppRoutes.home),
                   ),
                 ),
               ),

@@ -30,6 +30,7 @@ class GameTradingScreen extends StatefulWidget {
     super.key,
     required this.data,
     this.gameId = '',
+    this.backNavigatesToHome = false,
     this.onShowLogs,
     this.onEndGameFromMenu,
     this.onAddTime,
@@ -41,6 +42,10 @@ class GameTradingScreen extends StatefulWidget {
 
   /// Routing id — used by the back button to return to the game lobby.
   final String gameId;
+
+  /// When true (game already past trading), back goes to [AppRoutes.home]
+  /// instead of the lobby — lobby/trading are invalid for post-trading games.
+  final bool backNavigatesToHome;
 
   final VoidCallback? onShowLogs;
   final VoidCallback? onEndGameFromMenu;
@@ -279,6 +284,7 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
             child: _TradingWindowHeader(
               gameId: widget.gameId,
               isViewerAdmin: data.isViewerAdmin,
+              backNavigatesToHome: widget.backNavigatesToHome,
               onShowLogs: () {
                 widget.onShowLogs?.call();
                 _openLogsSheet(context);
@@ -427,12 +433,14 @@ class _TradingWindowHeader extends StatelessWidget {
   const _TradingWindowHeader({
     required this.gameId,
     required this.isViewerAdmin,
+    this.backNavigatesToHome = false,
     required this.onShowLogs,
     this.onEndGameFromMenu,
   });
 
   final String gameId;
   final bool isViewerAdmin;
+  final bool backNavigatesToHome;
   final VoidCallback onShowLogs;
   final VoidCallback? onEndGameFromMenu;
 
@@ -482,8 +490,12 @@ class _TradingWindowHeader extends StatelessWidget {
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
-                      tooltip: 'Back to lobby',
+                      tooltip: backNavigatesToHome ? 'Back to home' : 'Back to lobby',
                       onPressed: () {
+                        if (backNavigatesToHome) {
+                          context.go(AppRoutes.home);
+                          return;
+                        }
                         if (gameId.isNotEmpty) {
                           context.go(AppRoutes.gameLobby(gameId));
                         } else {

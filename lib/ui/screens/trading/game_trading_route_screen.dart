@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/router/game_flow.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/trading/personal_order.dart';
-import '../../../data/enums/game_state.dart';
 import '../../../data/enums/order_type.dart';
 import '../../../data/models/game_session_state.dart';
 import '../../../providers/auth_provider.dart';
@@ -37,14 +37,6 @@ Future<void> _runTradingCommand(
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
   }
-}
-
-/// When the server moves the game out of active trading, the results flow
-/// should open without requiring a manual deep link (gaps-stream-c).
-bool _gameStateOpensResults(GameState s) {
-  return s == GameState.tradingEnded ||
-      s == GameState.gameFinalised ||
-      s == GameState.discarded;
 }
 
 /// Best-effort post-submit refresh.
@@ -99,7 +91,7 @@ class _GameTradingRouteScreenState
       ) {
         final session = next.asData?.value;
         if (session == null) return;
-        if (!_gameStateOpensResults(session.game.gameState)) return;
+        if (!gameStateShowsEnvelopeFlowOnly(session.game.gameState)) return;
         if (!context.mounted) return;
         Future.microtask(() {
           if (!context.mounted) return;
@@ -145,9 +137,13 @@ class _GameTradingRouteScreenState
         final viewer = ref.read(authControllerProvider).valueOrNull;
         final playerId = viewer?.playerId ?? data.currentPlayerId;
         final cmds = ref.read(commandRepositoryProvider);
+        final session = ref.watch(currentGameProvider(widget.gameId)).valueOrNull;
+        final backNavigatesToHome = session != null &&
+            gameStateShowsEnvelopeFlowOnly(session.game.gameState);
         return GameTradingScreen(
           gameId: widget.gameId,
           data: data,
+          backNavigatesToHome: backNavigatesToHome,
           onEndGameFromMenu: () => _runTradingCommand(context, ref, () async {
             await cmds.submitEndTrading(
               gameId: widget.gameId,

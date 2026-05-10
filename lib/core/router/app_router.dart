@@ -6,7 +6,9 @@ import '../../ui/screens/auth/auth_route_screen.dart';
 import '../../ui/screens/history/game_history_route_screen.dart';
 import '../../ui/screens/profile/profile_route_screen.dart';
 import '../../ui/screens/create_game/create_game_screen.dart';
+import '../../ui/screens/home/home_mock_data.dart';
 import '../../ui/screens/home/home_screen.dart';
+import '../../ui/widgets/status_badge.dart';
 import '../../ui/screens/orders/pending_orders_route_screen.dart';
 import '../../ui/screens/lobby/game_lobby_route_screen.dart';
 import '../../ui/screens/results/game_results_route_screen.dart';
@@ -29,6 +31,18 @@ abstract final class AppRoutes {
   static String gameLobby(String id) => '/game/$id/lobby';
   static String gameTrading(String id) => '/game/$id/trading';
   static String gameResults(String id) => '/game/$id/results';
+}
+
+/// Home list tap — lobby while waiting, trading while active, results once
+/// trading has stopped or the tile is in the post-game envelope window.
+String homeGameEntryRoute(MockHomeGame game) {
+  if (game.status == GameStatusBadge.ended || game.openEnvelopeResults) {
+    return AppRoutes.gameResults(game.id);
+  }
+  if (game.status == GameStatusBadge.playing) {
+    return AppRoutes.gameTrading(game.id);
+  }
+  return AppRoutes.gameLobby(game.id);
 }
 
 /// Index of each bottom-nav destination inside the
@@ -126,11 +140,8 @@ GoRouter buildAppRouter({
               GoRoute(
                 path: AppRoutes.home,
                 builder: (context, _) => HomeScreen(
-                  onOpenGame: (game) => GoRouter.of(context).go(
-                    game.openEnvelopeResults
-                        ? AppRoutes.gameResults(game.id)
-                        : AppRoutes.gameLobby(game.id),
-                  ),
+                  onOpenGame: (game) =>
+                      GoRouter.of(context).go(homeGameEntryRoute(game)),
                 ),
               ),
             ],

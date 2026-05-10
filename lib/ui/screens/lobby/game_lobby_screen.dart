@@ -18,6 +18,7 @@ class GameLobbyScreen extends StatelessWidget {
     required this.phase,
     required this.currentPlayerId,
     required this.isViewerAdmin,
+    this.backNavigatesToHome = false,
     this.onStartGame,
     this.onEndGame,
     this.onEnterGame,
@@ -30,6 +31,9 @@ class GameLobbyScreen extends StatelessWidget {
   final GameLobbyPhase phase;
   final String currentPlayerId;
   final bool isViewerAdmin;
+
+  /// Post-trading games: back leads home instead of popping stack (lobby is invalid).
+  final bool backNavigatesToHome;
 
   final VoidCallback? onStartGame;
   final VoidCallback? onEndGame;
@@ -69,6 +73,10 @@ class GameLobbyScreen extends StatelessWidget {
         centerTitle: true,
         leading: BackButton(
           onPressed: () {
+            if (backNavigatesToHome) {
+              context.go(AppRoutes.home);
+              return;
+            }
             if (context.canPop()) {
               context.pop();
             } else {

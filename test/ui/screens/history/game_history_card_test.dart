@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_colors.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_card.dart';
@@ -53,6 +54,8 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('en', 'US'),
+      supportedLocales: const [Locale('en', 'US')],
       theme: buildAppTheme(),
       home: Scaffold(
         body: SingleChildScrollView(
@@ -227,29 +230,37 @@ void main() {
     });
 
     testWidgets('shows STARTED label and formatted time', (tester) async {
+      const localeName = 'en_US';
+      final startedUtc = DateTime.utc(2024, 10, 24, 14, 30);
+      final expected =
+          DateFormat('MMM d, HH:mm', localeName).format(startedUtc.toLocal());
       await _pump(
         tester,
         GameHistoryCard(
-          entry: _entry(startedAt: DateTime.utc(2024, 10, 24, 14, 30)),
+          entry: _entry(startedAt: startedUtc),
           isExpanded: true,
           onTap: () {},
         ),
       );
       expect(find.text('STARTED'), findsOneWidget);
-      expect(find.text('Oct 24, 14:30'), findsOneWidget);
+      expect(find.text(expected), findsOneWidget);
     });
 
     testWidgets('shows ENDED label and formatted time', (tester) async {
+      const localeName = 'en_US';
+      final endedUtc = DateTime.utc(2024, 10, 24, 16, 0);
+      final expected =
+          DateFormat('MMM d, HH:mm', localeName).format(endedUtc.toLocal());
       await _pump(
         tester,
         GameHistoryCard(
-          entry: _entry(endedAt: DateTime.utc(2024, 10, 24, 16, 0)),
+          entry: _entry(endedAt: endedUtc),
           isExpanded: true,
           onTap: () {},
         ),
       );
       expect(find.text('ENDED'), findsOneWidget);
-      expect(find.text('Oct 24, 16:00'), findsOneWidget);
+      expect(find.text(expected), findsOneWidget);
     });
 
     testWidgets('shows — when startedAt is null', (tester) async {

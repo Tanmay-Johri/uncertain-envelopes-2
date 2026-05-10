@@ -35,6 +35,17 @@ String formatResultsPnlPlaceholder(double? pnl) {
   return formatProjectedPnl(pnl);
 }
 
+/// Game history STARTED/ENDED: local calendar date + 24h clock (backend UTC).
+String formatHistorySessionInstant(DateTime utcInstant, {required String localeName}) {
+  return DateFormat('MMM d, HH:mm', localeName).format(utcInstant.toLocal());
+}
+
+/// Same as [formatHistorySessionInstant] but returns em dash when null.
+String formatHistorySessionInstantOrDash(DateTime? utcInstant, {required String localeName}) {
+  if (utcInstant == null) return '—';
+  return formatHistorySessionInstant(utcInstant, localeName: localeName);
+}
+
 /// Wall-clock time for the transaction log (matches chart tooltip local clock).
 ///
 /// [executedAtUtc] is stored as UTC from the backend; displayed in the user's

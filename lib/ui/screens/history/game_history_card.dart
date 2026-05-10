@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -143,6 +142,8 @@ class _ExpandedBody extends StatelessWidget {
         ? '\$${entry.envelopePriceUsd!.toStringAsFixed(2)}'
         : kUnsetUsdLine;
 
+    final localeName = Localizations.localeOf(context).toString();
+
     return Container(
       color: Colors.black.withValues(alpha: 0.2),
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -189,13 +190,19 @@ class _ExpandedBody extends StatelessWidget {
               Expanded(
                 child: _MetaCell(
                   label: 'STARTED',
-                  value: _formatDateTime(entry.startedAt),
+                  value: formatHistorySessionInstantOrDash(
+                    entry.startedAt,
+                    localeName: localeName,
+                  ),
                 ),
               ),
               Expanded(
                 child: _MetaCell(
                   label: 'ENDED',
-                  value: _formatDateTime(entry.endedAt),
+                  value: formatHistorySessionInstantOrDash(
+                    entry.endedAt,
+                    localeName: localeName,
+                  ),
                 ),
               ),
             ],
@@ -307,16 +314,6 @@ class _PlayerPnlRow extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-final _dtFormat = DateFormat('MMM d, HH:mm');
-
-/// Returns a formatted date/time string, or "—" when [dt] is null.
-String _formatDateTime(DateTime? dt) =>
-    dt != null ? _dtFormat.format(dt) : '—';
 
 Color _pnlColor(double pnl) {
   if (pnl > 0) return AppColors.primary;

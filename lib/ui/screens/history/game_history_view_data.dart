@@ -55,10 +55,10 @@ class GameHistoryEntry {
   /// null when the envelope price was never set (e.g. discarded game).
   final double? envelopePriceUsd;
 
-  /// When the game started. null for legacy / unknown.
+  /// Game start instant from backend (UTC). Shown in local time on the card.
   final DateTime? startedAt;
 
-  /// When the game ended. null for legacy / unknown.
+  /// Game end instant from backend (UTC). Shown in local time on the card.
   final DateTime? endedAt;
 
   /// All players sorted by PnL descending (caller's responsibility).

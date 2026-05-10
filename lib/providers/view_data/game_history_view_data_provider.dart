@@ -8,6 +8,7 @@ import '../../data/models/game_player.dart';
 import '../../ui/screens/history/game_history_view_data.dart';
 import '../auth_provider.dart';
 import '../game_repository_provider.dart';
+import '../player_repository_provider.dart';
 import 'lobby_view_data_provider.dart';
 
 part 'game_history_view_data_provider.g.dart';
@@ -47,9 +48,25 @@ Future<List<GameHistoryEntry>> gameHistoryViewData(Ref ref) async {
       return eb.compareTo(ea);
     });
 
+  final playersByGameId = <String, List<GamePlayer>>{};
+  final allPlayerIds = <String>{};
+  for (final g in terminal) {
+    allPlayerIds.add(g.adminPlayerId);
+    final players = await repo.fetchGamePlayers(g.gameId);
+    playersByGameId[g.gameId] = players;
+    for (final p in players) {
+      allPlayerIds.add(p.mapPlayerId);
+    }
+  }
+
+  final profilesById =
+      await ref.read(playerRepositoryProvider).fetchProfilesByIds(
+            allPlayerIds.toList(),
+          );
+
   final out = <GameHistoryEntry>[];
   for (final g in terminal) {
-    final players = await repo.fetchGamePlayers(g.gameId);
+    final players = playersByGameId[g.gameId]!;
     final sorted = [...players]..sort((a, b) => b.pnl.compareTo(a.pnl));
     GamePlayer? viewerRow;
     for (final p in players) {
@@ -67,7 +84,7 @@ Future<List<GameHistoryEntry>> gameHistoryViewData(Ref ref) async {
         securityType:
             g.gameSecurity == GameSecurity.public ? 'Public' : 'Private',
         isRanked: g.isRanked == IsRanked.ranked,
-        adminName: lobbyDisplayUsername(g.adminPlayerId),
+        adminName: displayUsernameForPlayer(g.adminPlayerId, profilesById),
         envelopePriceUsd: g.envelopePrice,
         startedAt: g.startTime,
         endedAt: g.endTimeActual,
@@ -75,7 +92,7 @@ Future<List<GameHistoryEntry>> gameHistoryViewData(Ref ref) async {
           for (final p in sorted)
             GameHistoryPlayerResult(
               playerId: p.mapPlayerId,
-              displayName: lobbyDisplayUsername(p.mapPlayerId),
+              displayName: displayUsernameForPlayer(p.mapPlayerId, profilesById),
               pnl: p.pnl,
             ),
         ],

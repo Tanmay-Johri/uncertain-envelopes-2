@@ -31,6 +31,16 @@ void main() {
     });
   });
 
+  group('formatHistorySessionInstant', () {
+    test('formats UTC instant in local zone', () {
+      final utc = DateTime.utc(2026, 5, 10, 18, 5);
+      expect(
+        formatHistorySessionInstant(utc, localeName: 'en_US'),
+        DateFormat('MMM d, HH:mm', 'en_US').format(utc.toLocal()),
+      );
+    });
+  });
+
   group('formatTradeLogTime', () {
     test('matches DateFormat Hm on local instant', () {
       final utc = DateTime.utc(2026, 5, 10, 19, 7);
