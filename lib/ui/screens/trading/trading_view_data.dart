@@ -84,6 +84,7 @@ class GameTradingViewData {
     this.tradeLogs = const [],
     this.gameStartedAtUtc,
     this.tradingTimeRemaining,
+    this.tradingDeadlineUtc,
   });
 
   final String gameTitle;
@@ -91,9 +92,13 @@ class GameTradingViewData {
   final bool isViewerAdmin;
   final String currentPlayerId;
 
-  /// When true and [tradingTimeRemaining] is non-null, shows a live countdown.
+  /// When true and ([tradingDeadlineUtc] or [tradingTimeRemaining]) is set,
+  /// shows a live countdown.
   final bool isTimed;
   final Duration? tradingTimeRemaining;
+
+  /// DB `end_time_decided` — drives [CountdownTimer] directly (canonical).
+  final DateTime? tradingDeadlineUtc;
 
   /// Signed delta cash (USD); sign drives stat tile tint (green / red / neutral).
   final double deltaCash;

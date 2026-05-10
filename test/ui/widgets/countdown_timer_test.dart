@@ -38,6 +38,29 @@ void main() {
   });
 
   group('CountdownTimer', () {
+    testWidgets('deadlineUtc recomputes from wall instant each tick',
+        (tester) async {
+      final clock = _TestClock(DateTime.utc(2030, 1, 1, 12));
+      final deadline =
+          DateTime.utc(2030, 1, 1, 12, 5, 30); // 5m 30s after clock start
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: CountdownTimer(
+              deadlineUtc: deadline,
+              now: clock.call,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('05:30'), findsOneWidget);
+
+      clock.advance(const Duration(seconds: 90));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('04:00'), findsOneWidget);
+    });
+
     testWidgets('renders initial MM:SS', (tester) async {
       final clock = _TestClock(DateTime.utc(2030, 1, 1, 12));
       await tester.pumpWidget(

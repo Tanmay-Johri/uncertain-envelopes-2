@@ -152,7 +152,14 @@ class GameLobbyScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      if (data.tradingTimeRemaining != null) ...[
+                      if (data.tradingDeadlineUtc != null &&
+                          phase == GameLobbyPhase.trading) ...[
+                        CountdownTimer(
+                          key: const ValueKey('game-lobby-countdown'),
+                          deadlineUtc: data.tradingDeadlineUtc,
+                          initialRemaining: Duration.zero,
+                        ),
+                      ] else if (data.tradingTimeRemaining != null) ...[
                         if (phase == GameLobbyPhase.trading)
                           CountdownTimer(
                             key: const ValueKey('game-lobby-countdown'),

@@ -180,6 +180,7 @@ abstract final class GoldenTradingMinimalSeed {
         personalOrders: const [],
         tradeLogs: const [],
         gameStartedAtUtc: goldenTradingTStart,
+        tradingDeadlineUtc: null,
       );
 
   /// Asserts [actual] matches [expectedViewData] field-for-field (lists deep).
@@ -191,6 +192,7 @@ abstract final class GoldenTradingMinimalSeed {
     expect(actual.currentPlayerId, expected.currentPlayerId);
     expect(actual.isTimed, expected.isTimed);
     expect(actual.tradingTimeRemaining, expected.tradingTimeRemaining);
+    expect(actual.tradingDeadlineUtc, expected.tradingDeadlineUtc);
     expect(actual.deltaCash, expected.deltaCash);
     expect(actual.deltaEnvelopes, expected.deltaEnvelopes);
     expect(actual.marketPrice, expected.marketPrice);

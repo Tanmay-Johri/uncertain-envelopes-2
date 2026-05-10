@@ -29,6 +29,10 @@ class GameTradingScreen extends StatefulWidget {
   const GameTradingScreen({
     super.key,
     required this.data,
+    /// When set (live route), drives [PriceChart] / axis session length so the
+    /// line extends as wall-clock session time advances without new trades.
+    /// Tests and mocks omit this and use [GameTradingViewData.chartSessionElapsed].
+    this.liveChartSessionElapsed,
     this.gameId = '',
     this.backNavigatesToHome = false,
     this.onShowLogs,
@@ -39,6 +43,8 @@ class GameTradingScreen extends StatefulWidget {
   });
 
   final GameTradingViewData data;
+
+  final Duration? liveChartSessionElapsed;
 
   /// Routing id — used by the back button to return to the game lobby.
   final String gameId;
@@ -254,6 +260,8 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    final chartSessionElapsed =
+        widget.liveChartSessionElapsed ?? data.chartSessionElapsed;
     return Scaffold(
       key: const ValueKey('game-trading-scaffold'),
       backgroundColor: AppColors.background,
@@ -324,7 +332,8 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     if (data.isTimed &&
-                        data.tradingTimeRemaining != null)
+                        (data.tradingDeadlineUtc != null ||
+                            data.tradingTimeRemaining != null))
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -334,7 +343,9 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                             const SizedBox(width: AppSpacing.md + 40),
                           CountdownTimer(
                             key: const ValueKey('game-trading-countdown'),
-                            initialRemaining: data.tradingTimeRemaining!,
+                            deadlineUtc: data.tradingDeadlineUtc,
+                            initialRemaining: data.tradingTimeRemaining ??
+                                Duration.zero,
                             textStyle: AppTypography.timerDisplay,
                           ),
                           if (data.isViewerAdmin) ...[
@@ -345,7 +356,9 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                           ],
                         ],
                       ),
-                    if (data.isTimed && data.tradingTimeRemaining != null)
+                    if (data.isTimed &&
+                        (data.tradingDeadlineUtc != null ||
+                            data.tradingTimeRemaining != null))
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.sm),
                         child: Text(
@@ -396,9 +409,10 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                       key: const ValueKey('trading-chart-section'),
                       marketPrice: data.marketPrice,
                       points: data.priceHistory,
+                      chartSessionElapsed: chartSessionElapsed,
                       gameStartedAtUtc: data.gameStartedAtUtc,
                       axis: ChartAxisConfig.fromExecutionHistory(
-                        sessionElapsed: data.chartSessionElapsed,
+                        sessionElapsed: chartSessionElapsed,
                         points: data.priceHistory,
                       ),
                     ),

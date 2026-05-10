@@ -36,6 +36,7 @@ class GameLobbyViewData {
     required this.players,
     required this.isTimed,
     this.tradingTimeRemaining,
+    this.tradingDeadlineUtc,
   });
 
   final String gameTitle;
@@ -49,8 +50,12 @@ class GameLobbyViewData {
   final List<LobbyPlayerView> players;
   final bool isTimed;
 
-  /// Shown only when [isTimed] is true; drives [CountdownTimer].
+  /// Pre-start: planned trading duration. Trading phase: fallback only when no
+  /// [tradingDeadlineUtc].
   final Duration? tradingTimeRemaining;
+
+  /// During trading (`games.end_time_decided`) — canonical countdown end.
+  final DateTime? tradingDeadlineUtc;
 }
 
 /// Joins characters with spaces for the large mono display (e.g. `V 8 J A J`).

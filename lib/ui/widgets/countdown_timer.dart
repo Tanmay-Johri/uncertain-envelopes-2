@@ -18,28 +18,29 @@ String formatCountdownMmSs(Duration remaining) {
 
 /// Live countdown label.
 ///
-/// Anchored to a wall-clock **deadline** (computed once from `now() +
-/// initialRemaining`) instead of decrementing a local counter on every tick.
-/// This means the displayed value is always `deadline - now()` and is
-/// **drift-proof**: if the periodic timer ever misses ticks (app backgrounded,
-/// device sleep, OS throttling, jank), the next tick recomputes from the
-/// current clock and the display jumps back to the correct value rather than
-/// silently lagging behind real time.
+/// Prefer [deadlineUtc]: wall-clock instant when trading ends (DB
+/// `end_time_decided`). Each tick recomputes `deadlineUtc - now()` so every
+/// device shows the same remaining time given the same deadline and clock.
 ///
-/// When [initialRemaining] changes (e.g. the upstream provider re-snapshots,
-/// or admin "add time" extends the game), the deadline is re-anchored in
-/// [didUpdateWidget] so the display resyncs with the authoritative server
-/// value on the next build.
+/// When [deadlineUtc] is null, falls back to [initialRemaining] anchored with
+/// `now + initialRemaining` (mocks / pre-start lobby display).
 class CountdownTimer extends StatefulWidget {
   const CountdownTimer({
     super.key,
-    required this.initialRemaining,
+    this.deadlineUtc,
+    this.initialRemaining = Duration.zero,
     this.onExpired,
     this.textStyle,
     this.now,
   });
 
+  /// Authoritative end instant (e.g. Supabase `games.end_time_decided`).
+  /// When non-null, [initialRemaining] is ignored for display math.
+  final DateTime? deadlineUtc;
+
+  /// Used only when [deadlineUtc] is null.
   final Duration initialRemaining;
+
   final VoidCallback? onExpired;
 
   /// When null, uses the default lobby-sized style.
@@ -55,21 +56,29 @@ class CountdownTimer extends StatefulWidget {
 
 class _CountdownTimerState extends State<CountdownTimer> {
   Timer? _timer;
-  late DateTime _deadline;
+  /// Only for legacy [initialRemaining] mode: anchor = now + initial.
+  late DateTime _anchorDeadline;
   late int _remainingSeconds;
   bool _expiredFired = false;
 
   DateTime _now() => (widget.now ?? DateTime.now)();
 
-  void _anchorDeadlineFromInitial() {
+  bool get _usesDbDeadline => widget.deadlineUtc != null;
+
+  void _seedFromInitialRemainingAt(DateTime t) {
     final initialSeconds = math.max(0, widget.initialRemaining.inSeconds);
-    _deadline = _now().add(Duration(seconds: initialSeconds));
-    _remainingSeconds = initialSeconds;
+    _anchorDeadline = t.add(Duration(seconds: initialSeconds));
+    _remainingSeconds = math.max(0, _anchorDeadline.difference(t).inSeconds);
   }
 
   void _recomputeRemaining() {
-    final secs = _deadline.difference(_now()).inSeconds;
-    _remainingSeconds = math.max(0, secs);
+    if (_usesDbDeadline) {
+      final secs = widget.deadlineUtc!.difference(_now()).inSeconds;
+      _remainingSeconds = math.max(0, secs);
+    } else {
+      final secs = _anchorDeadline.difference(_now()).inSeconds;
+      _remainingSeconds = math.max(0, secs);
+    }
   }
 
   void _startTickerIfNeeded() {
@@ -94,18 +103,37 @@ class _CountdownTimerState extends State<CountdownTimer> {
   @override
   void initState() {
     super.initState();
-    _anchorDeadlineFromInitial();
+    final t = _now();
+    if (_usesDbDeadline) {
+      _remainingSeconds =
+          math.max(0, widget.deadlineUtc!.difference(t).inSeconds);
+    } else {
+      _seedFromInitialRemainingAt(t);
+    }
     _startTickerIfNeeded();
   }
 
   @override
   void didUpdateWidget(covariant CountdownTimer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialRemaining != widget.initialRemaining) {
-      // Authoritative resync: re-anchor the deadline whenever the upstream
-      // snapshot changes (provider rebuild, add-time, etc.).
+    final deadlineChanged =
+        oldWidget.deadlineUtc != widget.deadlineUtc;
+    final initialChanged =
+        oldWidget.initialRemaining != widget.initialRemaining;
+    final modeChanged =
+        (oldWidget.deadlineUtc != null) != (widget.deadlineUtc != null);
+
+    if (modeChanged || deadlineChanged || (!_usesDbDeadline && initialChanged)) {
       _expiredFired = false;
-      _anchorDeadlineFromInitial();
+      _timer?.cancel();
+      _timer = null;
+      final t = _now();
+      if (_usesDbDeadline) {
+        _remainingSeconds =
+            math.max(0, widget.deadlineUtc!.difference(t).inSeconds);
+      } else {
+        _seedFromInitialRemainingAt(t);
+      }
       _startTickerIfNeeded();
     }
   }

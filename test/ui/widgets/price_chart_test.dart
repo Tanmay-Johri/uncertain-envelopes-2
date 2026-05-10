@@ -23,7 +23,12 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: Scaffold(
-            body: PriceChart(marketPrice: 150, points: points, axis: axis),
+            body: PriceChart(
+              marketPrice: 150,
+              points: points,
+              axis: axis,
+              chartSessionElapsed: const Duration(minutes: 25),
+            ),
           ),
         ),
       );
@@ -50,7 +55,12 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: Scaffold(
-            body: PriceChart(marketPrice: 42.5, points: points, axis: axis),
+            body: PriceChart(
+              marketPrice: 42.5,
+              points: points,
+              axis: axis,
+              chartSessionElapsed: const Duration(minutes: 5),
+            ),
           ),
         ),
       );
@@ -77,6 +87,7 @@ void main() {
               marketPrice: 150,
               points: points,
               axis: axis,
+              chartSessionElapsed: const Duration(minutes: 55),
             ),
           ),
         ),
@@ -97,6 +108,7 @@ void main() {
               marketPrice: null,
               points: const [],
               axis: axis,
+              chartSessionElapsed: Duration.zero,
             ),
           ),
         ),
@@ -114,7 +126,12 @@ void main() {
         MaterialApp(
           theme: buildAppTheme(),
           home: Scaffold(
-            body: PriceChart(marketPrice: 0, points: const [], axis: axis),
+            body: PriceChart(
+              marketPrice: 0,
+              points: const [],
+              axis: axis,
+              chartSessionElapsed: const Duration(minutes: 3),
+            ),
           ),
         ),
       );

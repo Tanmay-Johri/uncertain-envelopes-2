@@ -7,7 +7,7 @@ part of 'game_history_view_data_provider.dart';
 // **************************************************************************
 
 String _$gameHistoryViewDataHash() =>
-    r'7b910f728a3c6f773735230130e294db9a0db45a';
+    r'35670f472b207626cd567016ae50e851414ba6de';
 
 /// Completed games for [GameHistoryScreen], derived from joined games in
 /// terminal states (Phase 2B.9 — no dedicated SQL yet).

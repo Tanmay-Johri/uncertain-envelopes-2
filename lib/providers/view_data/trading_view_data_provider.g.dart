@@ -6,7 +6,7 @@ part of 'trading_view_data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$tradingViewDataHash() => r'6d81101fd696e33fa77b6532d4b10fb9c8e9e887';
+String _$tradingViewDataHash() => r'17dd05261bba36bbc89b4148281e721446939724';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -31,20 +31,48 @@ class _SystemHash {
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
 ///
+/// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+/// executions, or auth change. The countdown ticks locally inside
+/// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+/// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+/// trading screen from flickering once per second while still updating
+/// instantly whenever real backend data changes.
+///
 /// Copied from [tradingViewData].
 @ProviderFor(tradingViewData)
 const tradingViewDataProvider = TradingViewDataFamily();
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
 ///
+/// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+/// executions, or auth change. The countdown ticks locally inside
+/// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+/// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+/// trading screen from flickering once per second while still updating
+/// instantly whenever real backend data changes.
+///
 /// Copied from [tradingViewData].
 class TradingViewDataFamily extends Family<AsyncValue<GameTradingViewData>> {
   /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
+  ///
+  /// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+  /// executions, or auth change. The countdown ticks locally inside
+  /// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+  /// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+  /// trading screen from flickering once per second while still updating
+  /// instantly whenever real backend data changes.
   ///
   /// Copied from [tradingViewData].
   const TradingViewDataFamily();
 
   /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
+  ///
+  /// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+  /// executions, or auth change. The countdown ticks locally inside
+  /// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+  /// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+  /// trading screen from flickering once per second while still updating
+  /// instantly whenever real backend data changes.
   ///
   /// Copied from [tradingViewData].
   TradingViewDataProvider call(String gameId) {
@@ -75,10 +103,24 @@ class TradingViewDataFamily extends Family<AsyncValue<GameTradingViewData>> {
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
 ///
+/// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+/// executions, or auth change. The countdown ticks locally inside
+/// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+/// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+/// trading screen from flickering once per second while still updating
+/// instantly whenever real backend data changes.
+///
 /// Copied from [tradingViewData].
 class TradingViewDataProvider
     extends AutoDisposeFutureProvider<GameTradingViewData> {
   /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
+  ///
+  /// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
+  /// executions, or auth change. The countdown ticks locally inside
+  /// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
+  /// the chart's session-elapsed is also a one-shot snapshot. This prevents the
+  /// trading screen from flickering once per second while still updating
+  /// instantly whenever real backend data changes.
   ///
   /// Copied from [tradingViewData].
   TradingViewDataProvider(String gameId)

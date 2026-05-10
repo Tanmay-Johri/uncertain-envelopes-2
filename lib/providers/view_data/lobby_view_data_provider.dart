@@ -65,9 +65,11 @@ String lobbyInitials(String playerId) {
 /// [profilesByPlayerId] supplies real usernames; falls back to
 /// [lobbyDisplayUsername] when an id is missing (e.g. profile fetch failed).
 ///
-/// [tradingSecondsRemaining] is a one-shot snapshot at build time; the
-/// [game_lobby_screen] then ticks locally via `CountdownTimer` so this
-/// provider does **not** rebuild every second.
+/// [tradingSecondsRemaining] is a one-shot snapshot at build time (used for
+/// [tradingTimeRemaining] when in **pre-start** or when [Game.endTimeDecided]
+/// is not yet available). When in **trading** with an end time, the lobby
+/// passes [Game.endTimeDecided] as [GameLobbyViewData.tradingDeadlineUtc] so
+/// the countdown is driven by the DB instant.
 GameLobbyScenario lobbyScenarioFromSession({
   required GameSessionState session,
   required String viewerPlayerId,
@@ -83,14 +85,18 @@ GameLobbyScenario lobbyScenarioFromSession({
       : GameLobbyPhase.trading;
 
   Duration? tradingRemaining;
+  DateTime? tradingDeadlineUtc;
   if (game.endCondition == EndCondition.timed) {
     if (phase == GameLobbyPhase.preStart) {
       final secs = game.totalDecidedDurationSeconds;
       if (secs != null && secs > 0) {
         tradingRemaining = Duration(seconds: secs);
       }
-    } else if (tradingSecondsRemaining != null) {
-      tradingRemaining = Duration(seconds: tradingSecondsRemaining);
+    } else if (phase == GameLobbyPhase.trading) {
+      tradingDeadlineUtc = game.endTimeDecided;
+      if (tradingSecondsRemaining != null) {
+        tradingRemaining = Duration(seconds: tradingSecondsRemaining);
+      }
     }
   }
 
@@ -128,6 +134,7 @@ GameLobbyScenario lobbyScenarioFromSession({
       ],
       isTimed: game.endCondition == EndCondition.timed,
       tradingTimeRemaining: tradingRemaining,
+      tradingDeadlineUtc: tradingDeadlineUtc,
     ),
     phase: phase,
     currentPlayerId: viewerPlayerId,
@@ -138,9 +145,11 @@ GameLobbyScenario lobbyScenarioFromSession({
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
 /// Does **not** subscribe to the timer tick so the future runs only when
-/// session data changes (auth / realtime / membership). The countdown is
-/// rendered by the `CountdownTimer` widget which ticks locally from a
-/// one-shot seconds-remaining snapshot read here.
+/// session data changes (auth / realtime / membership). During trading for
+/// timed games, [Game.endTimeDecided] is passed through as
+/// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+/// time from that instant on each tick. Pre-start still uses a duration read
+/// once here via [gameSecondsRemainingProvider].
 @riverpod
 Future<GameLobbyScenario> lobbyViewData(Ref ref, String gameId) async {
   final viewer = await ref.watch(authControllerProvider.future);

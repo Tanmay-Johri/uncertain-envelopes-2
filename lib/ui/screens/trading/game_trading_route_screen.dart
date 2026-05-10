@@ -5,26 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/game_flow.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/trading/order_type_from_personal.dart';
 import '../../../core/trading/personal_order.dart';
-import '../../../data/enums/order_type.dart';
 import '../../../data/models/game_session_state.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
 import '../../../providers/trading_provider.dart';
+import '../../../providers/best_effort_post_submit_refresh.dart';
 import '../../../providers/view_data/trading_view_data_provider.dart';
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_trading_screen.dart';
 
-OrderType _orderTypeFromPersonalDraft(PersonalOrder o) {
-  return switch ((o.side, o.orderType)) {
-    (PersonalOrderSide.buy, PersonalOrderType.limit) => OrderType.limitBuy,
-    (PersonalOrderSide.buy, PersonalOrderType.market) => OrderType.marketBuy,
-    (PersonalOrderSide.sell, PersonalOrderType.limit) => OrderType.limitSell,
-    (PersonalOrderSide.sell, PersonalOrderType.market) => OrderType.marketSell,
-  };
-}
+export '../../../providers/best_effort_post_submit_refresh.dart'
+    show bestEffortPostSubmitRefresh;
 
 Future<void> _runTradingCommand(
   BuildContext context,
@@ -36,29 +31,6 @@ Future<void> _runTradingCommand(
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-  }
-}
-
-/// Best-effort post-submit refresh.
-///
-/// Realtime is the primary delivery mechanism for new pending-command tiles
-/// and order rows. The explicit refreshes called after `submitCreateOrder` are
-/// only a low-latency UI bump on top of that channel — if any of them throw
-/// (transient network blip, parser hiccup, race with realtime, auth token
-/// rotation) we **must not** propagate the failure to the caller. Letting
-/// refresh errors bubble up was the cause of the user-reported false positive
-/// where the order *was* created on the server but the UI showed
-/// "Could not submit order".
-@visibleForTesting
-Future<void> bestEffortPostSubmitRefresh(
-  List<Future<void> Function()> refreshFns,
-) async {
-  try {
-    await Future.wait(refreshFns.map((f) => f()));
-  } catch (e, st) {
-    debugPrint(
-      'post-submit refresh failed (best-effort, ignored): $e\n$st',
-    );
   }
 }
 
@@ -143,6 +115,8 @@ class _GameTradingRouteScreenState
         return GameTradingScreen(
           gameId: widget.gameId,
           data: data,
+          liveChartSessionElapsed:
+              ref.watch(chartSessionElapsedProvider(widget.gameId)),
           backNavigatesToHome: backNavigatesToHome,
           onEndGameFromMenu: () => _runTradingCommand(context, ref, () async {
             await cmds.submitEndTrading(
@@ -165,7 +139,7 @@ class _GameTradingRouteScreenState
             );
           },
           onSubmitNewOrder: (draft) async {
-            final type = _orderTypeFromPersonalDraft(draft);
+            final type = orderTypeFromPersonalDraft(draft);
             // Only `submitCreateOrder` throwing should trigger the screen's
             // "Could not submit order" snackbar. See
             // [bestEffortPostSubmitRefresh] for why refresh failures are

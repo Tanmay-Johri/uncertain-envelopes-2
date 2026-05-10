@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/chart/chart_axis.dart';
 import '../../core/chart/chart_tooltip_format.dart';
 import '../../core/chart/price_chart_point.dart';
+import '../../core/chart/price_chart_step_series.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -24,40 +23,34 @@ final _axisPriceFormat = NumberFormat.currency(
   decimalDigits: 0,
 );
 
-double _xMinutes(Duration d) => d.inMicroseconds / (60 * 1000000.0);
-
 class _SpotsBundle {
   const _SpotsBundle({required this.spots, required this.tooltipPoints});
 
   final List<FlSpot> spots;
 
-  /// Parallel to [spots]: execution point shown when that spot is touched.
-  final List<PriceChartPoint> tooltipPoints;
+  /// Parallel to [spots]: tooltip payload only on trade vertices (null on
+  /// forward-filled bridge points — hover chip stays hidden there).
+  final List<PriceChartPoint?> tooltipPoints;
 }
 
 _SpotsBundle _buildSpotsBundle(
   List<PriceChartPoint> points,
   ChartAxisConfig axis,
+  Duration chartSessionElapsed,
 ) {
-  final sorted = [...points]
-    ..sort((a, b) => a.timeElapsed.compareTo(b.timeElapsed));
-  if (sorted.isEmpty) {
+  final rows = buildPriceChartStepRows(
+    points: points,
+    axisMaxXMinutes: axis.maxXMinutes,
+    chartSessionElapsed: chartSessionElapsed,
+  );
+  if (rows.isEmpty) {
     return const _SpotsBundle(spots: [], tooltipPoints: []);
   }
-  if (sorted.length == 1) {
-    final p = sorted.single;
-    final x = _xMinutes(p.timeElapsed);
-    final xR = math.max(x + 1e-6, axis.maxXMinutes * 0.02);
-    return _SpotsBundle(
-      spots: [FlSpot(x, p.price), FlSpot(xR, p.price)],
-      tooltipPoints: [p, p],
-    );
-  }
   return _SpotsBundle(
-    spots: sorted
-        .map((p) => FlSpot(_xMinutes(p.timeElapsed), p.price))
-        .toList(),
-    tooltipPoints: sorted,
+    spots: [
+      for (final r in rows) FlSpot(r.xMinutes, r.y),
+    ],
+    tooltipPoints: [for (final r in rows) r.tooltipExecution],
   );
 }
 
@@ -131,7 +124,9 @@ class _PriceChartPlotState extends State<_PriceChartPlot> {
   final GlobalKey _chartLeafKey = GlobalKey();
 
   TouchLineBarSpot? _touchSpot;
-  PriceChartPoint? _tooltipPoint;
+
+  /// Tooltip source execution (null when the touched vertex is a bridge point).
+  PriceChartPoint? _tooltipExecution;
 
   void _onTouch(FlTouchEvent event, LineTouchResponse? response) {
     if (!event.isInterestedForInteractions ||
@@ -140,17 +135,24 @@ class _PriceChartPlotState extends State<_PriceChartPlot> {
       if (_touchSpot != null) {
         setState(() {
           _touchSpot = null;
-          _tooltipPoint = null;
+          _tooltipExecution = null;
         });
       }
       return;
     }
 
-    final spot = response.lineBarSpots!.first;
+    final candidates = response.lineBarSpots!;
+    TouchLineBarSpot spot = candidates.first;
+    for (final s in candidates) {
+      if (widget.bundle.tooltipPoints[s.spotIndex] != null) {
+        spot = s;
+        break;
+      }
+    }
     final p = widget.bundle.tooltipPoints[spot.spotIndex];
     setState(() {
       _touchSpot = spot;
-      _tooltipPoint = p;
+      _tooltipExecution = p;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() {});
@@ -261,8 +263,7 @@ class _PriceChartPlotState extends State<_PriceChartPlot> {
           : [
               LineChartBarData(
                 spots: spots,
-                isCurved: true,
-                curveSmoothness: 0.35,
+                isCurved: false,
                 color: AppColors.primary,
                 barWidth: 2,
                 isStrokeCapRound: true,
@@ -298,7 +299,7 @@ class _PriceChartPlotState extends State<_PriceChartPlot> {
 
   Widget _belowPointLabel() {
     final spot = _touchSpot;
-    final point = _tooltipPoint;
+    final point = _tooltipExecution;
     if (spot == null || point == null) return const SizedBox.shrink();
 
     final stackRo = _stackKey.currentContext?.findRenderObject() as RenderBox?;
@@ -383,6 +384,7 @@ class PriceChart extends StatelessWidget {
     required this.marketPrice,
     required this.points,
     required this.axis,
+    required this.chartSessionElapsed,
     this.gameStartedAtUtc,
     this.cardHeight = 192,
   });
@@ -391,13 +393,17 @@ class PriceChart extends StatelessWidget {
   final List<PriceChartPoint> points;
   final ChartAxisConfig axis;
 
+  /// Same elapsed duration used for axis bounds ([chartAxisProvider]); drives
+  /// how far forward-filled steps extend on the right.
+  final Duration chartSessionElapsed;
+
   /// UTC instant when trading started (Supabase truth); tooltip wall-clock only.
   final DateTime? gameStartedAtUtc;
   final double cardHeight;
 
   @override
   Widget build(BuildContext context) {
-    final bundle = _buildSpotsBundle(points, axis);
+    final bundle = _buildSpotsBundle(points, axis, chartSessionElapsed);
     final localeTag =
         Localizations.maybeLocaleOf(context)?.toLanguageTag() ?? 'en_US';
 

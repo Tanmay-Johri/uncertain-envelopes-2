@@ -74,12 +74,14 @@ double? _resolveMarketPrice({
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).
 ///
-/// Does **not** subscribe to the timer tick. Re-runs only when session, orders,
-/// executions, or auth change. The countdown ticks locally inside
-/// [CountdownTimer] from a one-shot seconds-remaining snapshot read here, and
-/// the chart's session-elapsed is also a one-shot snapshot. This prevents the
-/// trading screen from flickering once per second while still updating
-/// instantly whenever real backend data changes.
+/// Does **not** subscribe to the timer tick for its AsyncNotifier rebuild.
+/// [GameTradingViewData.chartSessionElapsed] is therefore a snapshot when the
+/// payload was built. The live trading route passes
+/// [GameTradingScreen.liveChartSessionElapsed] from [chartSessionElapsedProvider]
+/// so the price chart advances with wall-clock session time without refetching
+/// this snapshot every tick. For timed games, [GameTradingViewData.tradingDeadlineUtc]
+/// carries `games.end_time_decided`; [CountdownTimer] recomputes each tick from that
+/// instant so all devices stay aligned with the server field.
 @riverpod
 Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
   final viewer = await ref.watch(authControllerProvider.future);
@@ -110,11 +112,9 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
       personalOrdersSortedNewestFirst(mineOrders.map(personalOrderFromOrder).toList());
 
   final priceHistory = ref.watch(executionHistoryProvider(gameId));
-  // ref.read so timer ticks do not re-run this future (fixes trading flicker).
-  // chartSessionElapsed and secondsRemaining both depend on timerTickStream;
-  // we snapshot them at build time and let the UI tick locally.
+  // Snapshot for view-model cargo (tests / mocks). Live chart uses
+  // GameTradingScreen.liveChartSessionElapsed from chartSessionElapsedProvider.
   final chartElapsed = ref.read(chartSessionElapsedProvider(gameId));
-  final secondsRemaining = ref.read(gameSecondsRemainingProvider(gameId));
 
   GamePlayer? me;
   for (final p in session.players) {
@@ -125,9 +125,6 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
   }
 
   final isTimed = game.endCondition == EndCondition.timed;
-  final Duration? tradingRemaining = isTimed && secondsRemaining != null
-      ? Duration(seconds: secondsRemaining)
-      : null;
 
   final marketPrice = _resolveMarketPrice(
     executionsAsc: executionsAsc,
@@ -162,7 +159,6 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
     isViewerAdmin: game.adminPlayerId == viewer.playerId,
     currentPlayerId: viewer.playerId,
     isTimed: isTimed,
-    tradingTimeRemaining: tradingRemaining,
     deltaCash: me?.deltaCash ?? 0,
     deltaEnvelopes: (me?.deltaEnvelopes ?? 0).toDouble(),
     orderBookBids: bids,
@@ -173,5 +169,6 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
     personalOrders: personalSorted,
     tradeLogs: tradeLogs,
     gameStartedAtUtc: game.startTime,
+    tradingDeadlineUtc: isTimed ? game.endTimeDecided : null,
   );
 }
