@@ -12,7 +12,7 @@ import '../../ui/screens/create_game/create_game_screen.dart';
 import '../../ui/screens/home/home_screen.dart';
 import '../../ui/screens/orders/pending_orders_screen.dart';
 import '../../ui/screens/lobby/game_lobby_route_screen.dart';
-import '../../ui/screens/results/game_results_mock_route_host.dart';
+import '../../ui/screens/results/game_results_route_screen.dart';
 import '../../ui/screens/trading/game_trading_route_screen.dart';
 import '../../ui/widgets/app_shell.dart';
 import '../../ui/widgets/auth_tab_switcher.dart';
@@ -120,7 +120,7 @@ GoRouter buildAppRouter({
             path: '/game/:id/results',
             builder: (_, state) {
               final id = state.pathParameters['id']!;
-              return GameResultsMockRouteHost(gameId: id);
+              return GameResultsRouteScreen(gameId: id);
             },
           ),
         ],

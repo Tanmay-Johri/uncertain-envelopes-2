@@ -378,3 +378,19 @@ streams because those streams do not touch that file).
   `test/ui/screens/trading/game_trading_screen_test.dart` (custom cancel path),
   `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
   `flutter test` (all passed).
+
+- **2026-05-09 — Plan 2B.6 (results provider + route host):** Added
+  `lib/providers/view_data/results_view_data_provider.dart` (`resultsViewDataProvider`):
+  `buildGameResultsViewDataFromSession` maps `GameSessionState` + viewer to
+  `GameResultsViewData` (roster from `games_players`, `lobbyDisplayUsername` /
+  `lobbyInitials`, envelope from `game.envelopePrice`, `gameEnded` when state is
+  `game_finalised` or `discarded`, PnL sort via existing `withEnvelopeUsd`).
+  `lib/ui/screens/results/game_results_route_screen.dart` loads the provider
+  (loading/error scaffolds), wires `submitSetEnvelopePrice` / `submitFinaliseGame` /
+  `submitDiscardGame` + `currentGameProvider.refresh` for poll/reconcile.
+  `GameResultsMockRouteHost` kept for widget tests (e.g. stale poll). `app_router.dart`
+  results route uses the route screen; router tests add `resultsViewDataProvider`
+  mock overrides (including `GAME1`, `gResults*`). Tests:
+  `test/providers/view_data/results_view_data_provider_test.dart`,
+  `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
+  `flutter test` (all passed).
