@@ -97,6 +97,7 @@ Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; nar
 | 2026-05-03 | **C9** Pending orders (`/orders`) | `feat(orders): C9 PendingOrdersScreen + PendingOrderCard` | `PendingOrdersScreen` / **`PendingOrderCard`** / **`kMockPendingOrders`** from HTML ref **`admin_game_trading_dashboard_4`**; **`pendingOrderPlacedLabel`**; **`onCancelOrder`** optional. Filter UX evolved: see next row. Phase 2: repository + ack path like **`GameTradingScreen`**. |
 | 2026-05-03 | **C9** filters (multi) | `feat(orders): PendingOrdersFilterState multi-select` | **No “All”**: **Buy** / **Sell** `FilterChip`s (both default = all directions; empty set → no rows). **Games:** multi-select by title; **no chip selected = all games**. **Apply** / **Reset** in sheet. **`flutter test`** 501 green. |
 | 2026-05-03 | **C10** Game History (`/history`) | `feat(history): C10 GameHistoryScreen + accordion cards` | `GameHistoryEntry`, `GameHistoryPlayerResult`, `GameHistoryCard` (stateless, caller-owned expand), `GameHistoryScreen` (**multi-expand**: `Set<String> _expandedIds`), `kMockGameHistory` (5 entries from HTML ref). Router `/history` → `GameHistoryScreen` replacing `PlaceholderScreen`. **Tests:** 573 green (16 view-data + 24 card + 16 screen + router). **Browser MCP verified:** `/history` renders all 5 collapsed cards; Alpha Market + Beta Indices expanded simultaneously confirming multi-expand; PnL colors green/red correct; SECURITY TYPE / STATUS / ADMIN / ENVELOPE PRICE / PLAYERS PNL all present in expanded body. **3 pre-existing warnings** (lobby `formatCountdownMmSs` visibility, unused `iconColor` param, `main.dart` dep) — none introduced by C10. **Stream C is now plan-complete** (C1–C10 all done). |
+| 2026-05-10 | **Phase 2 plan triage** | — | **`uncertain_envelopes_v2_phase2.plan.md`:** Phase 2A–2B integration is present on `main` (bootstrap, `USE_REAL_BACKEND`, route `*RouteScreen`s, trading/lobby/results/profile/history providers, B-GAP-1 merge per **`gaps-stream-b.md`**). Added repo-root **`INT3_RESULTS.md`** template for §2E manual runs. Updated **Data and backend** / **Navigation** tables in this file to remove obsolete “mock-only router” language. Next execution focus: **INT3** manual matrix + **Phase 3** polish slices. |
 
 ---
 
@@ -113,17 +114,17 @@ Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; nar
 
 | Gap | Notes | Suggested direction |
 |-----|--------|---------------------|
-| **Home games are mock-only** | `HomeScreen` defaults to `kMockHomeGames`; no network. | Add a repository (e.g. Supabase) + Riverpod (or agreed state layer); keep `games` constructor injection for tests. |
-| **`onEnterGame` not wired from router** | Shell builds `HomeScreen()` with no callback; join is a no-op in production. | Router or parent provides `onEnterGame`: validate code, call API, navigate to lobby or show error via `SnackBar` / dialog. |
+| **Home games list** | **Phase 2B.2 (done on `main`):** when `HomeScreen.games` is null, tiles load from **`homeViewDataProvider`** (`fetchJoinedGames` + `fetchPublicGames`). `kMockHomeGames` remains for tests / constructor injection. | Harden empty and error UI; optional offline retry (Phase 3). |
+| **Joining code from home** | **Phase 2B.2 (done on `main`):** shell passes **`onOpenGame`** for row taps; default path uses **`GameRepository.joinByCode`** + **`SnackBar`** on failure. | None unless product changes copy or adds rate-limit UX. |
 | **Admin filter is client-only** | “You are admin” toggles local filter only; not persisted or server-authoritative. | Drive from profile/session claims or game payload; optional local persistence only if product agrees. |
 | **Active orders: `Cancelling` vs backend** | Stream-c **mock** uses `defaultSubmitCancelOrderCommandAck` (short delay) + a worker delay before local `cancelled`; **10s** `AppConstants.cancelOrderCommandAckTimeout` on command-row ack via `.timeout`; on timeout/error the UI reverts from **Cancelling** and shows **“Could not create cancellation request”** (`kCancelOrderCommandAckFailedMessage`). Reconciles orders from `GameTradingViewData`; clears pending on terminal status (`personalOrderClearsCancellationPending`). | **Production:** optimistic **Cancelling** on confirm; `submitCancelOrderCommand` completes only when the **`cancel_order` command row** is ack’d; if ack does not arrive within **10s** (or RPC errors), revert + banner; after ack, stay **Cancelling** until the **orders** snapshot shows **`cancelled`**. Replace mock worker timer with realtime/polling. Inject `GameTradingScreen.submitCancelOrderCommand` in tests (e.g. non-completing `Future` for timeout coverage). |
-| **`GameResultsMockRouteHost` is mock-only** | Envelope commits, polls, `gameEnded`, and PnLs are simulated in-widget state—not server truth. | Add `GameResultsRepository` (or Supabase/REST) returning `GameResultsViewData` + streams; **admin** calls `set_envelope_price` / `end_game`; **reconcile** uses real poll or subscription; delete or shrink mock host behind `kDebugMode` / tests only. |
+| **Results screen data path** | **Phase 2B.6 (done on `main`):** **`GameResultsRouteScreen`** watches **`resultsViewDataProvider`** and wires admin commands via **`commandRepositoryProvider`**. **`GameResultsMockRouteHost`** remains for widget tests / mock ids (**`gResults`**, etc.). | INT3: verify live admin vs player flows; tighten reconcile timing if product requires. |
 | **Final PnL only as server snapshot** | UI applies PRD formula in `withEnvelopeUsd` for mock coherence; production must trust backend rows (cheating resistance). | Ensure API returns per-player **`pnl`** (or deltas + authoritative `envelope_price`) and Flutter **displays** only—no recomputing leaderboard PnL from deltas in release unless product explicitly dual-verifies. |
 | **`envelope_price` typing / optional game rows** | Create-game and lobby do not surface results-phase rules; discarded vs finalised is UI-only confirmation today. | Align with PRD § game lifecycle; persist `discarded` / `game_finalised` on server; gate routes (e.g. block trading after end). |
-| **`ProfileScreen` reads mock `ProfileViewData` only** | Router injects **`mockProfileViewDataDefault()`**; not tied to Supabase **`auth`** or profiles table. | Add repository / Riverpod provider; map session user → **`ProfileViewData`**; optimistic updates after successful rename. |
-| **Username rename is simulated** | **`onUsernameCommit`** in **`app_router`**: succeeds unless lowercase name is **`taken`**. | Call real **update username** mutation; translate unique-violation / API errors → **`ProfileUsernameSubmitResult.taken`** + localized copy. |
-| **Sign-out and delete-account are stubs** | **`onSignOut: () {}`** and **`onDeleteAccount: () {}`** in **`app_router`** so **`NeonButton` / confirmation** always have callbacks; confirmations still perform no persistence in Stream C. | **`onSignOut`:** revoke session + **`context.go(AppRoutes.auth)`**. **`onDeleteAccount`:** account deletion RPC + clear local session + navigate. |
-| **Game History route** | **`/history`** **`PlaceholderScreen`**. | Build history list screen (dedicated slice) or defer to Phase 2. |
+| **`ProfileScreen` session path** | **Phase 2B.7 (done on `main`):** **`ProfileRouteScreen`** → **`profileViewDataProvider`** + **`playerRepository.updateUsername`** + **`authController`** adopt / sign-out / delete. | Stats RPC and copy still tracked under **`gaps-stream-b.md`** (**B-GAP-2**). |
+| **Username rename** | **Wired:** **`UsernameAlreadyInUseException`** → **`ProfileUsernameSubmitResult.taken`**. | Improve non-`taken` API error mapping if new server codes appear. |
+| **Sign-out / delete account** | **Wired:** **`ProfileRouteScreen`** calls **`signOut`** / **`deleteAccount`** then **`context.go(AppRoutes.auth)`**. | INT3: exercise delete against live project policy. |
+| **Game History route** | **C10 + Phase 2B.9:** **`GameHistoryRouteScreen`** → **`gameHistoryViewDataProvider`** (not a placeholder). | INT3: verify data matches SQL expectations for finalised games. |
 
 ---
 
@@ -132,8 +133,8 @@ Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; nar
 | Gap | Notes | Suggested direction |
 |-----|--------|---------------------|
 | **Game cards don’t open real destinations** | **Addressed (stream-c):** `HomeScreen.onOpenGame` + router → `GameLobbyScreen` (mock data by id). | Phase 2: replace mocks with `GameRepository` snapshot; ensure API `id` shape matches route param. |
-| **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen`; **ORDERS:** **`PendingOrdersScreen`** (**C9** mock). | Wire **`onCancelOrder`** to commands + realtime; **`OrderRepository.fetchPendingOrdersAcrossGames`**; filter chips from server-backed game list when data is live. |
-| **Profile (`/profile`)** | **C8 complete (mock):** same as Stream C UX spec; **`VERIFIED`** micro-tag when **`emailVerified`**; delete flow uses **`ConfirmationDialog`** → **`onDeleteAccount`**. Router: mock rename (`taken` literal), **`onSignOut`** / **`onDeleteAccount`** no-ops for now. **`/history`** still placeholder. | Load profile from Supabase/session; real rename + uniqueness errors; **`onSignOut`** + **`onDeleteAccount`** wired to APIs; ship **History** UI; reconcile with Streams A/B auth. |
+| **CREATE / ORDERS shell branches** | **CREATE:** `CreateGameScreen` default path → **`createGameAndReturnGameId`** + **`go`** to lobby. **ORDERS:** **`PendingOrdersRouteScreen`** → **`pendingOrdersViewDataProvider`** + **`submitCancelOrder`**. | INT2: validate cancel UX latency; Phase 3 offline retry. |
+| **Profile (`/profile`)** | **C8 UX + Phase 2B.7 wiring on `main`:** **`ProfileRouteScreen`** + real rename / sign-out / delete; email **VERIFIED** chip removed (product). **`/history`** is **`GameHistoryRouteScreen`**, not a placeholder. | Phase 3 polish; optional **`VERIFIED`** if email confirmation returns. |
 | **Trading → Results navigation** | User can deep-link `/game/:id/results`; **no** automatic `go` from `GameTradingScreen` when phase becomes *trading ended*. | Subscribe to game phase (WS/poll); when server reports trading ended, navigate or show CTA to results; keep deep link as fallback. |
 | **Results bottom nav** | Same Home / Create / Orders shell destinations; **no** “current game” persistence from results. | Optional: pass `gameId` query or restore last game from session when returning from shell. |
 
@@ -170,15 +171,15 @@ Official plan refs: YAML **`stream-c-orders`** / **`stream-c-orders-test`**; nar
 
 ## Merge checklist (Phase 2)
 
-- [ ] Reconcile **route table** with streams A and B (auth entry, initial route, game routes).
-- [ ] Single **game model** (replace `MockHomeGame` or map into shared types).
-- [ ] One **gaps file triage** pass: dedupe items, assign owners, delete obsolete rows after fix.
+- [x] Reconcile **route table** with streams A and B (auth entry, initial route, game routes) — **`app_router.dart`** + **`app_router_provider.dart`** on `main` (2026-05-10 snapshot).
+- [ ] Single **game model** (replace `MockHomeGame` or map into shared types) — **tile type still `MockHomeGame`** for pixel parity; acceptable until product unifies DTOs.
+- [x] One **gaps file triage** pass — this file updated 2026-05-10 for Phase 2 wiring; dedupe with **`gaps-stream-a.md`** / **`gaps-stream-b.md`** continues as gaps close.
 
 ---
 
 ## What’s next on Stream C (before or right after merge)
 
-1. **C7 → production seam:** implement `GameResultsRepository` + authz (admin vs player), `set_envelope_price` and `end_game` commands, and replace `GameResultsMockRouteHost` with a provider that maps API DTOs → `GameResultsViewData` (keep mock for tests / dev flag).
+1. **C7 → production seam:** **partially done** — **`GameResultsRouteScreen`** + **`resultsViewDataProvider`** + commands on `main`. Remaining: INT3 sign-off on live data, optional deletion of redundant mock host paths once tests fully migrate.
 2. **Phase-driven navigation:** when `game_state` enters *trading ended*, route from `GameTradingScreen` (or show explicit “View results”) to `/game/:id/results`; handle *discarded* / *game_finalised* redirects if the user deep-links stale URLs.
 3. **Lobby / menu integration:** wire **End game** on trading and lobby to the same backend semantics as results **END GAME**; ensure a single source of truth for “game ended” so admin cannot double-submit.
 4. **history / polish:** **`/history`** ✅ **C10 complete** — `GameHistoryScreen` with multi-expand accordion and mock data. Reconcile with Stream A/B auth entry and session in Phase 2.
