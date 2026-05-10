@@ -26,6 +26,9 @@ import 'package:uncertain_envelopes_2/providers/trading_repository_providers.dar
 import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 
+import '../../support/golden_trading_minimal_seed.dart'
+    show GoldenTradingMinimalHarness, GoldenTradingMinimalSeed;
+
 void main() {
   group('personalOrderFromOrder', () {
     test('maps resting limit sell', () {
@@ -179,6 +182,17 @@ void main() {
       addTearDown(container.dispose);
       final data = await container.read(tradingViewDataProvider('g1').future);
       expect(data.gameTitle, 'Forex Masters');
+    });
+
+    test('golden minimal seed reproduces expectedViewData via adapter',
+        () async {
+      final harness = GoldenTradingMinimalHarness.create();
+      addTearDown(harness.dispose);
+      await harness.container.read(authControllerProvider.future);
+      final data = await harness.container.read(
+        tradingViewDataProvider(GoldenTradingMinimalSeed.gameId).future,
+      );
+      GoldenTradingMinimalSeed.assertMatchesExpected(data);
     });
   });
 }

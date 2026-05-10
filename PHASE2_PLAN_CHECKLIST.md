@@ -16,7 +16,7 @@
 
 **Global gaps vs plan “iron rules”**
 
-- **Golden / pixel contract:** Plan §2B universal recipe + §2B.5 trading mock-vs-adapter golden — **`matchesGoldenFile` is not used anywhere under `test/`** → treat **Todo** until goldens land.
+- **Golden / pixel contract:** Trading goldens landed (`game_trading_screen_golden_test.dart` + `test/ui/screens/trading/goldens/`). Plan §2B **per-screen** pre-slice goldens for every INT1 screen remain **Todo**.
 - **Browser MCP per slice:** Process requirement; not tracked in this file.
 - **STOP before commit:** Process; actual git history may batch slices.
 
@@ -38,12 +38,12 @@
 
 | ID | Status | Evidence / notes |
 |----|--------|-------------------|
-| **2B recipe** Pre-slice goldens per screen | **Todo** | No `matchesGoldenFile` in repo. |
+| **2B recipe** Pre-slice goldens per screen | **Partial** | Trading goldens only — see **2B.5**; other screens still **Todo**. |
 | **2B.1** Auth + redirects | **Done** (shape differs) | `AuthRouteScreen` + `authControllerProvider`; `lib/core/router/app_router_provider.dart` redirect; tests in `test/core/router/app_router_test.dart`, `test/ui/screens/auth/`. Plan’s optional `authViewDataProvider` file **not** present — functionality via controller + SnackBar errors. |
 | **2B.2** Home + join by code | **Done** | `lib/providers/view_data/home_view_data_provider.dart`; `test/providers/view_data/home_view_data_provider_test.dart`; `home_screen_test.dart`. |
 | **2B.3** Create game submit | **Done** | `CreateGameScreen` with `onSubmit == null` uses `ref.read(gameRepositoryProvider).createGameAndReturnGameId(...)` then `context.go(AppRoutes.gameLobby(...))` — see `lib/ui/screens/create_game/create_game_screen.dart`; router uses `const CreateGameScreen()`. |
 | **2B.4** Lobby adapter + commands | **Done** | `lobby_view_data_provider.dart` + tests; `game_lobby_route_screen.dart`. |
-| **2B.5** Trading adapter + commands | **Partial** | `trading_view_data_provider.dart` + `test/providers/view_data/trading_view_data_provider_test.dart`; `game_trading_route_screen.dart`. **Todo:** dedicated **`game_trading_screen_golden_test.dart`** (mock vs adapter bit-identical) per plan. |
+| **2B.5** Trading adapter + commands | **Partial** | `trading_view_data_provider.dart` + `test/providers/view_data/trading_view_data_provider_test.dart`; `game_trading_route_screen.dart`. **Goldens:** `test/ui/screens/trading/game_trading_screen_golden_test.dart` — minimal fixture **mock vs adapter** same PNG (`trading_minimal_mock_vs_adapter.png`); `g1` mock baseline (`trading_dashboard_g1_mock.png`). Full `g1` cannot match adapter (chart points vs executions) — documented in test file header. |
 | **2B.6** Results route host | **Done** | `results_view_data_provider.dart` + tests; `game_results_route_screen.dart`. |
 | **2B.7** Profile | **Done** | `profile_view_data_provider.dart` + tests; `profile_route_screen.dart`; B-GAP-2 RPC migration `013_player_ranked_finalised_participations.sql` + `gaps-stream-b.md` apply notes. |
 | **2B.8** Pending orders | **Done** | `pending_orders_view_data_provider.dart` + tests; `pending_orders_route_screen.dart`. |
@@ -130,3 +130,4 @@ dart run build_runner build --delete-conflicting-outputs
 | Date | Change |
 |------|--------|
 | 2026-05-09 | Initial checklist generated from plan + repo scan. |
+| 2026-05-09 | Trading goldens + minimal mock-vs-adapter harness (`GoldenTradingMinimalHarness`). |
