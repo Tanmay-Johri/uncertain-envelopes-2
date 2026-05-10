@@ -16,14 +16,27 @@ String formatCountdownMmSs(Duration remaining) {
   return '${mm.toString().padLeft(2, '0')}:${ss.toString().padLeft(2, '0')}';
 }
 
-/// Live countdown label; uses a one-second periodic timer so the widget tree
-/// settles between ticks (e.g. `pumpAndSettle` in parent tests).
+/// Live countdown label.
+///
+/// Anchored to a wall-clock **deadline** (computed once from `now() +
+/// initialRemaining`) instead of decrementing a local counter on every tick.
+/// This means the displayed value is always `deadline - now()` and is
+/// **drift-proof**: if the periodic timer ever misses ticks (app backgrounded,
+/// device sleep, OS throttling, jank), the next tick recomputes from the
+/// current clock and the display jumps back to the correct value rather than
+/// silently lagging behind real time.
+///
+/// When [initialRemaining] changes (e.g. the upstream provider re-snapshots,
+/// or admin "add time" extends the game), the deadline is re-anchored in
+/// [didUpdateWidget] so the display resyncs with the authoritative server
+/// value on the next build.
 class CountdownTimer extends StatefulWidget {
   const CountdownTimer({
     super.key,
     required this.initialRemaining,
     this.onExpired,
     this.textStyle,
+    this.now,
   });
 
   final Duration initialRemaining;
@@ -32,19 +45,35 @@ class CountdownTimer extends StatefulWidget {
   /// When null, uses the default lobby-sized style.
   final TextStyle? textStyle;
 
+  /// Injectable wall clock. Defaults to [DateTime.now]. Tests pass a
+  /// controllable function so they can advance time deterministically.
+  final DateTime Function()? now;
+
   @override
   State<CountdownTimer> createState() => _CountdownTimerState();
 }
 
 class _CountdownTimerState extends State<CountdownTimer> {
   Timer? _timer;
+  late DateTime _deadline;
   late int _remainingSeconds;
   bool _expiredFired = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _remainingSeconds = math.max(0, widget.initialRemaining.inSeconds);
+  DateTime _now() => (widget.now ?? DateTime.now)();
+
+  void _anchorDeadlineFromInitial() {
+    final initialSeconds = math.max(0, widget.initialRemaining.inSeconds);
+    _deadline = _now().add(Duration(seconds: initialSeconds));
+    _remainingSeconds = initialSeconds;
+  }
+
+  void _recomputeRemaining() {
+    final secs = _deadline.difference(_now()).inSeconds;
+    _remainingSeconds = math.max(0, secs);
+  }
+
+  void _startTickerIfNeeded() {
+    if (_timer != null) return;
     if (_remainingSeconds == 0) {
       _fireExpiredIfNeeded();
       return;
@@ -52,7 +81,7 @@ class _CountdownTimerState extends State<CountdownTimer> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
-        _remainingSeconds = math.max(0, _remainingSeconds - 1);
+        _recomputeRemaining();
         if (_remainingSeconds == 0) {
           _timer?.cancel();
           _timer = null;
@@ -60,6 +89,25 @@ class _CountdownTimerState extends State<CountdownTimer> {
         }
       });
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _anchorDeadlineFromInitial();
+    _startTickerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant CountdownTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialRemaining != widget.initialRemaining) {
+      // Authoritative resync: re-anchor the deadline whenever the upstream
+      // snapshot changes (provider rebuild, add-time, etc.).
+      _expiredFired = false;
+      _anchorDeadlineFromInitial();
+      _startTickerIfNeeded();
+    }
   }
 
   void _fireExpiredIfNeeded() {

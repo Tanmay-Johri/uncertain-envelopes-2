@@ -204,7 +204,13 @@ void main() {
       expect(find.byType(CountdownTimer), findsOneWidget);
     });
 
-    testWidgets('trading phase countdown ticks down when timed', (tester) async {
+    testWidgets('trading phase renders live CountdownTimer when timed',
+        (tester) async {
+      // Tick-down behaviour itself lives in countdown_timer_test.dart (which
+      // exercises the wall-clock-anchored implementation against simulated
+      // throttling, add-time, and zero-cross). This test only verifies the
+      // lobby wires the live CountdownTimer in during trading phase with the
+      // correct initial value.
       final s = mockLobbyScenarioForGameId('g1');
       expect(s.phase, GameLobbyPhase.trading);
       await tester.pumpWidget(
@@ -218,9 +224,8 @@ void main() {
           ),
         ),
       );
+      expect(find.byKey(const ValueKey('game-lobby-countdown')), findsOneWidget);
       expect(find.text('60:00'), findsOneWidget);
-      await tester.pump(const Duration(minutes: 1));
-      expect(find.text('59:00'), findsOneWidget);
     });
 
     testWidgets('timed game shows TIME REMAINING placeholder when duration unknown',
