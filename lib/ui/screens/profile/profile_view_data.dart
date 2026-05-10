@@ -11,14 +11,12 @@ class ProfileViewData {
   ProfileViewData({
     required String username,
     required this.email,
-    required this.emailVerified,
     required this.winRatePct,
     required this.gamesPlayed,
   }) : username = username.trim().toLowerCase();
 
   final String username;
   final String email;
-  final bool emailVerified;
 
   /// 0–100 for display (**`--`** formatting left to UI if null later).
   final int winRatePct;
@@ -27,7 +25,6 @@ class ProfileViewData {
   ProfileViewData copyWith({
     String? username,
     String? email,
-    bool? emailVerified,
     int? winRatePct,
     int? gamesPlayed,
   }) {
@@ -36,7 +33,6 @@ class ProfileViewData {
           ? username.trim().toLowerCase()
           : this.username,
       email: email ?? this.email,
-      emailVerified: emailVerified ?? this.emailVerified,
       winRatePct: winRatePct ?? this.winRatePct,
       gamesPlayed: gamesPlayed ?? this.gamesPlayed,
     );

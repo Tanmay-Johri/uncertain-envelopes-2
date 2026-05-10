@@ -442,29 +442,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (widget.data.emailVerified) ...[
-                            const SizedBox(width: AppSpacing.sm),
-                            Container(
-                              key: const ValueKey('profile-email-verified-badge'),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.xs,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: AppColors.outline),
-                              ),
-                              child: Text(
-                                'VERIFIED',
-                                style: AppTypography.monoSmall.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),

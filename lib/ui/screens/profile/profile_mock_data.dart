@@ -4,7 +4,6 @@ import 'profile_view_data.dart';
 ProfileViewData mockProfileViewDataDefault() => ProfileViewData(
   username: 'cryptoking99',
   email: 'user@example.com',
-  emailVerified: true,
   winRatePct: 68,
   gamesPlayed: 142,
 );

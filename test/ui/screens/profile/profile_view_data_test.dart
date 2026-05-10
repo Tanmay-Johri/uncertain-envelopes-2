@@ -7,7 +7,6 @@ void main() {
       final d = ProfileViewData(
         username: '  CryptoKing99 ',
         email: 'a@b.com',
-        emailVerified: true,
         winRatePct: 1,
         gamesPlayed: 2,
       );
@@ -18,7 +17,6 @@ void main() {
       final d = ProfileViewData(
         username: 'alice',
         email: 'a@b.com',
-        emailVerified: true,
         winRatePct: 1,
         gamesPlayed: 2,
       );

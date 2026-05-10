@@ -273,32 +273,6 @@ void main() {
     expect(find.text('at-home'), findsOneWidget);
   });
 
-  testWidgets('shows verified badge only when email is verified', (
-    tester,
-  ) async {
-    await _pumpProfile(
-      tester,
-      ProfileScreen(
-        data: mockProfileViewDataDefault().copyWith(emailVerified: true),
-      ),
-    );
-    expect(
-      find.byKey(const ValueKey('profile-email-verified-badge')),
-      findsOneWidget,
-    );
-
-    await _pumpProfile(
-      tester,
-      ProfileScreen(
-        data: mockProfileViewDataDefault().copyWith(emailVerified: false),
-      ),
-    );
-    expect(
-      find.byKey(const ValueKey('profile-email-verified-badge')),
-      findsNothing,
-    );
-  });
-
   testWidgets('shows performance stats from view data', (tester) async {
     await _pumpProfile(
       tester,
