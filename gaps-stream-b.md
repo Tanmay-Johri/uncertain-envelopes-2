@@ -315,3 +315,14 @@ streams because those streams do not touch that file).
   `redirect` / `refreshListenable` for tests. `UncertainEnvelopesApp` is a `ConsumerWidget`
   watching `appRouterProvider`. Tests: `test/core/router/app_router_test.dart` (auth redirect
   group), `test/widget_test.dart` (pre-seeded in-memory session).
+
+- **2026-05-09 — Plan 2B.2 (home discovery + join by code):** Added
+  `lib/providers/view_data/home_view_data_provider.dart` (`homeViewDataProvider`)
+  merging `fetchJoinedGames` + `fetchPublicGames` into `List<MockHomeGame>` via
+  `mockHomeGamesFromRepositorySnapshot`. `HomeScreen` uses the provider when
+  `games` is null; `joinByCode` + `context.go` on Enter; loading/error UI for
+  AsyncValue. Router tests override `homeViewDataProvider` with `kMockHomeGames`
+  so list goldens stay stable without seeding the default repo. Tests:
+  `test/providers/view_data/home_view_data_provider_test.dart`,
+  `test/ui/screens/home/home_screen_test.dart` (loading/error),
+  `test/core/router/app_router_test.dart` (override in `_pumpAppWith` + auth group).

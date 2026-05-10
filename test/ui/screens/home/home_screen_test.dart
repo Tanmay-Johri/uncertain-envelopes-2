@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/home_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_screen.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/code_input.dart';
@@ -79,7 +81,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: const HomeScreen(),
+          home: const HomeScreen(games: kMockHomeGames),
         ),
       );
       await tester.pump();
@@ -91,7 +93,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: const HomeScreen(),
+          home: const HomeScreen(games: kMockHomeGames),
         ),
       );
       await tester.pump();
@@ -105,7 +107,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: const HomeScreen(),
+          home: const HomeScreen(games: kMockHomeGames),
         ),
       );
       await tester.pump();
@@ -145,7 +147,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: const HomeScreen(),
+          home: const HomeScreen(games: kMockHomeGames),
         ),
       );
       await tester.pump();
@@ -183,6 +185,48 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('game-card-z9')));
       await tester.pump();
       expect(openedId, 'z9');
+    });
+  });
+
+  group('HomeScreen provider-driven list', () {
+    testWidgets('shows loading indicator while homeViewData resolves',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeViewDataProvider.overrideWith((ref) async {
+              await Future<void>.delayed(const Duration(milliseconds: 40));
+              return const <MockHomeGame>[];
+            }),
+          ],
+          child: MaterialApp(
+            theme: buildAppTheme(),
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows error text when homeViewData fails', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeViewDataProvider.overrideWith(
+              (ref) async => throw StateError('network'),
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildAppTheme(),
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Bad state'), findsOneWidget);
     });
   });
 }

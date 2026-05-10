@@ -7,6 +7,8 @@ import 'package:uncertain_envelopes_2/core/router/app_router_provider.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/home_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
@@ -26,6 +28,9 @@ Future<GoRouter> _pumpAppWith(
   final router = buildAppRouter(initialLocation: initialLocation);
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+      ],
       child: MaterialApp.router(theme: buildAppTheme(), routerConfig: router),
     ),
   );
@@ -280,7 +285,11 @@ void main() {
   group('appRouterProvider auth redirects', () {
     testWidgets('unauthenticated user at /home is redirected to /auth',
         (tester) async {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [
+          homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
+        ],
+      );
       addTearDown(container.dispose);
       final router = container.read(appRouterProvider);
       await tester.pumpWidget(
@@ -308,6 +317,7 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(repo),
           appRouterInitialLocationProvider.overrideWithValue(AppRoutes.auth),
+          homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
         ],
       );
       addTearDown(container.dispose);
