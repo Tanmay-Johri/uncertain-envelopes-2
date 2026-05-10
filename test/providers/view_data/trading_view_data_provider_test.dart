@@ -170,6 +170,75 @@ void main() {
       expect(data.tradeLogs.single.quantity, 1);
     });
 
+    test('marketPrice is null when no trades and incomplete book', () async {
+      final commands = InMemoryCommandRepository();
+      final games = InMemoryGameRepository(commandRepository: commands);
+      final orders = InMemoryOrderRepository();
+      final executions = InMemoryExecutionRepository();
+      final authRepo = InMemoryAuthRepository();
+      authRepo.setSessionPlayerForTest(
+        Player(
+          playerId: 'viewer-1',
+          username: 'viewer',
+          createdAt: DateTime.utc(2026, 1, 1),
+          email: 'v@test.com',
+        ),
+      );
+
+      final start = DateTime.utc(2026, 3, 1, 12);
+      games.seedGame(
+        Game(
+          gameId: 'tg-empty',
+          gameName: 'Empty Book',
+          gameDescription: 'D',
+          gameCreatedAt: start,
+          gameSecurity: GameSecurity.public,
+          isRanked: IsRanked.casual,
+          gameMaxPlayers: 4,
+          joiningCode: 'EMPTY',
+          endCondition: EndCondition.endless,
+          gameState: GameState.tradingStarted,
+          adminPlayerId: 'viewer-1',
+          stateVersion: 1,
+          updatedAt: start,
+          startTime: start,
+          lastTradedPrice: null,
+        ),
+      );
+      games.seedGamePlayer(
+        GamePlayer(
+          gamesPlayersRowId: 'gp-e',
+          mapGameId: 'tg-empty',
+          mapPlayerId: 'viewer-1',
+          lobbyStatus: LobbyStatus.playing,
+          joinedAt: start,
+          isAdmin: true,
+          deltaCash: 0,
+          deltaEnvelopes: 0,
+          pnl: 0,
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepo),
+          gameRepositoryProvider.overrideWithValue(games),
+          orderRepositoryProvider.overrideWithValue(orders),
+          executionRepositoryProvider.overrideWithValue(executions),
+          commandRepositoryProvider.overrideWithValue(commands),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.future);
+      final data =
+          await container.read(tradingViewDataProvider('tg-empty').future);
+
+      expect(data.marketPrice, isNull);
+      expect(data.orderBookBids, isEmpty);
+      expect(data.orderBookAsks, isEmpty);
+    });
+
     test('router-style trading override returns mock without hitting auth',
         () async {
       final container = ProviderContainer(

@@ -26,6 +26,25 @@ void main() {
       expect(find.byKey(const ValueKey('trading-pnl-projected')), findsOneWidget);
     });
 
+    testWidgets('null market price uses default envelope center', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const Scaffold(
+            body: PnlCalculator(
+              marketPrice: null,
+              deltaCash: 0,
+              deltaEnvelopes: 0,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(r'$1.00'), findsOneWidget);
+    });
+
     testWidgets('reset snaps assumption and range to market price', (
       tester,
     ) async {

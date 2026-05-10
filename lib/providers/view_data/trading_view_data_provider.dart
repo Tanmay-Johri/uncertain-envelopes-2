@@ -54,7 +54,7 @@ List<TradeLogEntry> _tradeLogsFromExecutions({
   ];
 }
 
-double _resolveMarketPrice({
+double? _resolveMarketPrice({
   required List<Execution> executionsAsc,
   required double? gameLastTradedPrice,
   required List<OrderBookLevel> bids,
@@ -68,7 +68,7 @@ double _resolveMarketPrice({
   }
   final mid = computeBidAskMidpoint(bids, asks);
   if (mid != null) return mid;
-  return 100;
+  return null;
 }
 
 /// Trading dashboard snapshot for [gameId] (Phase 2B.5).

@@ -107,8 +107,9 @@ class GameTradingViewData {
   /// Ask side (price asc. in mock).
   final List<OrderBookLevel> orderBookAsks;
 
-  /// Headline market price (e.g. last trade).
-  final double marketPrice;
+  /// Headline market price (e.g. last trade or bid–ask mid). `null` when unknown
+  /// (no trades, no stored last price, incomplete book) — show `-` in the UI.
+  final double? marketPrice;
 
   /// `(timeElapsed, price)` from executions, sorted ascending by time (plan **B9**).
   final List<PriceChartPoint> priceHistory;

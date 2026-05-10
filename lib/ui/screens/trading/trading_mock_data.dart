@@ -171,7 +171,7 @@ GameTradingScenario mockTradingScenarioForGameId(String gameId) {
             deltaEnvelopes: 0,
             orderBookBids: const [],
             orderBookAsks: const [],
-            marketPrice: 100,
+            marketPrice: null,
             priceHistory: const [],
             chartSessionElapsed: Duration.zero,
           ),

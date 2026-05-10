@@ -9,6 +9,9 @@ import '../../core/trading/envelope_value_parse.dart';
 import '../../core/trading/projected_pnl.dart';
 import '../screens/trading/trading_stat_format.dart';
 
+/// Default envelope center when [marketPrice] is unknown (slider uses [envelopeSliderBoundsForCenter]).
+const double _kEnvelopeCenterWhenNoMarketPrice = 1.0;
+
 /// PnL calculator: adjustable envelope assumption, projected PnL (B7 formula).
 class PnlCalculator extends StatefulWidget {
   const PnlCalculator({
@@ -18,7 +21,9 @@ class PnlCalculator extends StatefulWidget {
     required this.deltaEnvelopes,
   });
 
-  final double marketPrice;
+  /// `null` before any reference price exists — internal slider recenters to
+  /// [_kEnvelopeCenterWhenNoMarketPrice].
+  final double? marketPrice;
   final double deltaCash;
   final double deltaEnvelopes;
 
@@ -38,7 +43,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
   @override
   void initState() {
     super.initState();
-    _envelope = widget.marketPrice;
+    _envelope = widget.marketPrice ?? _kEnvelopeCenterWhenNoMarketPrice;
     final b = envelopeSliderBoundsForCenter(_envelope);
     _minB = b.min;
     _maxB = b.max;
@@ -79,7 +84,7 @@ class _PnlCalculatorState extends State<PnlCalculator> {
   }
 
   void _recenterToMarket() {
-    _envelope = widget.marketPrice;
+    _envelope = widget.marketPrice ?? _kEnvelopeCenterWhenNoMarketPrice;
     final b = envelopeSliderBoundsForCenter(_envelope);
     _minB = b.min;
     _maxB = b.max;

@@ -387,7 +387,7 @@ class PriceChart extends StatelessWidget {
     this.cardHeight = 192,
   });
 
-  final double marketPrice;
+  final double? marketPrice;
   final List<PriceChartPoint> points;
   final ChartAxisConfig axis;
 
@@ -424,7 +424,9 @@ class PriceChart extends StatelessWidget {
                   const PulsingLiveDot(),
                   const SizedBox(width: 8),
                   Text(
-                    _headerPriceFormat.format(marketPrice),
+                    marketPrice == null
+                        ? '-'
+                        : _headerPriceFormat.format(marketPrice),
                     style: AppTypography.monoSmall.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

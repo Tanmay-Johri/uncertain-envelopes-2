@@ -41,6 +41,15 @@ void main() {
       );
     });
 
+    test('empty with null fallback clears field', () {
+      expect(normalizeLimitPriceFieldText('', null), '');
+    });
+
+    test('invalid with null fallback clears field', () {
+      expect(normalizeLimitPriceFieldText('abc', null), '');
+      expect(normalizeLimitPriceFieldText('-1', null), '');
+    });
+
     test('invalid uses fallback', () {
       expect(
         normalizeLimitPriceFieldText('abc', 99.5),

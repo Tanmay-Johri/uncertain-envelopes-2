@@ -33,13 +33,18 @@ String formatLimitPriceForField(double d, {String? rawHint}) {
   return d.toStringAsFixed(n);
 }
 
-/// After edit: if empty or not a positive finite number, reset to [fallbackMarket].
+/// After edit: if empty or not a positive finite number, reset to [fallbackMarket]
+/// (or clear the field when [fallbackMarket] is `null`).
 /// Otherwise format [d] with [formatLimitPriceForField].
-String normalizeLimitPriceFieldText(String raw, double fallbackMarket) {
+String normalizeLimitPriceFieldText(String raw, double? fallbackMarket) {
   final t = raw.trim();
-  if (t.isEmpty) return formatLimitPriceForField(fallbackMarket);
+  if (t.isEmpty) {
+    if (fallbackMarket == null) return '';
+    return formatLimitPriceForField(fallbackMarket);
+  }
   final d = double.tryParse(t);
   if (d == null || d.isNaN || d.isInfinite || d <= 0) {
+    if (fallbackMarket == null) return '';
     return formatLimitPriceForField(fallbackMarket);
   }
   return formatLimitPriceForField(d, rawHint: t);

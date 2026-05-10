@@ -84,6 +84,27 @@ void main() {
       expect(find.text('60'), findsWidgets);
     });
 
+    testWidgets('null market price shows hyphen in header', (tester) async {
+      final axis = ChartAxisConfig.fromExecutionHistory(
+        sessionElapsed: Duration.zero,
+        points: const [],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: PriceChart(
+              marketPrice: null,
+              points: const [],
+              axis: axis,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('-'), findsOneWidget);
+      expect(find.text(r'$150.00'), findsNothing);
+    });
+
     testWidgets('empty history shows grid only', (tester) async {
       final axis = ChartAxisConfig.fromExecutionHistory(
         sessionElapsed: const Duration(minutes: 3),

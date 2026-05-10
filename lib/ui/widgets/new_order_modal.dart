@@ -48,11 +48,12 @@ class NewOrderModal extends StatefulWidget {
     this.bidAskMidpointForGameTitle,
   });
 
-  final double marketPrice;
+  /// Last traded reference for limit defaults and labeling (`null` → hyphen).
+  final double? marketPrice;
 
   /// When set (e.g. live game tick), the **Last Traded Price** line tracks
   /// [ValueListenable.value] while this dialog is open.
-  final ValueListenable<double>? marketPriceListenable;
+  final ValueListenable<double?>? marketPriceListenable;
 
   /// Live bid–ask midpoint (`null` shows `-`); omitted in tests that do not
   /// model an order book.
@@ -63,7 +64,7 @@ class NewOrderModal extends StatefulWidget {
   final List<String>? gameTitles;
 
   /// Per-game hint for Last Traded / limit defaults when [gameTitles] is used.
-  final double Function(String gameTitle)? marketPriceForGameTitle;
+  final double? Function(String gameTitle)? marketPriceForGameTitle;
 
   /// When [gameTitles] is used: bid–ask midpoint per title (`null` → hyphen).
   /// Prefer this over [bidAskMidpointListenable] when the picker changes game.
@@ -72,8 +73,8 @@ class NewOrderModal extends StatefulWidget {
   /// Trading route: unchanged return type ([gameTitles] omitted).
   static Future<PersonalOrder?> show(
     BuildContext context, {
-    required double marketPrice,
-    ValueListenable<double>? marketPriceListenable,
+    required double? marketPrice,
+    ValueListenable<double?>? marketPriceListenable,
     ValueListenable<double?>? bidAskMidpointListenable,
   }) {
     return showDialog<PersonalOrder>(
@@ -91,10 +92,10 @@ class NewOrderModal extends StatefulWidget {
   static Future<GameScopedNewOrder?> showChoosingGame(
     BuildContext context, {
     required List<String> gameTitles,
-    double fallbackMarketPrice = 150,
-    double Function(String gameTitle)? marketPriceForGameTitle,
+    double? fallbackMarketPrice = 150,
+    double? Function(String gameTitle)? marketPriceForGameTitle,
     double? Function(String gameTitle)? bidAskMidpointForGameTitle,
-    ValueListenable<double>? marketPriceListenable,
+    ValueListenable<double?>? marketPriceListenable,
     ValueListenable<double?>? bidAskMidpointListenable,
   }) {
     final titles = List<String>.of(gameTitles)..sort();
@@ -132,7 +133,7 @@ class _NewOrderModalState extends State<NewOrderModal> {
   bool get _gamesMode =>
       widget.gameTitles != null && widget.gameTitles!.isNotEmpty;
 
-  double _baseMarketForSelectedGame() {
+  double? _baseMarketForSelectedGame() {
     if (_gamesMode) {
       return widget.marketPriceForGameTitle?.call(_selectedGame) ??
           widget.marketPrice;
@@ -140,7 +141,7 @@ class _NewOrderModalState extends State<NewOrderModal> {
     return widget.marketPrice;
   }
 
-  double _seedMarketSnapshot() =>
+  double? _seedMarketSnapshot() =>
       widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
 
   @override
@@ -154,10 +155,12 @@ class _NewOrderModalState extends State<NewOrderModal> {
       selection: TextSelection.collapsed(offset: 1),
     );
     final seedMarket = _seedMarketSnapshot();
-    final initialLimit = normalizeLimitPriceFieldText(
-      seedMarket.toString(),
-      seedMarket,
-    );
+    final initialLimit = seedMarket == null
+        ? ''
+        : normalizeLimitPriceFieldText(
+            seedMarket.toString(),
+            seedMarket,
+          );
     _limitCtrl.value = TextEditingValue(
       text: initialLimit,
       selection: TextSelection.collapsed(offset: initialLimit.length),
@@ -214,7 +217,7 @@ class _NewOrderModalState extends State<NewOrderModal> {
     });
   }
 
-  double _effectiveMarketPrice() {
+  double? _effectiveMarketPrice() {
     return widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
   }
 
@@ -224,14 +227,21 @@ class _NewOrderModalState extends State<NewOrderModal> {
       _selectedGame = next;
       final mp =
           widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
-      final normalized = normalizeLimitPriceFieldText(
-        mp.toString(),
-        mp,
-      );
-      _limitCtrl.value = TextEditingValue(
-        text: normalized,
-        selection: TextSelection.collapsed(offset: normalized.length),
-      );
+      if (mp == null) {
+        _limitCtrl.value = const TextEditingValue(
+          text: '',
+          selection: TextSelection.collapsed(offset: 0),
+        );
+      } else {
+        final normalized = normalizeLimitPriceFieldText(
+          mp.toString(),
+          mp,
+        );
+        _limitCtrl.value = TextEditingValue(
+          text: normalized,
+          selection: TextSelection.collapsed(offset: normalized.length),
+        );
+      }
     });
   }
 
@@ -265,8 +275,9 @@ class _NewOrderModalState extends State<NewOrderModal> {
 
   void _bumpLimit(double delta) {
     setState(() {
-      final cur =
-          double.tryParse(_limitCtrl.text.trim()) ?? _effectiveMarketPrice();
+      final cur = double.tryParse(_limitCtrl.text.trim()) ??
+          _effectiveMarketPrice() ??
+          kLimitPriceMinPositive;
       var n = cur + delta;
       if (n < kLimitPriceMinPositive) {
         n = kLimitPriceMinPositive;
@@ -658,15 +669,17 @@ class _LastTradedPriceLine extends StatelessWidget {
     required this.marketPriceListenable,
   });
 
-  final double marketPrice;
-  final ValueListenable<double>? marketPriceListenable;
+  final double? marketPrice;
+  final ValueListenable<double?>? marketPriceListenable;
+
+  static String _valueLabel(double? m) => m == null ? '-' : '\$${m.toStringAsFixed(2)}';
 
   @override
   Widget build(BuildContext context) {
     final listenable = marketPriceListenable;
     if (listenable == null) {
       return Text(
-        'Last Traded Price \$${marketPrice.toStringAsFixed(2)}',
+        'Last Traded Price ${_valueLabel(marketPrice)}',
         style: AppTypography.monoSmall.copyWith(
           color: AppColors.textTertiary,
         ),
@@ -675,9 +688,8 @@ class _LastTradedPriceLine extends StatelessWidget {
     return ListenableBuilder(
       listenable: listenable,
       builder: (context, _) {
-        final m = listenable.value;
         return Text(
-          'Last Traded Price \$${m.toStringAsFixed(2)}',
+          'Last Traded Price ${_valueLabel(listenable.value)}',
           style: AppTypography.monoSmall.copyWith(
             color: AppColors.textTertiary,
           ),

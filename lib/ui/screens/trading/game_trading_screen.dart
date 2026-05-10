@@ -65,7 +65,7 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
   var _localOrderSeq = 0;
 
   /// Keeps [NewOrderModal]’s Last Traded Price line in sync while the dialog is open.
-  late final ValueNotifier<double> _marketPriceNotifier;
+  late final ValueNotifier<double?> _marketPriceNotifier;
 
   /// Live bid–ask midpoint for [NewOrderModal] (`null` → hyphen in the UI).
   late final ValueNotifier<double?> _bidAskMidpointNotifier;
