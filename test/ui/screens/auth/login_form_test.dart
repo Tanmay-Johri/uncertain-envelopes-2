@@ -48,13 +48,34 @@ void main() {
 
     testWidgets('password field is obscured by default', (tester) async {
       await _pump(tester, onSubmit: (_) {});
-      final tf = tester.widget<TextField>(
-        find.descendant(
-          of: find.byKey(const Key('login_password_field')),
-          matching: find.byType(TextField),
-        ),
+      final finder = find.descendant(
+        of: find.byKey(const Key('login_password_field')),
+        matching: find.byType(TextField),
       );
-      expect(tf.obscureText, isTrue);
+      expect(tester.widget<TextField>(finder).obscureText, isTrue);
+    });
+
+    testWidgets('password visibility toggle obscures and reveals text',
+        (tester) async {
+      await _pump(tester, onSubmit: (_) {});
+      await _enter(tester, const Key('login_password_field'), 'secret');
+      final field = find.descendant(
+        of: find.byKey(const Key('login_password_field')),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(field).obscureText, isTrue);
+
+      await tester.tap(
+        find.byKey(const ValueKey('login_password_visibility_toggle')),
+      );
+      await tester.pump();
+      expect(tester.widget<TextField>(field).obscureText, isFalse);
+
+      await tester.tap(
+        find.byKey(const ValueKey('login_password_visibility_toggle')),
+      );
+      await tester.pump();
+      expect(tester.widget<TextField>(field).obscureText, isTrue);
     });
 
     testWidgets('renders the Forgot? link', (tester) async {

@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../widgets/neon_button.dart';
+import 'auth_password_field_suffix.dart';
 
 /// Credentials collected by the log-in form.
 class LoginSubmission {
@@ -39,6 +40,7 @@ class _LoginFormState extends State<LoginForm> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -116,13 +118,19 @@ class _LoginFormState extends State<LoginForm> {
           TextFormField(
             key: const Key('login_password_field'),
             controller: _passwordController,
-            obscureText: true,
+            obscureText: _obscurePassword,
             autofillHints: const [AutofillHints.password],
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '••••••••',
-              suffixIcon: Icon(Icons.lock_outline),
+              suffixIcon: AuthPasswordFieldSuffix(
+                obscureText: _obscurePassword,
+                visibilityToggleKey:
+                    const ValueKey('login_password_visibility_toggle'),
+                onToggle: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
             validator: _validatePassword,
           ),

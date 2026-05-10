@@ -64,13 +64,34 @@ void main() {
 
     testWidgets('password field is obscured', (tester) async {
       await _pump(tester, onSubmit: (_) {});
-      final tf = tester.widget<TextField>(
-        find.descendant(
-          of: find.byKey(_passwordKey),
-          matching: find.byType(TextField),
-        ),
+      final finder = find.descendant(
+        of: find.byKey(_passwordKey),
+        matching: find.byType(TextField),
       );
-      expect(tf.obscureText, isTrue);
+      expect(tester.widget<TextField>(finder).obscureText, isTrue);
+    });
+
+    testWidgets('password visibility toggle obscures and reveals text',
+        (tester) async {
+      await _pump(tester, onSubmit: (_) {});
+      await _enter(tester, _passwordKey, 'hunter2x');
+      final field = find.descendant(
+        of: find.byKey(_passwordKey),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(field).obscureText, isTrue);
+
+      await tester.tap(
+        find.byKey(const ValueKey('signup_password_visibility_toggle')),
+      );
+      await tester.pump();
+      expect(tester.widget<TextField>(field).obscureText, isFalse);
+
+      await tester.tap(
+        find.byKey(const ValueKey('signup_password_visibility_toggle')),
+      );
+      await tester.pump();
+      expect(tester.widget<TextField>(field).obscureText, isTrue);
     });
 
     testWidgets('no validation errors on first render', (tester) async {

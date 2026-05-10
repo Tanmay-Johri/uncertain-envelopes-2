@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../widgets/neon_button.dart';
+import 'auth_password_field_suffix.dart';
 
 /// Credentials collected by the sign-up form.
 class SignUpSubmission {
@@ -43,6 +44,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
+  bool _obscurePassword = true;
 
   // Kept intentionally simple: exactly one `@` with something on each
   // side and a `.` in the domain. Full RFC-compliant validation lives
@@ -142,13 +144,19 @@ class _SignUpFormState extends State<SignUpForm> {
           TextFormField(
             key: const Key('signup_password_field'),
             controller: _passwordController,
-            obscureText: true,
+            obscureText: _obscurePassword,
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Create a strong password',
-              suffixIcon: Icon(Icons.lock_outline),
+              suffixIcon: AuthPasswordFieldSuffix(
+                obscureText: _obscurePassword,
+                visibilityToggleKey:
+                    const ValueKey('signup_password_visibility_toggle'),
+                onToggle: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
             validator: _validatePassword,
           ),
