@@ -16,8 +16,13 @@ loads non-terminal `create_order` rows for the whole game (`fetchPendingCreateOr
 merges into `personalOrdersProvider` (filtered by viewer), and is updated by Supabase Realtime
 on `commands` (`command_game_id` filter) via `GameRealtimeService` → `RiverpodRealtimeTarget`.
 `refreshAll` and `GameTradingRouteScreen` after submit refresh this notifier alongside `orders`.
-**Still open:** dedup when the processor materialises an `orders` row without a `cmd:` linkage
-to the originating command (if the backend never exposes that mapping).
+**Dedup (2026-05-09):** `mergePersonalOrdersDedupingPlaceholders` drops a synthetic `cmd:*`
+row when a same-signature real `orders` row exists for the player with
+`order_created_at` not before the synthetic time minus
+`kPersonalOrdersDedupClockSkewBackward` (FIFO oldest-synthetic ↔ earliest
+unused real). **Residual risk:** two identical live orders seconds apart can
+still collapse visually if only one real row exists; prefer a backend
+`command_id` on `orders` when available.
 
 **Where:** `lib/providers/trading_provider.dart` — `pendingCreateOrderCommandsProvider`,
 `personalOrdersProvider`; `lib/services/game_realtime_service.dart`,

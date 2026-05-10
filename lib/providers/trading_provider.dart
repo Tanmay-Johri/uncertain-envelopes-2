@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/chart/chart_axis.dart';
 import '../core/chart/price_chart_point.dart';
+import '../core/trading/personal_orders_merge.dart';
 import '../data/enums/command_status.dart';
 import '../data/enums/command_type.dart';
 import '../data/enums/order_status.dart';
@@ -260,9 +261,10 @@ Future<List<Order>> personalOrders(
     if (o != null) synthetic.add(o);
   }
 
-  final merged = [...mineReal, ...synthetic]
-    ..sort((a, b) => b.orderCreatedAt.compareTo(a.orderCreatedAt));
-  return List.unmodifiable(merged);
+  return mergePersonalOrdersDedupingPlaceholders(
+    mineReal: mineReal,
+    synthetic: synthetic,
+  );
 }
 
 /// (timeElapsed, price) datapoints for the trading chart. Returns an

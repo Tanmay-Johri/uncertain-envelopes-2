@@ -336,6 +336,39 @@ void main() {
       expect(mine.single.quantityInitial, 4);
       expect(mine.single.status, OrderStatus.inQueue);
     });
+
+    test('dedups cmd placeholder when a matching real order row exists', () async {
+      games.seedGame(_gameTrading());
+      orders.seedOrders([
+        _resting(
+          id: 'real-after-cmd',
+          type: OrderType.limitBuy,
+          price: 77,
+          qty: 2,
+          playerId: 'p-me',
+          createdAt: DateTime.utc(2026, 1, 1, 12, 1),
+        ),
+      ]);
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(ordersProvider('g-1').future);
+      await commands.submitCreateOrder(
+        gameId: 'g-1',
+        playerId: 'p-me',
+        type: OrderType.limitBuy,
+        quantityInitial: 2,
+        pricePerStock: 77,
+      );
+      await container
+          .read(pendingCreateOrderCommandsProvider('g-1').notifier)
+          .refresh();
+      final mine = await container.read(
+        personalOrdersProvider(gameId: 'g-1', playerId: 'p-me').future,
+      );
+      expect(mine.length, 1);
+      expect(mine.single.orderId, 'real-after-cmd');
+    });
   });
 
   group('PendingCreateOrderCommands notifier', () {
