@@ -11,23 +11,46 @@ import '../trading/trading_mock_data.dart';
 import 'pending_orders_mock_data.dart';
 import 'pending_orders_view_data.dart';
 
+/// Callback after the user confirms **Place order** on the shell Orders tab.
+/// When non-null, orders are submitted via [CommandRepository.submitCreateOrder]
+/// and the screen does **not** prepend a local-only row.
+typedef PendingOrdersOnSubmitNewOrder = Future<void> Function({
+  required String gameId,
+  required GameScopedNewOrder created,
+});
+
 /// Global pending orders (**C9**). Shell provides header + bottom nav.
 ///
 /// Rows render **newest [PersonalOrder.createdAt] first** (`null` times sort
 /// last). The order of [items] is ignored for display. Default mocks use historic
 /// [createdAt] so live inserts naturally sort above them.
+///
+/// [tradingGamesForNewOrder] lists joined games in `trading_started` — required
+/// for **Create new order** when using explicit [items]. When both [items] and
+/// [tradingGamesForNewOrder] are omitted, mock defaults derive eligibility from
+/// the sample pending list (UI demos only).
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({
     super.key,
     this.items,
+    this.tradingGamesForNewOrder,
     this.onCancelOrder,
+    this.onSubmitNewOrder,
   });
 
   /// When `null`, uses [kMockPendingOrders].
   final List<PendingOrderListItem>? items;
 
+  /// Joined games where `game_state == trading_started`. When non-null, defines
+  /// who may tap **Create new order** (independent of pending rows).
+  final List<TradingOrderTargetGame>? tradingGamesForNewOrder;
+
   /// Stream C stub after user confirms cancellation in [PendingOrderCard].
   final ValueChanged<String>? onCancelOrder;
+
+  /// When set (shell route), new orders are sent to the backend; otherwise the
+  /// screen inserts a local mock row (tests / standalone widget demos).
+  final PendingOrdersOnSubmitNewOrder? onSubmitNewOrder;
 
   @override
   State<PendingOrdersScreen> createState() => _PendingOrdersScreenState();
@@ -49,11 +72,24 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   @override
   void didUpdateWidget(covariant PendingOrdersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.items != oldWidget.items) {
+    if (widget.items != oldWidget.items ||
+        widget.tradingGamesForNewOrder != oldWidget.tradingGamesForNewOrder) {
       _source = widget.items != null
           ? List<PendingOrderListItem>.from(widget.items!)
           : kMockPendingOrders();
     }
+  }
+
+  /// Games the user may place orders in — from [tradingGamesForNewOrder], or
+  /// (mock-only) derived from [_source] when [items] is null.
+  List<TradingOrderTargetGame> get _eligibleGames {
+    if (widget.tradingGamesForNewOrder != null) {
+      return widget.tradingGamesForNewOrder!;
+    }
+    if (widget.items == null) {
+      return tradingOrderTargetsFromPendingRows(_source);
+    }
+    return const [];
   }
 
   List<String> get _distinctSortedGameTitles {
@@ -102,6 +138,9 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   }
 
   String _descriptionForGameTitle(String title) {
+    for (final g in _eligibleGames) {
+      if (g.gameTitle == title) return g.gameDescription;
+    }
     for (final e in _source) {
       if (e.gameTitle == title) {
         return e.gameDescription;
@@ -111,22 +150,69 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   }
 
   String _gameIdForGameTitle(String title) {
+    for (final g in _eligibleGames) {
+      if (g.gameTitle == title) return g.gameId;
+    }
     for (final e in _source) {
       if (e.gameTitle == title) return e.gameId;
     }
     return 'g-cross';
   }
 
+  String? _gameIdForEligibleTitle(String title) {
+    for (final g in _eligibleGames) {
+      if (g.gameTitle == title) return g.gameId;
+    }
+    return null;
+  }
+
   Future<void> _openNewOrder() async {
-    final games = _distinctSortedGameTitles;
-    if (games.isEmpty) return;
+    final titles = _eligibleGames.map((e) => e.gameTitle).toSet().toList()
+      ..sort();
+    if (titles.isEmpty) return;
+    final useLivePrices =
+        widget.onSubmitNewOrder != null && _eligibleGames.isNotEmpty;
     final created = await NewOrderModal.showChoosingGame(
       context,
-      gameTitles: games,
+      gameTitles: titles,
+      gameIdForTitle: useLivePrices ? _gameIdForEligibleTitle : null,
       marketPriceForGameTitle: _referencePriceForGameTitle,
-      bidAskMidpointForGameTitle: mockBidAskMidpointForGameTitle,
+      bidAskMidpointForGameTitle:
+          useLivePrices ? null : mockBidAskMidpointForGameTitle,
     );
     if (!mounted || created == null) return;
+
+    if (widget.onSubmitNewOrder != null) {
+      final gid = _gameIdForEligibleTitle(created.gameTitle);
+      if (gid == null || gid.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not submit order'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+      try {
+        await widget.onSubmitNewOrder!(
+          gameId: gid,
+          created: created,
+        );
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not submit order'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+      return;
+    }
+
     final id = _allocateCrossGameOrderId();
     setState(() {
       _source = [
@@ -229,9 +315,8 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                 child: NeonButton(
                   key: const ValueKey('pending-orders-create-new-order'),
                   label: 'Create new order',
-                  onPressed: _distinctSortedGameTitles.isEmpty
-                      ? null
-                      : _openNewOrder,
+                  onPressed:
+                      _eligibleGames.isEmpty ? null : _openNewOrder,
                 ),
               ),
             ),

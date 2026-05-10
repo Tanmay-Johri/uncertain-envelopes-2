@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/trading/order_type_from_personal.dart';
+import '../../../core/trading/personal_order.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/best_effort_post_submit_refresh.dart';
 import '../../../providers/command_repository_provider.dart';
+import '../../../providers/trading_provider.dart';
 import '../../../providers/view_data/pending_orders_view_data_provider.dart';
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
+import '../../widgets/new_order_modal.dart';
 import 'pending_orders_screen.dart';
 import 'pending_orders_view_data.dart';
 
@@ -33,10 +38,40 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(pendingOrdersViewDataProvider),
         ),
       ),
-      data: (items) {
+      data: (data) {
         final viewer = ref.read(authControllerProvider).valueOrNull;
+        final items = data.items;
         return PendingOrdersScreen(
           items: items,
+          tradingGamesForNewOrder: data.tradingGamesForNewOrder,
+          onSubmitNewOrder: viewer == null
+              ? null
+              : ({
+                  required String gameId,
+                  required GameScopedNewOrder created,
+                }) async {
+                  final cmds = ref.read(commandRepositoryProvider);
+                  await cmds.submitCreateOrder(
+                    gameId: gameId,
+                    playerId: viewer.playerId,
+                    type: orderTypeFromPersonalDraft(created.order),
+                    quantityInitial: created.order.quantityInitial,
+                    pricePerStock: created.order.orderType ==
+                            PersonalOrderType.limit
+                        ? created.order.limitPrice
+                        : null,
+                  );
+                  await bestEffortPostSubmitRefresh([
+                    () => ref.read(ordersProvider(gameId).notifier).refresh(),
+                    () => ref
+                        .read(
+                          pendingCreateOrderCommandsProvider(gameId).notifier,
+                        )
+                        .refresh(),
+                    () async =>
+                        ref.invalidate(pendingOrdersViewDataProvider),
+                  ]);
+                },
           onCancelOrder: viewer == null
               ? null
               : (orderId) {

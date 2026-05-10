@@ -31,6 +31,7 @@ import 'package:uncertain_envelopes_2/providers/view_data/profile_view_data_prov
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_mock_data.dart';
+import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_view_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
@@ -141,7 +142,11 @@ Future<GoRouter> _pumpAppWith(
           (ref) async => mockProfileViewDataDefault(),
         ),
         pendingOrdersViewDataProvider.overrideWith(
-          (ref) async => kMockPendingOrders(),
+          (ref) async => PendingOrdersScreenData(
+            items: kMockPendingOrders(),
+            tradingGamesForNewOrder:
+                tradingOrderTargetsFromPendingRows(kMockPendingOrders()),
+          ),
         ),
         gameHistoryViewDataProvider.overrideWith(
           (ref) async => kMockGameHistory(),

@@ -10,6 +10,48 @@ import 'package:uncertain_envelopes_2/ui/widgets/neon_button.dart';
 void main() {
   final t0 = DateTime.utc(2018, 7, 10, 12, 0);
 
+  const List<TradingOrderTargetGame> eligibleGamesAbTest = [
+    TradingOrderTargetGame(
+      gameId: 'g-test',
+      gameTitle: 'Game A',
+      gameDescription: '',
+    ),
+    TradingOrderTargetGame(
+      gameId: 'g-test',
+      gameTitle: 'Game B',
+      gameDescription: '',
+    ),
+  ];
+
+  const List<TradingOrderTargetGame> eligibleGamesOlderLaterTest = [
+    TradingOrderTargetGame(
+      gameId: 'g-test',
+      gameTitle: 'Game Older',
+      gameDescription: '',
+    ),
+    TradingOrderTargetGame(
+      gameId: 'g-test',
+      gameTitle: 'Game Later',
+      gameDescription: '',
+    ),
+  ];
+
+  const List<TradingOrderTargetGame> eligibleForexTest = [
+    TradingOrderTargetGame(
+      gameId: 'g-forex',
+      gameTitle: 'Forex Masters',
+      gameDescription: '',
+    ),
+  ];
+
+  const List<TradingOrderTargetGame> eligibleSingleGTest = [
+    TradingOrderTargetGame(
+      gameId: 'g-test',
+      gameTitle: 'G',
+      gameDescription: '',
+    ),
+  ];
+
   List<PendingOrderListItem> twoGamesTwoSides() => [
         PendingOrderListItem(
           gameId: 'g-test',
@@ -141,6 +183,7 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: twoGamesTwoSides(),
+          tradingGamesForNewOrder: eligibleGamesAbTest,
         ),
       ),
     );
@@ -168,6 +211,7 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: items,
+            tradingGamesForNewOrder: eligibleGamesOlderLaterTest,
           ),
         ),
       );
@@ -195,6 +239,7 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: twoGamesTwoSides(),
+          tradingGamesForNewOrder: eligibleGamesAbTest,
         ),
       ),
     );
@@ -218,6 +263,7 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: multiRowSameGame(),
+          tradingGamesForNewOrder: eligibleGamesAbTest,
         ),
       ),
     );
@@ -247,6 +293,7 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: multiRowSameGame(),
+            tradingGamesForNewOrder: eligibleGamesAbTest,
           ),
         ),
       );
@@ -285,6 +332,7 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: twoGamesTwoSides(),
+            tradingGamesForNewOrder: eligibleGamesAbTest,
           ),
         ),
       );
@@ -307,6 +355,7 @@ void main() {
           theme: buildAppTheme(),
           home: PendingOrdersScreen(
             items: twoGamesTwoSides(),
+            tradingGamesForNewOrder: eligibleGamesAbTest,
           ),
         ),
       );
@@ -336,6 +385,7 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: twoGamesTwoSides(),
+          tradingGamesForNewOrder: eligibleGamesAbTest,
         ),
       ),
     );
@@ -382,6 +432,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
+          tradingGamesForNewOrder: eligibleSingleGTest,
           items: [
             PendingOrderListItem(
               gameId: 'g-test',
@@ -467,13 +518,14 @@ void main() {
     expect(filterText.style?.color, AppColors.textTertiary);
   });
 
-  testWidgets('create new order is disabled when source has no game titles',
+  testWidgets('create new order is disabled when there are no eligible trading games',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: const [],
+          tradingGamesForNewOrder: const [],
         ),
       ),
     );
@@ -491,6 +543,7 @@ void main() {
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
           items: twoGamesTwoSides(),
+          tradingGamesForNewOrder: eligibleGamesAbTest,
         ),
       ),
     );
@@ -531,6 +584,7 @@ void main() {
       MaterialApp(
         theme: buildAppTheme(),
         home: PendingOrdersScreen(
+          tradingGamesForNewOrder: eligibleForexTest,
           items: [
             PendingOrderListItem(
               gameId: 'g-forex',

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -7,7 +8,24 @@ import '../../core/theme/app_typography.dart';
 import '../../core/trading/limit_price_input.dart';
 import '../../core/trading/order_quantity_input.dart';
 import '../../core/trading/personal_order.dart';
+import '../../providers/view_data/trading_view_data_provider.dart';
+import '../screens/trading/trading_view_data.dart';
 import 'neon_button.dart';
+
+/// Wraps dialog content so [ConsumerWidget]s resolve [Ref] correctly: reuse the
+/// app [ProviderContainer] when present; otherwise create a scope for widget
+/// tests that pump [MaterialApp] without Riverpod.
+Widget _newOrderDialogShell(BuildContext context, Widget child) {
+  try {
+    final container = ProviderScope.containerOf(context);
+    return UncontrolledProviderScope(
+      container: container,
+      child: child,
+    );
+  } catch (_) {
+    return ProviderScope(child: child);
+  }
+}
 
 /// Populated only from [NewOrderModal.showChoosingGame].
 @immutable
@@ -37,7 +55,7 @@ const PersonalOrderStatusChipStyle _kNeutralOrderChipStyle =
 
 /// C6 mock: create order dialog. Returns a [PersonalOrder] with a placeholder
 /// [PersonalOrder.id] (`new`) — the screen assigns a real id.
-class NewOrderModal extends StatefulWidget {
+class NewOrderModal extends ConsumerStatefulWidget {
   const NewOrderModal({
     super.key,
     required this.marketPrice,
@@ -46,6 +64,7 @@ class NewOrderModal extends StatefulWidget {
     this.gameTitles,
     this.marketPriceForGameTitle,
     this.bidAskMidpointForGameTitle,
+    this.gameIdForTitle,
   });
 
   /// Last traded reference for limit defaults and labeling (`null` → hyphen).
@@ -68,7 +87,12 @@ class NewOrderModal extends StatefulWidget {
 
   /// When [gameTitles] is used: bid–ask midpoint per title (`null` → hyphen).
   /// Prefer this over [bidAskMidpointListenable] when the picker changes game.
+  /// Ignored when [gameIdForTitle] is set (live book via [tradingViewDataProvider]).
   final double? Function(String gameTitle)? bidAskMidpointForGameTitle;
+
+  /// When set with [gameTitles], resolves each title to a game id so Last Traded
+  /// Price and bid–ask midpoint load from [tradingViewDataProvider].
+  final String? Function(String gameTitle)? gameIdForTitle;
 
   /// Trading route: unchanged return type ([gameTitles] omitted).
   static Future<PersonalOrder?> show(
@@ -80,10 +104,13 @@ class NewOrderModal extends StatefulWidget {
     return showDialog<PersonalOrder>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => NewOrderModal(
-        marketPrice: marketPrice,
-        marketPriceListenable: marketPriceListenable,
-        bidAskMidpointListenable: bidAskMidpointListenable,
+      builder: (_) => _newOrderDialogShell(
+        context,
+        NewOrderModal(
+          marketPrice: marketPrice,
+          marketPriceListenable: marketPriceListenable,
+          bidAskMidpointListenable: bidAskMidpointListenable,
+        ),
       ),
     );
   }
@@ -95,6 +122,7 @@ class NewOrderModal extends StatefulWidget {
     double? fallbackMarketPrice = 150,
     double? Function(String gameTitle)? marketPriceForGameTitle,
     double? Function(String gameTitle)? bidAskMidpointForGameTitle,
+    String? Function(String gameTitle)? gameIdForTitle,
     ValueListenable<double?>? marketPriceListenable,
     ValueListenable<double?>? bidAskMidpointListenable,
   }) {
@@ -105,23 +133,27 @@ class NewOrderModal extends StatefulWidget {
     return showDialog<GameScopedNewOrder>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => NewOrderModal(
-        marketPrice: fallbackMarketPrice,
-        marketPriceListenable: marketPriceListenable,
-        bidAskMidpointListenable: bidAskMidpointListenable,
-        gameTitles: titles,
-        marketPriceForGameTitle:
-            marketPriceForGameTitle ?? ((_) => fallbackMarketPrice),
-        bidAskMidpointForGameTitle: bidAskMidpointForGameTitle,
+      builder: (_) => _newOrderDialogShell(
+        context,
+        NewOrderModal(
+          marketPrice: fallbackMarketPrice,
+          marketPriceListenable: marketPriceListenable,
+          bidAskMidpointListenable: bidAskMidpointListenable,
+          gameTitles: titles,
+          marketPriceForGameTitle:
+              marketPriceForGameTitle ?? ((_) => fallbackMarketPrice),
+          bidAskMidpointForGameTitle: bidAskMidpointForGameTitle,
+          gameIdForTitle: gameIdForTitle,
+        ),
       ),
     );
   }
 
   @override
-  State<NewOrderModal> createState() => _NewOrderModalState();
+  ConsumerState<NewOrderModal> createState() => _NewOrderModalState();
 }
 
-class _NewOrderModalState extends State<NewOrderModal> {
+class _NewOrderModalState extends ConsumerState<NewOrderModal> {
   late PersonalOrderSide _side;
   late PersonalOrderType _type;
   late String _selectedGame;
@@ -133,7 +165,26 @@ class _NewOrderModalState extends State<NewOrderModal> {
   bool get _gamesMode =>
       widget.gameTitles != null && widget.gameTitles!.isNotEmpty;
 
-  double? _baseMarketForSelectedGame() {
+  GameTradingViewData? _liveTradingSnapshot({bool listen = true}) {
+    if (!_gamesMode || widget.gameIdForTitle == null) return null;
+    final gid = widget.gameIdForTitle!(_selectedGame);
+    if (gid == null || gid.isEmpty) return null;
+    final async = listen
+        ? ref.watch(tradingViewDataProvider(gid))
+        : ref.read(tradingViewDataProvider(gid));
+    return async.asData?.value;
+  }
+
+  double? _liveBidAskMid() {
+    final d = _liveTradingSnapshot();
+    if (d == null) return null;
+    return computeBidAskMidpoint(d.orderBookBids, d.orderBookAsks);
+  }
+
+  double? _baseMarketForSelectedGame({bool listen = true}) {
+    final live = _liveTradingSnapshot(listen: listen);
+    if (live?.marketPrice != null) return live!.marketPrice;
+
     if (_gamesMode) {
       return widget.marketPriceForGameTitle?.call(_selectedGame) ??
           widget.marketPrice;
@@ -142,7 +193,8 @@ class _NewOrderModalState extends State<NewOrderModal> {
   }
 
   double? _seedMarketSnapshot() =>
-      widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
+      widget.marketPriceListenable?.value ??
+      _baseMarketForSelectedGame(listen: false);
 
   @override
   void initState() {
@@ -218,6 +270,8 @@ class _NewOrderModalState extends State<NewOrderModal> {
   }
 
   double? _effectiveMarketPrice() {
+    final live = _liveTradingSnapshot();
+    if (live?.marketPrice != null) return live!.marketPrice;
     return widget.marketPriceListenable?.value ?? _baseMarketForSelectedGame();
   }
 
@@ -444,6 +498,9 @@ class _NewOrderModalState extends State<NewOrderModal> {
               _BidAskMidpointLine(
                 listenable: widget.bidAskMidpointListenable!,
               ),
+            ] else if (_gamesMode && widget.gameIdForTitle != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _bidAskMidpointLabelText(_liveBidAskMid()),
             ] else if (_gamesMode &&
                 widget.bidAskMidpointForGameTitle != null) ...[
               const SizedBox(height: AppSpacing.sm),

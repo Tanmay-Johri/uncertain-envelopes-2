@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
+import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/new_order_modal.dart';
 
 void main() {
@@ -634,6 +637,44 @@ void main() {
       expect(popped!.gameTitle, 'OnlyGame');
       expect(popped!.order.id, 'new');
       expect(popped!.order.quantityInitial, 1);
+    });
+
+    testWidgets(
+      'showChoosingGame with gameIdForTitle completes initState without crash',
+      (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tradingViewDataProvider('game-x').overrideWith(
+              (ref) => Future.value(mockTradingScenarioForGameId('g1').data),
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildAppTheme(),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return TextButton(
+                    onPressed: () {
+                      NewOrderModal.showChoosingGame(
+                        context,
+                        gameTitles: const ['Forex Masters'],
+                        gameIdForTitle: (_) => 'game-x',
+                      );
+                    },
+                    child: const Text('open'),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('new-order-dialog')), findsOneWidget);
     });
   });
 }

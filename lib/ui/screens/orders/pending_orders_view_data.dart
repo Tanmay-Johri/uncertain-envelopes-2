@@ -37,6 +37,65 @@ class PendingOrdersFilterState {
       );
 }
 
+/// A game the signed-in player may place orders in (`games.game_state` =
+/// `trading_started`). Drives the Pending Orders **Create new order** picker;
+/// independent of whether the player already has resting orders.
+@immutable
+class TradingOrderTargetGame {
+  const TradingOrderTargetGame({
+    required this.gameId,
+    required this.gameTitle,
+    required this.gameDescription,
+  });
+
+  final String gameId;
+  final String gameTitle;
+  final String gameDescription;
+}
+
+/// Payload for [PendingOrdersRouteScreen]: pending rows plus games eligible
+/// for creating new orders (joined + active trading).
+@immutable
+class PendingOrdersScreenData {
+  const PendingOrdersScreenData({
+    required this.items,
+    required this.tradingGamesForNewOrder,
+  });
+
+  final List<PendingOrderListItem> items;
+  final List<TradingOrderTargetGame> tradingGamesForNewOrder;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PendingOrdersScreenData &&
+        listEquals(items, other.items) &&
+        listEquals(tradingGamesForNewOrder, other.tradingGamesForNewOrder);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        Object.hashAll(items),
+        Object.hashAll(tradingGamesForNewOrder),
+      );
+}
+
+/// Unique [TradingOrderTargetGame]s derived from pending rows (dev/mock only).
+List<TradingOrderTargetGame> tradingOrderTargetsFromPendingRows(
+  List<PendingOrderListItem> rows,
+) {
+  final seen = <String>{};
+  return [
+    for (final e in rows)
+      if (seen.add(e.gameId))
+        TradingOrderTargetGame(
+          gameId: e.gameId,
+          gameTitle: e.gameTitle,
+          gameDescription: e.gameDescription,
+        ),
+  ];
+}
+
 @immutable
 class PendingOrderListItem {
   const PendingOrderListItem({

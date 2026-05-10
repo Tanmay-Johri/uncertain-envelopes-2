@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../data/enums/game_state.dart';
 import '../../core/trading/personal_order_from_order.dart';
 import '../../ui/screens/orders/pending_orders_view_data.dart';
 import '../auth_provider.dart';
@@ -18,9 +19,10 @@ class PendingOrdersViewDataException implements Exception {
   String toString() => 'PendingOrdersViewDataException($message)';
 }
 
-/// Cross-game pending resting / in-flight orders for [PendingOrdersScreen].
+/// Cross-game pending resting / in-flight orders plus games where the player
+/// may create orders (`trading_started`).
 @riverpod
-Future<List<PendingOrderListItem>> pendingOrdersViewData(Ref ref) async {
+Future<PendingOrdersScreenData> pendingOrdersViewData(Ref ref) async {
   final player = ref.watch(authControllerProvider).valueOrNull;
   if (player == null) {
     throw const PendingOrdersViewDataException(
@@ -30,8 +32,22 @@ Future<List<PendingOrderListItem>> pendingOrdersViewData(Ref ref) async {
 
   final ordersRepo = ref.watch(orderRepositoryProvider);
   final gamesRepo = ref.watch(gameRepositoryProvider);
-  final orders =
-      await ordersRepo.fetchPendingOrdersAcrossGames(player.playerId);
+
+  final ordersFuture =
+      ordersRepo.fetchPendingOrdersAcrossGames(player.playerId);
+  final joinedFuture = gamesRepo.fetchJoinedGames(player.playerId);
+  final orders = await ordersFuture;
+  final joinedGames = await joinedFuture;
+
+  final tradingGamesForNewOrder = <TradingOrderTargetGame>[
+    for (final g in joinedGames)
+      if (g.gameState == GameState.tradingStarted)
+        TradingOrderTargetGame(
+          gameId: g.gameId,
+          gameTitle: g.gameName,
+          gameDescription: g.gameDescription ?? '',
+        ),
+  ];
 
   final out = <PendingOrderListItem>[];
   for (final o in orders) {
@@ -46,5 +62,9 @@ Future<List<PendingOrderListItem>> pendingOrdersViewData(Ref ref) async {
       ),
     );
   }
-  return out;
+
+  return PendingOrdersScreenData(
+    items: out,
+    tradingGamesForNewOrder: tradingGamesForNewOrder,
+  );
 }

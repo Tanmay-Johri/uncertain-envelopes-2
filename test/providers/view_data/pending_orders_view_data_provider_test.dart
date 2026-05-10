@@ -17,6 +17,7 @@ import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/trading_repository_providers.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/pending_orders_view_data_provider.dart';
+import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_view_data.dart';
 
 void main() {
   test('pendingOrdersViewData joins game metadata to orders', () async {
@@ -51,6 +52,7 @@ void main() {
         startTime: t,
       ),
     );
+    games.seedMembership('g-x', 'p1');
     orders.seedOrders([
       Order(
         orderId: 'o1',
@@ -76,11 +78,17 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(authControllerProvider.future);
-    final list = await container.read(pendingOrdersViewDataProvider.future);
+    final data = await container.read(pendingOrdersViewDataProvider.future);
 
-    expect(list.single.gameId, 'g-x');
-    expect(list.single.gameTitle, 'My Game');
-    expect(list.single.gameDescription, 'Desc');
-    expect(list.single.order.id, 'o1');
+    expect(data, isA<PendingOrdersScreenData>());
+    expect(data.items.single.gameId, 'g-x');
+    expect(data.items.single.gameTitle, 'My Game');
+    expect(data.items.single.gameDescription, 'Desc');
+    expect(data.items.single.order.id, 'o1');
+
+    expect(data.tradingGamesForNewOrder, hasLength(1));
+    expect(data.tradingGamesForNewOrder.single.gameId, 'g-x');
+    expect(data.tradingGamesForNewOrder.single.gameTitle, 'My Game');
+    expect(data.tradingGamesForNewOrder.single.gameDescription, 'Desc');
   });
 }
