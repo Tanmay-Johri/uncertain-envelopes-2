@@ -110,6 +110,12 @@ built yet — a read path for rows in `commands` with
 
 ## B-GAP-2 — `fetchPerformanceStats` depends on a Postgres RPC that Stream A has not built
 
+**Status (2026-05-10):** **RPC landed in Stream B repo** as
+`supabase/migrations/013_player_ranked_finalised_participations.sql`
+(`player_ranked_finalised_participations(p_player_id uuid)`). Apply with
+`supabase db push` / CI migrations. **Still coordinate with Stream A** so
+the same function name/shape is canonical if they already added an equivalent.
+
 **Where:** `lib/services/supabase_player_gateway.dart` —
 `RealSupabasePlayerGateway.fetchRankedFinalisedGameParticipations`
 calls `_client.rpc('player_ranked_finalised_participations', ...)`.
@@ -332,6 +338,16 @@ streams because those streams do not touch that file).
   barrel. Test: `bindGameRealtimeServiceToRef` group in
   `test/services/game_realtime_service_test.dart`. Corrected stale B-GAP-3a/3b
   log lines that still claimed lifecycle / poller wiring was deferred.
+
+- **2026-05-10 — B-GAP-2 RPC + profile emailVerified:** Added
+  `supabase/migrations/013_player_ranked_finalised_participations.sql` implementing
+  `player_ranked_finalised_participations(p_player_id)` (ranked + `game_finalised`
+  only, `SECURITY INVOKER` / RLS-safe).   `profileViewDataProvider` reads
+  `User.emailConfirmedAt` when `USE_REAL_BACKEND` and Supabase are initialised
+  (`lib/core/profile/profile_email_verified.dart` + test; guarded via
+  `isSupabaseClientAvailable` in `supabase_bootstrap.dart` so unit tests never
+  touch `Supabase.instance` before init). Coordinate merge with
+  Stream A if they ship the same RPC name.
 
 - **2026-05-09 — Plan 2B.1 (auth + redirect guards):** Added
   `lib/ui/screens/auth/auth_route_screen.dart` (wires `AuthScreen` to

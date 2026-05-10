@@ -43,6 +43,7 @@ void main() {
 
     expect(data.username, 'alice');
     expect(data.email, 'a@b.com');
+    expect(data.emailVerified, isTrue);
     expect(data.gamesPlayed, 2);
     expect(data.winRatePct, 50);
   });

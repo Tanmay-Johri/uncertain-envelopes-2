@@ -1,8 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../bootstrap/supabase_bootstrap.dart';
+import '../../core/profile/profile_email_verified.dart';
 import '../../data/repositories/player_repository.dart';
 import '../../ui/screens/profile/profile_view_data.dart';
+import '../_environment.dart';
 import '../auth_provider.dart';
 import '../player_repository_provider.dart';
 
@@ -21,6 +25,9 @@ class ProfileViewDataException implements Exception {
 ///
 /// Stats come from [PlayerRepository.fetchPerformanceStats]. When the
 /// ranked-stats RPC is missing or errors (B-GAP-2), falls back to zeros.
+/// With `USE_REAL_BACKEND` and an initialised Supabase client,
+/// [ProfileViewData.emailVerified] reflects Auth `emailConfirmedAt`; otherwise
+/// it stays `true` for in-memory / bootstrap.
 @riverpod
 Future<ProfileViewData> profileViewData(Ref ref) async {
   final player = ref.watch(authControllerProvider).valueOrNull;
@@ -40,11 +47,21 @@ Future<ProfileViewData> profileViewData(Ref ref) async {
       ? 0
       : (stats.winRate * 100).round().clamp(0, 100);
 
+  late final bool emailVerified;
+  if (!useRealBackend) {
+    emailVerified = true;
+  } else if (!isSupabaseClientAvailable) {
+    emailVerified = true;
+  } else {
+    emailVerified = isAuthEmailConfirmed(
+      Supabase.instance.client.auth.currentUser?.emailConfirmedAt,
+    );
+  }
+
   return ProfileViewData(
     username: player.username,
     email: player.email,
-    // Email verification lives on Supabase Auth; wire in Phase 2C.
-    emailVerified: true,
+    emailVerified: emailVerified,
     winRatePct: winRatePct,
     gamesPlayed: stats.gamesPlayed,
   );

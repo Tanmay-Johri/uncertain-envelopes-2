@@ -57,3 +57,15 @@ Future<void> initializeSupabase({
     );
   }
 }
+
+/// Whether [Supabase.initialize] has completed in this isolate.
+///
+/// Unlike [Supabase.instance] before initialization, this does not throw
+/// (uses [AssertionError] from the package guard when init has not run).
+bool get isSupabaseClientAvailable {
+  try {
+    return Supabase.instance.isInitialized;
+  } on AssertionError {
+    return false;
+  }
+}

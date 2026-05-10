@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../bootstrap/supabase_bootstrap.dart';
 import '../core/constants/app_constants.dart';
 import '../services/game_realtime_service.dart';
 import '../services/game_realtime_session_binding.dart';
@@ -23,7 +24,7 @@ part 'game_realtime_session_provider.g.dart';
 void gameRealtimeSession(Ref ref, String gameId) {
   if (!useRealBackend) return;
   if (gameId.isEmpty) return;
-  if (!Supabase.instance.isInitialized) return;
+  if (!isSupabaseClientAvailable) return;
 
   ref.watch(pendingCreateOrderCommandsProvider(gameId));
 
