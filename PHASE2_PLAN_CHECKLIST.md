@@ -87,7 +87,7 @@
 
 | ID | Status | Evidence / notes |
 |----|--------|-------------------|
-| **POL1** Web responsive + breakpoint goldens | **Todo** | No tests for 375 / 768 / 1280; no responsive goldens found. |
+| **POL1** Web responsive + breakpoint goldens | **Partial** | `MaxWidthCenteredLayout` + `AppLayout.maxContentWidth` in `MaterialApp.router` builder (`lib/app.dart`); tests `max_width_centered_layout_test.dart`. Breakpoint **goldens** deferred (per team). |
 | **POL2** iOS + Android pass | **Manual** | Safe area / keyboard — not proven from Dart-only artifacts. |
 | **POL3** Error / loading / empty + retry on fetched screens | **Partial** | `FetchedErrorPanel` + invalidate retry: `game_lobby_route_screen.dart`, `game_trading_route_screen.dart`, `game_results_route_screen.dart`, `profile_route_screen.dart`, `pending_orders_route_screen.dart`, `game_history_route_screen.dart`; home list error uses `ValueKey('home-game-list-retry')`. **Not** using `FetchedErrorPanel` on auth (errors → **SnackBar**; user retries by resubmitting). **Create game:** local form — **N/A** for “fetch error” in plan sense. **Bootstrap failure:** `SupabaseBootstrapGate` has its own retry UI. **Sweep:** confirm any remaining `AsyncValue.error` branches on shell-only or rare routes. |
 
@@ -130,4 +130,4 @@ dart run build_runner build --delete-conflicting-outputs
 | Date | Change |
 |------|--------|
 | 2026-05-09 | Initial checklist generated from plan + repo scan. |
-| 2026-05-09 | Trading goldens + minimal mock-vs-adapter harness (`GoldenTradingMinimalHarness`). |
+| 2026-05-09 | POL1: `MaxWidthCenteredLayout` + `AppLayout.maxContentWidth` (no breakpoint goldens yet). |

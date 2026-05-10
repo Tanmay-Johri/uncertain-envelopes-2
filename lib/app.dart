@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/router/app_router_provider.dart';
 import 'core/theme/app_theme.dart';
+import 'ui/widgets/max_width_centered_layout.dart';
 
 class UncertainEnvelopesApp extends ConsumerWidget {
   /// If [router] is provided it is used as-is (useful for tests that want
@@ -21,6 +22,10 @@ class UncertainEnvelopesApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       routerConfig: config,
+      builder: (context, child) {
+        if (child == null) return const SizedBox.shrink();
+        return MaxWidthCenteredLayout(child: child);
+      },
     );
   }
 }
