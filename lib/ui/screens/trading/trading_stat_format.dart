@@ -34,3 +34,11 @@ String formatResultsPnlPlaceholder(double? pnl) {
   if (pnl == null) return kUnsetUsdLine;
   return formatProjectedPnl(pnl);
 }
+
+/// Wall-clock time for the transaction log (matches chart tooltip local clock).
+///
+/// [executedAtUtc] is stored as UTC from the backend; displayed in the user's
+/// local timezone.
+String formatTradeLogTime(DateTime executedAtUtc, {required String localeName}) {
+  return DateFormat.Hm(localeName).format(executedAtUtc.toLocal());
+}

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_stat_format.dart';
 
 void main() {
@@ -27,6 +28,16 @@ void main() {
 
     test('zero has no plus', () {
       expect(formatTradingDeltaEnvelopes(0), '0');
+    });
+  });
+
+  group('formatTradeLogTime', () {
+    test('matches DateFormat Hm on local instant', () {
+      final utc = DateTime.utc(2026, 5, 10, 19, 7);
+      expect(
+        formatTradeLogTime(utc, localeName: 'en_US'),
+        DateFormat.Hm('en_US').format(utc.toLocal()),
+      );
     });
   });
 

@@ -35,8 +35,8 @@ class TradeLogEntry {
   /// Execution price per envelope (USD).
   final double price;
 
-  /// Wall-clock UTC time when the trade was executed. Shown as HH:MM in the
-  /// transaction log. Null until Phase 2 wires real execution data.
+  /// Wall-clock UTC when the trade executed (`players` / Supabase). Shown in
+  /// local time in the transaction log.
   final DateTime? tradedAt;
 }
 

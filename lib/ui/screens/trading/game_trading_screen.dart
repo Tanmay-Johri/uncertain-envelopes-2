@@ -711,8 +711,9 @@ class _TradeLogRow extends StatelessWidget {
         '\$${entry.price % 1 == 0 ? entry.price.toInt() : entry.price.toStringAsFixed(2)}';
     final annotation = '${entry.quantity} @ $priceText';
 
+    final localeName = Localizations.localeOf(context).toString();
     final timeLabel = entry.tradedAt != null
-        ? '${entry.tradedAt!.hour.toString().padLeft(2, '0')}:${entry.tradedAt!.minute.toString().padLeft(2, '0')}'
+        ? formatTradeLogTime(entry.tradedAt!, localeName: localeName)
         : '--:--';
 
     return Row(
