@@ -16,6 +16,7 @@ Use a dev build with **`--dart-define=USE_REAL_BACKEND=true`** and the intended 
 | Tabs 2–3: join | Both players seated in lobby | | |
 | Tab 1: start | Lobby advances to trading for all | | |
 | Distribute ~10 orders | Charts, book, personal orders, logs stay consistent across tabs | | |
+| End trading (admin) | **Trading route auto-opens `/game/:id/results`** when `game_state` reaches `trading_ended` (also on `game_finalised` / `discarded` if user is still on trading). | | |
 | End trading → envelope → finalise | Agreed end state on all tabs; history if applicable | | |
 
 ## 2. A-GAP-4 — last lobby slot race

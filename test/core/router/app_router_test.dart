@@ -7,6 +7,8 @@ import 'package:uncertain_envelopes_2/core/router/app_router_provider.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
+import 'package:uncertain_envelopes_2/data/models/game_session_state.dart';
+import 'package:uncertain_envelopes_2/providers/game_provider.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/home_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/home/home_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
@@ -33,6 +35,8 @@ import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_mock_data
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
 
+import '../../support/stub_game.dart';
+
 List<Override> _lobbyMockOverridesForRouterTests() {
   const ids = <String>[
     'g1',
@@ -46,9 +50,36 @@ List<Override> _lobbyMockOverridesForRouterTests() {
   ];
   return [
     for (final id in ids)
-      lobbyViewDataProvider(id).overrideWith(
-        (ref) => mockLobbyScenarioForGameId(id),
-      ),
+      lobbyViewDataProvider(
+        id,
+      ).overrideWith((ref) => mockLobbyScenarioForGameId(id)),
+  ];
+}
+
+class _RouterTestCurrentGame extends CurrentGame {
+  @override
+  Future<GameSessionState> build(String gameId) async {
+    return GameSessionState(
+      game: stubGameForRouterTests(gameId: gameId),
+      players: const [],
+    );
+  }
+}
+
+List<Override> _currentGameStubOverridesForRouterTests() {
+  const ids = <String>[
+    'g1',
+    'g1pre',
+    'g2',
+    'g3',
+    'g4',
+    'g5',
+    'abc',
+    '550e8400-e29b-41d4-a716-446655440000',
+  ];
+  return [
+    for (final id in ids)
+      currentGameProvider(id).overrideWith(_RouterTestCurrentGame.new),
   ];
 }
 
@@ -113,6 +144,7 @@ Future<GoRouter> _pumpAppWith(
           (ref) async => kMockGameHistory(),
         ),
         ..._lobbyMockOverridesForRouterTests(),
+        ..._currentGameStubOverridesForRouterTests(),
         ..._tradingMockOverridesForRouterTests(),
         ..._resultsMockOverridesForRouterTests(),
       ],
@@ -164,8 +196,9 @@ void main() {
   });
 
   group('GoRouter shell routes', () {
-    testWidgets('default initial location shows HomeScreen under shell',
-        (tester) async {
+    testWidgets('default initial location shows HomeScreen under shell', (
+      tester,
+    ) async {
       await _pumpAppWith(tester);
       expect(find.byType(AppShell), findsOneWidget);
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -174,21 +207,18 @@ void main() {
       expect(find.text('HOME'), findsWidgets);
     });
 
-    testWidgets('tapping CREATE switches the shell branch',
-        (tester) async {
+    testWidgets('tapping CREATE switches the shell branch', (tester) async {
       await _pumpAppWith(tester);
       await tester.tap(find.text('CREATE'));
       await tester.pumpAndSettle();
       expect(find.byType(CreateGameScreen), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('create-game-heading')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('create-game-heading')), findsOneWidget);
       expect(find.byType(AppShell), findsOneWidget);
     });
 
-    testWidgets('tapping a home game card navigates to game lobby',
-        (tester) async {
+    testWidgets('tapping a home game card navigates to game lobby', (
+      tester,
+    ) async {
       await _pumpAppWith(tester);
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('game-card-g1')));
@@ -198,8 +228,9 @@ void main() {
       expect(find.text('V 8 J A J'), findsOneWidget);
     });
 
-    testWidgets('tapping ORDERS switches to pending orders shell branch',
-        (tester) async {
+    testWidgets('tapping ORDERS switches to pending orders shell branch', (
+      tester,
+    ) async {
       await _pumpAppWith(tester);
       await tester.tap(find.text('ORDERS'));
       await tester.pumpAndSettle();
@@ -210,8 +241,9 @@ void main() {
       expect(find.byType(AppShell), findsOneWidget);
     });
 
-    testWidgets('switching branches preserves shell chrome (header + nav)',
-        (tester) async {
+    testWidgets('switching branches preserves shell chrome (header + nav)', (
+      tester,
+    ) async {
       await _pumpAppWith(tester);
       await tester.tap(find.text('CREATE'));
       await tester.pumpAndSettle();
@@ -228,32 +260,31 @@ void main() {
       expect(find.byType(AppShell), findsNothing);
     });
 
-    testWidgets('/auth?tab=signup deep-links to the sign-up tab',
-        (tester) async {
+    testWidgets('/auth?tab=signup deep-links to the sign-up tab', (
+      tester,
+    ) async {
       await _pumpAppWith(tester, initialLocation: '/auth?tab=signup');
       expect(find.byType(AuthScreen), findsOneWidget);
       expect(find.byType(SignUpForm), findsOneWidget);
     });
 
-    testWidgets('/auth?tab=nonsense falls back to the login tab',
-        (tester) async {
+    testWidgets('/auth?tab=nonsense falls back to the login tab', (
+      tester,
+    ) async {
       await _pumpAppWith(tester, initialLocation: '/auth?tab=nonsense');
       expect(find.byType(AuthScreen), findsOneWidget);
       expect(find.byType(LoginForm), findsOneWidget);
     });
 
-    testWidgets('/profile renders ProfileScreen outside shell',
-        (tester) async {
+    testWidgets('/profile renders ProfileScreen outside shell', (tester) async {
       await _pumpAppWith(tester, initialLocation: AppRoutes.profile);
-      expect(
-        find.byKey(const ValueKey('profile-scaffold')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('profile-scaffold')), findsOneWidget);
       expect(find.byType(AppShell), findsNothing);
     });
 
-    testWidgets('/history renders GameHistoryScreen outside shell',
-        (tester) async {
+    testWidgets('/history renders GameHistoryScreen outside shell', (
+      tester,
+    ) async {
       await _pumpAppWith(tester, initialLocation: AppRoutes.history);
       expect(find.byType(GameHistoryScreen), findsOneWidget);
       expect(find.byType(AppShell), findsNothing);
@@ -268,27 +299,35 @@ void main() {
     });
 
     testWidgets(
-        '/game/g4/lobby shows Join Game when mock viewer is not seated',
-        (tester) async {
-      await _pumpAppWith(tester, initialLocation: '/game/g4/lobby');
-      expect(find.byType(GameLobbyScreen), findsOneWidget);
-      expect(find.byKey(const ValueKey('game-lobby-join')), findsOneWidget);
-      expect(find.text('JOIN GAME'), findsOneWidget);
-    });
+      '/game/g4/lobby shows Join Game when mock viewer is not seated',
+      (tester) async {
+        await _pumpAppWith(tester, initialLocation: '/game/g4/lobby');
+        expect(find.byType(GameLobbyScreen), findsOneWidget);
+        expect(find.byKey(const ValueKey('game-lobby-join')), findsOneWidget);
+        expect(find.text('JOIN GAME'), findsOneWidget);
+      },
+    );
 
-    testWidgets('/game/:id/trading parses id and shows GameTradingScreen',
-        (tester) async {
+    testWidgets('/game/:id/trading parses id and shows GameTradingScreen', (
+      tester,
+    ) async {
       await _pumpAppWith(tester, initialLocation: '/game/g1/trading');
       expect(find.byType(GameTradingScreen), findsOneWidget);
-      expect(find.byKey(const ValueKey('game-trading-scaffold')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('game-trading-scaffold')),
+        findsOneWidget,
+      );
       expect(find.text('Forex Masters'), findsWidgets);
     });
 
-    testWidgets('lobby Enter Game navigates to trading for same game id',
-        (tester) async {
+    testWidgets('lobby Enter Game navigates to trading for same game id', (
+      tester,
+    ) async {
       await _pumpAppWith(tester, initialLocation: '/game/g1/lobby');
       expect(find.byType(GameLobbyScreen), findsOneWidget);
-      await tester.ensureVisible(find.byKey(const ValueKey('game-lobby-enter')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('game-lobby-enter')),
+      );
       await tester.tap(find.byKey(const ValueKey('game-lobby-enter')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -313,15 +352,15 @@ void main() {
   });
 
   group('GoRouter unknown routes', () {
-    testWidgets('unknown path renders NOT FOUND error screen',
-        (tester) async {
+    testWidgets('unknown path renders NOT FOUND error screen', (tester) async {
       await _pumpAppWith(tester, initialLocation: '/nope/does-not-exist');
       expect(find.text('NOT FOUND'), findsOneWidget);
       expect(find.textContaining('/nope/does-not-exist'), findsOneWidget);
     });
 
-    testWidgets('empty path falls back to error builder without crash',
-        (tester) async {
+    testWidgets('empty path falls back to error builder without crash', (
+      tester,
+    ) async {
       final router = buildAppRouter(initialLocation: '/blah');
       await tester.pumpWidget(
         ProviderScope(
@@ -337,20 +376,17 @@ void main() {
   });
 
   group('GoRouter programmatic navigation', () {
-    testWidgets('account icon in shell navigates to /profile',
-        (tester) async {
+    testWidgets('account icon in shell navigates to /profile', (tester) async {
       await _pumpAppWith(tester);
       await tester.tap(find.byIcon(Icons.account_circle_outlined));
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('profile-scaffold')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('profile-scaffold')), findsOneWidget);
       expect(find.byType(AppShell), findsNothing);
     });
 
-    testWidgets('router.go(AppRoutes.create) switches to CREATE branch',
-        (tester) async {
+    testWidgets('router.go(AppRoutes.create) switches to CREATE branch', (
+      tester,
+    ) async {
       final router = await _pumpAppWith(tester);
       router.go(AppRoutes.create);
       await tester.pumpAndSettle();
@@ -358,8 +394,9 @@ void main() {
       expect(find.byType(AppShell), findsOneWidget);
     });
 
-    testWidgets('router.go(AppRoutes.gameLobby(id)) goes to lobby',
-        (tester) async {
+    testWidgets('router.go(AppRoutes.gameLobby(id)) goes to lobby', (
+      tester,
+    ) async {
       final router = await _pumpAppWith(tester);
       router.go(AppRoutes.gameLobby('abc'));
       await tester.pumpAndSettle();
@@ -369,8 +406,9 @@ void main() {
   });
 
   group('appRouterProvider auth redirects', () {
-    testWidgets('unauthenticated user at /home is redirected to /auth',
-        (tester) async {
+    testWidgets('unauthenticated user at /home is redirected to /auth', (
+      tester,
+    ) async {
       final container = ProviderContainer(
         overrides: [
           homeViewDataProvider.overrideWith((ref) async => kMockHomeGames),
@@ -391,8 +429,9 @@ void main() {
       expect(find.byType(LoginForm), findsOneWidget);
     });
 
-    testWidgets('authenticated user at /auth is redirected to /home shell',
-        (tester) async {
+    testWidgets('authenticated user at /auth is redirected to /home shell', (
+      tester,
+    ) async {
       final repo = InMemoryAuthRepository();
       await repo.signUp(
         email: 'routerauth@test.co',
