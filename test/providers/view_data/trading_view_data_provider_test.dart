@@ -19,6 +19,7 @@ import 'package:uncertain_envelopes_2/data/repositories/in_memory_execution_repo
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_order_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
+import 'package:uncertain_envelopes_2/providers/command_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/trading_repository_providers.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
@@ -142,6 +143,7 @@ void main() {
           gameRepositoryProvider.overrideWithValue(games),
           orderRepositoryProvider.overrideWithValue(orders),
           executionRepositoryProvider.overrideWithValue(executions),
+          commandRepositoryProvider.overrideWithValue(commands),
         ],
       );
       addTearDown(container.dispose);

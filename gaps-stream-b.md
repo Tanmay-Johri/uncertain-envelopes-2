@@ -11,6 +11,14 @@ Tracked gap IDs: `B-GAP-1`, `B-GAP-2`, `B-GAP-3`.
 
 ## B-GAP-1 — `personalOrdersProvider` does not show "in queue" placeholders
 
+**Status (2026-05-09):** **Partially closed.** `CommandRepository.fetchPendingCreateOrderCommands`
+is implemented (in-memory + Supabase gateway query). `personalOrdersProvider` now merges
+non-terminal `create_order` commands as synthetic `Order` rows (`order_id` prefix `cmd:`),
+and the active-orders UI disables cancel for that prefix. **Still open:** realtime
+`commands` subscription + notifier hooks (`GameRealtimeService`) so placeholders appear
+and disappear without manual refresh; dedup when the processor links command → order if
+the server does not use the `cmd:` id pattern.
+
 **Where:** `lib/providers/trading_provider.dart` — `personalOrdersProvider`
 (docstring already notes this gap).
 
@@ -21,7 +29,7 @@ Tracked gap IDs: `B-GAP-1`, `B-GAP-2`, `B-GAP-3`.
 > commands should be shown as "in queue" orders in the UI by merging
 > unprocessed commands into the personal orders view.
 
-**Current behaviour:** The provider only reads from the `orders` table
+**Prior behaviour (pre-B-GAP-1a):** The provider only read from the `orders` table
 via `ordersProvider(gameId)` filtered by `createdByPlayerId`. Between
 "user taps Place Order" and "processor creates the orders row",
 potentially several seconds (longer on cold processor start), the user
@@ -394,3 +402,14 @@ streams because those streams do not touch that file).
   `test/providers/view_data/results_view_data_provider_test.dart`,
   `test/core/router/app_router_test.dart`. Verification: `flutter analyze` (0 issues),
   `flutter test` (all passed).
+
+- **2026-05-09 — B-GAP-1a (pending create_order → personal orders merge):** Added
+  `CommandRepository.fetchPendingCreateOrderCommands` + `InMemoryCommandRepository`
+  tracked rows (`setCreateOrderCommandStatusForTest`), `RealSupabaseCommandGateway`
+  query (pending/claimed/failed), `_FakeCommandGateway` stub. `personalOrdersProvider`
+  is now async: merges real `orders` rows with synthetic `Order` placeholders from
+  pending commands (`pendingCreateOrderPlaceholderOrderId` / `orderFromPendingCreateCommand`).
+  `tradingViewDataProvider` consumes merged list; `ActiveOrdersWidget` hides cancel for
+  `cmd:` ids. Tests: `command_repository_test`, `trading_provider_test`,
+  `trading_view_data_provider_test` (shared command repo override). Verification:
+  `flutter analyze` (0 issues), `flutter test` (all passed).

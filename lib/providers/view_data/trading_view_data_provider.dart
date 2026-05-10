@@ -114,6 +114,9 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
   final session = await ref.watch(currentGameProvider(gameId).future);
   await ref.watch(ordersProvider(gameId).future);
   await ref.watch(executionsProvider(gameId).future);
+  final mineOrders = await ref.watch(
+    personalOrdersProvider(gameId: gameId, playerId: viewer.playerId).future,
+  );
 
   final game = session.game;
   final book = ref.watch(orderBookProvider(gameId));
@@ -125,11 +128,8 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
       ref.watch(executionsProvider(gameId)).requireValue;
 
   final ordersById = {for (final o in orders) o.orderId: o};
-  final mine = orders
-      .where((o) => o.createdByPlayerId == viewer.playerId)
-      .map(personalOrderFromOrder)
-      .toList();
-  final personalSorted = personalOrdersSortedNewestFirst(mine);
+  final personalSorted =
+      personalOrdersSortedNewestFirst(mineOrders.map(personalOrderFromOrder).toList());
 
   final priceHistory = ref.watch(executionHistoryProvider(gameId));
   final chartElapsed = ref.watch(chartSessionElapsedProvider(gameId));

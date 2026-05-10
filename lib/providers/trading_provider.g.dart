@@ -177,52 +177,28 @@ class _OrderBookProviderElement extends AutoDisposeProviderElement<OrderBook>
   String get gameId => (origin as OrderBookProvider).gameId;
 }
 
-String _$personalOrdersHash() => r'409a0ce46f9f645db898af2d23f22ca88f524606';
+String _$personalOrdersHash() => r'9161a57474f4857ed088f9e34994de68dd57ad7b';
 
-/// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-/// per PRD §Personal Orders intent.
-///
-/// Known gap: the PRD also wants pending `create_order` commands that
-/// have not yet produced an orders row to show up as "in queue"
-/// placeholders. That requires a command-status fetch we haven't
-/// wired yet; tracked separately. This provider currently surfaces
-/// only the orders table.
+/// Orders belonging to [playerId] within [gameId], merged with non-terminal
+/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
 ///
 /// Copied from [personalOrders].
 @ProviderFor(personalOrders)
 const personalOrdersProvider = PersonalOrdersFamily();
 
-/// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-/// per PRD §Personal Orders intent.
-///
-/// Known gap: the PRD also wants pending `create_order` commands that
-/// have not yet produced an orders row to show up as "in queue"
-/// placeholders. That requires a command-status fetch we haven't
-/// wired yet; tracked separately. This provider currently surfaces
-/// only the orders table.
+/// Orders belonging to [playerId] within [gameId], merged with non-terminal
+/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
 ///
 /// Copied from [personalOrders].
-class PersonalOrdersFamily extends Family<List<Order>> {
-  /// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-  /// per PRD §Personal Orders intent.
-  ///
-  /// Known gap: the PRD also wants pending `create_order` commands that
-  /// have not yet produced an orders row to show up as "in queue"
-  /// placeholders. That requires a command-status fetch we haven't
-  /// wired yet; tracked separately. This provider currently surfaces
-  /// only the orders table.
+class PersonalOrdersFamily extends Family<AsyncValue<List<Order>>> {
+  /// Orders belonging to [playerId] within [gameId], merged with non-terminal
+  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
   ///
   /// Copied from [personalOrders].
   const PersonalOrdersFamily();
 
-  /// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-  /// per PRD §Personal Orders intent.
-  ///
-  /// Known gap: the PRD also wants pending `create_order` commands that
-  /// have not yet produced an orders row to show up as "in queue"
-  /// placeholders. That requires a command-status fetch we haven't
-  /// wired yet; tracked separately. This provider currently surfaces
-  /// only the orders table.
+  /// Orders belonging to [playerId] within [gameId], merged with non-terminal
+  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
   ///
   /// Copied from [personalOrders].
   PersonalOrdersProvider call({
@@ -254,25 +230,13 @@ class PersonalOrdersFamily extends Family<List<Order>> {
   String? get name => r'personalOrdersProvider';
 }
 
-/// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-/// per PRD §Personal Orders intent.
-///
-/// Known gap: the PRD also wants pending `create_order` commands that
-/// have not yet produced an orders row to show up as "in queue"
-/// placeholders. That requires a command-status fetch we haven't
-/// wired yet; tracked separately. This provider currently surfaces
-/// only the orders table.
+/// Orders belonging to [playerId] within [gameId], merged with non-terminal
+/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
 ///
 /// Copied from [personalOrders].
-class PersonalOrdersProvider extends AutoDisposeProvider<List<Order>> {
-  /// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-  /// per PRD §Personal Orders intent.
-  ///
-  /// Known gap: the PRD also wants pending `create_order` commands that
-  /// have not yet produced an orders row to show up as "in queue"
-  /// placeholders. That requires a command-status fetch we haven't
-  /// wired yet; tracked separately. This provider currently surfaces
-  /// only the orders table.
+class PersonalOrdersProvider extends AutoDisposeFutureProvider<List<Order>> {
+  /// Orders belonging to [playerId] within [gameId], merged with non-terminal
+  /// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
   ///
   /// Copied from [personalOrders].
   PersonalOrdersProvider({required String gameId, required String playerId})
@@ -310,7 +274,7 @@ class PersonalOrdersProvider extends AutoDisposeProvider<List<Order>> {
 
   @override
   Override overrideWith(
-    List<Order> Function(PersonalOrdersRef provider) create,
+    FutureOr<List<Order>> Function(PersonalOrdersRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -328,7 +292,7 @@ class PersonalOrdersProvider extends AutoDisposeProvider<List<Order>> {
   }
 
   @override
-  AutoDisposeProviderElement<List<Order>> createElement() {
+  AutoDisposeFutureProviderElement<List<Order>> createElement() {
     return _PersonalOrdersProviderElement(this);
   }
 
@@ -351,7 +315,7 @@ class PersonalOrdersProvider extends AutoDisposeProvider<List<Order>> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin PersonalOrdersRef on AutoDisposeProviderRef<List<Order>> {
+mixin PersonalOrdersRef on AutoDisposeFutureProviderRef<List<Order>> {
   /// The parameter `gameId` of this provider.
   String get gameId;
 
@@ -360,7 +324,7 @@ mixin PersonalOrdersRef on AutoDisposeProviderRef<List<Order>> {
 }
 
 class _PersonalOrdersProviderElement
-    extends AutoDisposeProviderElement<List<Order>>
+    extends AutoDisposeFutureProviderElement<List<Order>>
     with PersonalOrdersRef {
   _PersonalOrdersProviderElement(super.provider);
 

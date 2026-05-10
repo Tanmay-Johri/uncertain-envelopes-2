@@ -1,5 +1,6 @@
 import '../../services/supabase_command_gateway.dart';
 import '../enums/command_type.dart';
+import '../models/command.dart';
 import 'command_repository.dart';
 
 /// Production [CommandRepository] backed by Supabase Postgres. All payload
@@ -22,6 +23,17 @@ class SupabaseCommandRepository extends BaseCommandRepository {
       gameId: gameId,
       playerId: playerId,
       payload: payload,
+    );
+  }
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommands({
+    required String gameId,
+    required String playerId,
+  }) {
+    return _gateway.fetchPendingCreateOrderCommands(
+      gameId: gameId,
+      playerId: playerId,
     );
   }
 }

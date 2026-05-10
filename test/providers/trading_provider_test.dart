@@ -14,6 +14,7 @@ import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_reposi
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_execution_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_game_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_order_repository.dart';
+import 'package:uncertain_envelopes_2/providers/command_repository_provider.dart';
 import 'package:uncertain_envelopes_2/providers/clock_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_provider.dart';
 import 'package:uncertain_envelopes_2/providers/game_repository_provider.dart';
@@ -103,6 +104,7 @@ void main() {
         gameRepositoryProvider.overrideWithValue(games),
         orderRepositoryProvider.overrideWithValue(orders),
         executionRepositoryProvider.overrideWithValue(executions),
+        commandRepositoryProvider.overrideWithValue(commands),
         if (clock != null) clockProvider.overrideWith((_) => clock),
       ],
     );
@@ -288,8 +290,8 @@ void main() {
       addTearDown(container.dispose);
       await container.read(currentGameProvider('g-1').future);
       await container.read(ordersProvider('g-1').future);
-      final mine = container.read(
-        personalOrdersProvider(gameId: 'g-1', playerId: 'p-me'),
+      final mine = await container.read(
+        personalOrdersProvider(gameId: 'g-1', playerId: 'p-me').future,
       );
       expect(mine.map((o) => o.orderId).toList(), ['mine-new', 'mine-old']);
     });
@@ -301,11 +303,34 @@ void main() {
       await container.read(currentGameProvider('g-1').future);
       await container.read(ordersProvider('g-1').future);
       expect(
-        container.read(
-          personalOrdersProvider(gameId: 'g-1', playerId: 'p-none'),
+        await container.read(
+          personalOrdersProvider(gameId: 'g-1', playerId: 'p-none').future,
         ),
         isEmpty,
       );
+    });
+
+    test('includes pending create_order placeholder before orders row exists',
+        () async {
+      games.seedGame(_gameTrading());
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(currentGameProvider('g-1').future);
+      await container.read(ordersProvider('g-1').future);
+      await commands.submitCreateOrder(
+        gameId: 'g-1',
+        playerId: 'p-me',
+        type: OrderType.limitBuy,
+        quantityInitial: 4,
+        pricePerStock: 55,
+      );
+      final mine = await container.read(
+        personalOrdersProvider(gameId: 'g-1', playerId: 'p-me').future,
+      );
+      expect(mine.length, 1);
+      expect(mine.single.orderId.startsWith('cmd:'), isTrue);
+      expect(mine.single.quantityInitial, 4);
+      expect(mine.single.status, OrderStatus.inQueue);
     });
   });
 

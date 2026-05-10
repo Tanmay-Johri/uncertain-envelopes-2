@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uncertain_envelopes_2/data/enums/command_status.dart';
 import 'package:uncertain_envelopes_2/data/enums/command_type.dart';
 import 'package:uncertain_envelopes_2/data/enums/end_condition.dart';
 import 'package:uncertain_envelopes_2/data/enums/game_security.dart';
 import 'package:uncertain_envelopes_2/data/enums/is_ranked.dart';
 import 'package:uncertain_envelopes_2/data/enums/order_type.dart';
+import 'package:uncertain_envelopes_2/data/models/command.dart';
 import 'package:uncertain_envelopes_2/data/repositories/command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_command_repository.dart';
 import 'package:uncertain_envelopes_2/data/repositories/supabase_command_repository.dart';
@@ -42,7 +44,31 @@ void main() {
             .toList(),
       );
     }
+
     _runContract(fixture);
+
+    test('fetchPendingCreateOrderCommands returns non-terminal create_order',
+        () async {
+      final repo = InMemoryCommandRepository();
+      final id = await repo.submitCreateOrder(
+        gameId: 'g-a',
+        playerId: 'p1',
+        type: OrderType.limitBuy,
+        quantityInitial: 2,
+        pricePerStock: 10,
+      );
+      expect(
+        (await repo.fetchPendingCreateOrderCommands(gameId: 'g-a', playerId: 'p1'))
+            .single
+            .commandId,
+        id,
+      );
+      repo.setCreateOrderCommandStatusForTest(id, CommandStatus.processed);
+      expect(
+        await repo.fetchPendingCreateOrderCommands(gameId: 'g-a', playerId: 'p1'),
+        isEmpty,
+      );
+    });
   });
 
   group('SupabaseCommandRepository (fake gateway)', () {
@@ -337,6 +363,13 @@ void _runContract(_Fixture Function() build) {
 class _FakeCommandGateway implements SupabaseCommandGateway {
   final List<_Record> calls = [];
   int _next = 1;
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommands({
+    required String gameId,
+    required String playerId,
+  }) async =>
+      const [];
 
   @override
   Future<String> insertCommandRow({

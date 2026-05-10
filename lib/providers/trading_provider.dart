@@ -3,11 +3,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/chart/chart_axis.dart';
 import '../core/chart/price_chart_point.dart';
+import '../data/enums/command_status.dart';
+import '../data/enums/command_type.dart';
 import '../data/enums/order_status.dart';
+import '../data/enums/order_type.dart';
+import '../data/models/command.dart';
 import '../data/models/execution.dart';
 import '../data/models/order.dart';
 import '../data/models/order_book.dart';
 import 'clock_provider.dart';
+import 'command_repository_provider.dart';
 import 'game_provider.dart';
 import 'trading_repository_providers.dart';
 
@@ -129,26 +134,74 @@ OrderBook orderBook(Ref ref, String gameId) {
   return OrderBook(bids: bidLevels, asks: askLevels);
 }
 
-/// Orders belonging to [playerId] within [gameId]. Sorted newest first,
-/// per PRD §Personal Orders intent.
-///
-/// Known gap: the PRD also wants pending `create_order` commands that
-/// have not yet produced an orders row to show up as "in queue"
-/// placeholders. That requires a command-status fetch we haven't
-/// wired yet; tracked separately. This provider currently surfaces
-/// only the orders table.
+/// Synthetic `orders.order_id` for a row materialised only from a pending
+/// `create_order` command (B-GAP-1).
+String pendingCreateOrderPlaceholderOrderId(String commandId) =>
+    'cmd:$commandId';
+
+Order? orderFromPendingCreateCommand(Command cmd, String playerId) {
+  if (cmd.commandType != CommandType.createOrder) return null;
+  if (cmd.playerId != playerId) return null;
+  final gid = cmd.commandGameId;
+  if (gid == null) return null;
+
+  final p = cmd.payload;
+  final type = OrderType.fromWire(p['type'] as String);
+  final qtyRaw = p['quantity_initial'];
+  final qty = qtyRaw is int ? qtyRaw : (qtyRaw as num).toInt();
+  final priceRaw = p['price_per_stock'];
+  final double? price = priceRaw == null ? null : (priceRaw as num).toDouble();
+
+  final orderStatus = switch (cmd.commandStatus) {
+    CommandStatus.pending => OrderStatus.inQueue,
+    CommandStatus.claimed => OrderStatus.beingProcessed,
+    CommandStatus.failed => OrderStatus.beingProcessed,
+    CommandStatus.processed => OrderStatus.inQueue,
+    CommandStatus.rejected => OrderStatus.inQueue,
+  };
+
+  return Order(
+    orderId: pendingCreateOrderPlaceholderOrderId(cmd.commandId),
+    createdByPlayerId: playerId,
+    gameId: gid,
+    type: type,
+    quantityInitial: qty,
+    quantityCurrent: qty,
+    pricePerStock: price,
+    status: orderStatus,
+    orderCreatedAt: cmd.commandCreatedAt,
+    orderUpdatedAt: cmd.commandCreatedAt,
+  );
+}
+
+/// Orders belonging to [playerId] within [gameId], merged with non-terminal
+/// `create_order` commands as placeholder rows (B-GAP-1). Newest first.
 @riverpod
-List<Order> personalOrders(
+Future<List<Order>> personalOrders(
   Ref ref, {
   required String gameId,
   required String playerId,
-}) {
-  final orders = ref.watch(ordersProvider(gameId)).valueOrNull ?? const [];
-  final mine = orders
+}) async {
+  final realOrders = await ref.watch(ordersProvider(gameId).future);
+  final repo = ref.watch(commandRepositoryProvider);
+  final pending = await repo.fetchPendingCreateOrderCommands(
+    gameId: gameId,
+    playerId: playerId,
+  );
+
+  final mineReal = realOrders
       .where((o) => o.createdByPlayerId == playerId)
-      .toList()
+      .toList();
+
+  final synthetic = <Order>[];
+  for (final c in pending) {
+    final o = orderFromPendingCreateCommand(c, playerId);
+    if (o != null) synthetic.add(o);
+  }
+
+  final merged = [...mineReal, ...synthetic]
     ..sort((a, b) => b.orderCreatedAt.compareTo(a.orderCreatedAt));
-  return List.unmodifiable(mine);
+  return List.unmodifiable(merged);
 }
 
 /// (timeElapsed, price) datapoints for the trading chart. Returns an

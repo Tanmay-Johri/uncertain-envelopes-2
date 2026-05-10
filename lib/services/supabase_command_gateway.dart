@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../data/enums/command_type.dart';
+import '../data/models/command.dart';
 
 /// Narrow adapter for the single Supabase operation that the command
 /// repository needs: insert a row into `commands` and return its
@@ -11,6 +12,11 @@ abstract class SupabaseCommandGateway {
     required String? gameId,
     required String? playerId,
     required Map<String, dynamic> payload,
+  });
+
+  Future<List<Command>> fetchPendingCreateOrderCommands({
+    required String gameId,
+    required String playerId,
   });
 }
 
@@ -35,5 +41,27 @@ class RealSupabaseCommandGateway implements SupabaseCommandGateway {
       'attempt_count': 0,
     }).select('command_id').single();
     return row['command_id'] as String;
+  }
+
+  @override
+  Future<List<Command>> fetchPendingCreateOrderCommands({
+    required String gameId,
+    required String playerId,
+  }) async {
+    final rows = await _client
+        .from('commands')
+        .select()
+        .eq('command_game_id', gameId)
+        .eq('player_id', playerId)
+        .eq('command_type', CommandType.createOrder.wireValue)
+        .or('command_status.eq.pending,command_status.eq.claimed,'
+            'command_status.eq.failed')
+        .order('command_created_at', ascending: false);
+
+    final list = rows as List<dynamic>;
+    return [
+      for (final raw in list)
+        Command.fromJson(Map<String, dynamic>.from(raw as Map)),
+    ];
   }
 }

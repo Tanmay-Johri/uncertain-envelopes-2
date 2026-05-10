@@ -158,7 +158,8 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
         : formatUsdLimitForActiveOrder(o.limitPrice ?? 0);
     final isCancelled = o.status == PersonalOrderStatus.cancelled;
     final isPending = widget.pendingCancellationOrderIds.contains(o.id);
-    final canSendCancel = personalOrderCanCancel(o.status);
+    final canSendCancel =
+        personalOrderCanCancel(o.status) && !o.id.startsWith('cmd:');
 
     final limitDetail = o.orderType == PersonalOrderType.market
         ? '—'

@@ -3,6 +3,7 @@ import '../enums/end_condition.dart';
 import '../enums/game_security.dart';
 import '../enums/is_ranked.dart';
 import '../enums/order_type.dart';
+import '../models/command.dart';
 
 /// Low-level insert API for `commands` rows. This is the boundary where we
 /// construct the exact `payload` JSON shapes that the PL/pgSQL stored
@@ -100,6 +101,14 @@ abstract class CommandRepository {
     required String gameId,
     required String adminPlayerId,
     required int additionalSeconds,
+  });
+
+  /// Non-terminal `create_order` commands for this game and player
+  /// (`pending`, `claimed`, `failed`). Used to surface placeholder `orders`
+  /// rows before the processor creates the real `orders` row (B-GAP-1).
+  Future<List<Command>> fetchPendingCreateOrderCommands({
+    required String gameId,
+    required String playerId,
   });
 }
 
