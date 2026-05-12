@@ -91,9 +91,11 @@ void main() {
       expect(tiles.single.isPublic, isTrue);
     });
 
-    test('joined trading_ended within 10m maps to ended + envelope navigation', () {
+    test(
+        'joined trading_ended maps to playing + envelope navigation (no TTL)',
+        () {
       final now = DateTime.utc(2026, 6, 1, 12);
-      final end = now.subtract(const Duration(minutes: 3));
+      final end = now.subtract(const Duration(minutes: 45));
       final g = _game(
         id: 'g1',
         state: GameState.tradingEnded,
@@ -107,16 +109,16 @@ void main() {
         viewerPlayerId: 'p-me',
         nowUtc: now,
       );
-      expect(tiles.single.status, GameStatusBadge.ended);
+      expect(tiles.single.status, GameStatusBadge.playing);
       expect(tiles.single.openEnvelopeResults, isTrue);
     });
 
-    test('joined ended >10m ago is omitted from tiles', () {
+    test('joined game_finalised >10m ago is omitted from tiles', () {
       final now = DateTime.utc(2026, 6, 1, 12);
       final end = now.subtract(const Duration(minutes: 15));
       final g = _game(
         id: 'g1',
-        state: GameState.tradingEnded,
+        state: GameState.gameFinalised,
         endTimeActual: end,
         updatedAt: end,
       );
@@ -128,6 +130,26 @@ void main() {
         nowUtc: now,
       );
       expect(tiles, isEmpty);
+    });
+
+    test('joined game_finalised within 10m still shows as ended', () {
+      final now = DateTime.utc(2026, 6, 1, 12);
+      final end = now.subtract(const Duration(minutes: 3));
+      final g = _game(
+        id: 'g1',
+        state: GameState.gameFinalised,
+        endTimeActual: end,
+        updatedAt: end,
+      );
+      final tiles = mockHomeGamesFromRepositorySnapshot(
+        joinedGames: [g],
+        publicGames: const [],
+        playerInitialsByGameId: const {},
+        viewerPlayerId: 'p-me',
+        nowUtc: now,
+      );
+      expect(tiles.single.status, GameStatusBadge.ended);
+      expect(tiles.single.openEnvelopeResults, isFalse);
     });
 
     test('public not joined + ended game is omitted', () {

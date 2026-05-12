@@ -62,6 +62,26 @@ void main() {
       );
     });
 
+    test('playing + openEnvelopeResults routes to results (envelope stage)', () {
+      expect(
+        homeGameEntryRoute(
+          const MockHomeGame(
+            id: 'env',
+            title: '',
+            description: '',
+            status: GameStatusBadge.playing,
+            isPublic: true,
+            isJoined: true,
+            isAdmin: false,
+            playerInitials: [],
+            maxPlayers: 8,
+            openEnvelopeResults: true,
+          ),
+        ),
+        AppRoutes.gameResults('env'),
+      );
+    });
+
     test('playing routes to lobby (enter trading from lobby)', () {
       expect(
         homeGameEntryRoute(

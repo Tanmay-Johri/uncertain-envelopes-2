@@ -116,10 +116,14 @@ class NewOrderModal extends ConsumerStatefulWidget {
   }
 
   /// Pending-orders shell: same dialog body plus **exactly one** game pick.
+  ///
+  /// When [gameIdForTitle] is set, last traded / default limit price come from
+  /// [tradingViewDataProvider]. Otherwise use [marketPriceForGameTitle], then
+  /// [fallbackMarketPrice] if provided (no implicit default — avoids wrong limits).
   static Future<GameScopedNewOrder?> showChoosingGame(
     BuildContext context, {
     required List<String> gameTitles,
-    double? fallbackMarketPrice = 150,
+    double? fallbackMarketPrice,
     double? Function(String gameTitle)? marketPriceForGameTitle,
     double? Function(String gameTitle)? bidAskMidpointForGameTitle,
     String? Function(String gameTitle)? gameIdForTitle,
@@ -130,6 +134,8 @@ class NewOrderModal extends ConsumerStatefulWidget {
     if (titles.isEmpty) {
       return Future.value(null);
     }
+    final resolvedMarketForTitle = marketPriceForGameTitle ??
+        (fallbackMarketPrice != null ? (_) => fallbackMarketPrice : null);
     return showDialog<GameScopedNewOrder>(
       context: context,
       barrierDismissible: true,
@@ -140,8 +146,7 @@ class NewOrderModal extends ConsumerStatefulWidget {
           marketPriceListenable: marketPriceListenable,
           bidAskMidpointListenable: bidAskMidpointListenable,
           gameTitles: titles,
-          marketPriceForGameTitle:
-              marketPriceForGameTitle ?? ((_) => fallbackMarketPrice),
+          marketPriceForGameTitle: resolvedMarketForTitle,
           bidAskMidpointForGameTitle: bidAskMidpointForGameTitle,
           gameIdForTitle: gameIdForTitle,
         ),
@@ -412,6 +417,27 @@ class _NewOrderModalState extends ConsumerState<NewOrderModal> {
 
   @override
   Widget build(BuildContext context) {
+    if (_gamesMode && widget.gameIdForTitle != null) {
+      final gid = widget.gameIdForTitle!(_selectedGame);
+      if (gid != null && gid.isNotEmpty) {
+        ref.listen(tradingViewDataProvider(gid), (previous, next) {
+          next.whenData((data) {
+            final mp = data.marketPrice;
+            if (!mounted || mp == null) return;
+            if (_limitCtrl.text.trim().isNotEmpty) return;
+            final normalized = normalizeLimitPriceFieldText(
+              mp.toString(),
+              mp,
+            );
+            _limitCtrl.value = TextEditingValue(
+              text: normalized,
+              selection: TextSelection.collapsed(offset: normalized.length),
+            );
+            setState(() {});
+          });
+        });
+      }
+    }
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final maxH = MediaQuery.sizeOf(context).height * 0.88;
     return Dialog(

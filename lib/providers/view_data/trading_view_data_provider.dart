@@ -58,17 +58,15 @@ List<TradeLogEntry> _tradeLogsFromExecutions({
 double? _resolveMarketPrice({
   required List<Execution> executionsAsc,
   required double? gameLastTradedPrice,
-  required List<OrderBookLevel> bids,
-  required List<OrderBookLevel> asks,
 }) {
+  // Last execution wins; else persisted game LTP. No bid/ask midpoint — UI
+  // shows hyphen until a real trade exists.
   if (executionsAsc.isNotEmpty) {
     return executionsAsc.last.executionPrice;
   }
   if (gameLastTradedPrice != null) {
     return gameLastTradedPrice;
   }
-  final mid = computeBidAskMidpoint(bids, asks);
-  if (mid != null) return mid;
   return null;
 }
 
@@ -129,8 +127,6 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
   final marketPrice = _resolveMarketPrice(
     executionsAsc: executionsAsc,
     gameLastTradedPrice: game.lastTradedPrice,
-    bids: bids,
-    asks: asks,
   );
 
   final tradeParticipantIds = <String>{

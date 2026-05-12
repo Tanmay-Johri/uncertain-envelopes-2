@@ -11,11 +11,21 @@ import '../game_repository_provider.dart';
 
 part 'home_view_data_provider.g.dart';
 
-/// Games that finished trading or beyond — hide from discovery unless recent.
-bool _gameHasEnded(GameState state) {
-  return state == GameState.tradingEnded ||
-      state == GameState.gameFinalised ||
-      state == GameState.discarded;
+/// Admin set envelope price / discarded — no longer "in play" for home retention.
+bool _gameFullyConcluded(GameState state) {
+  return state == GameState.gameFinalised || state == GameState.discarded;
+}
+
+/// `trading_ended` is still an active session (envelope / results stage), not a
+/// terminal "game over" row — joined tiles stay until [GameState] is fully
+/// concluded, then the usual recent window applies.
+bool _joinedTileEligibleForRecentEndedWindow(GameState state) {
+  return _gameFullyConcluded(state);
+}
+
+/// Public discovery: only games players can still join.
+bool _publicGameJoinable(GameState state) {
+  return state == GameState.created || state == GameState.tradingStarted;
 }
 
 DateTime _gameEndReferenceUtc(Game g) =>
@@ -27,12 +37,12 @@ bool _endedWithinTenMinutes(Game g, DateTime nowUtc) {
 }
 
 bool _shouldShowJoinedTile(Game g, DateTime nowUtc) {
-  if (!_gameHasEnded(g.gameState)) return true;
+  if (!_joinedTileEligibleForRecentEndedWindow(g.gameState)) return true;
   return _endedWithinTenMinutes(g, nowUtc);
 }
 
 bool _shouldShowPublicNotJoinedTile(Game g) {
-  return !_gameHasEnded(g.gameState);
+  return _publicGameJoinable(g.gameState);
 }
 
 /// Maps [Game] rows into [MockHomeGame] tiles for [HomeScreen].
@@ -53,8 +63,7 @@ List<MockHomeGame> mockHomeGamesFromRepositorySnapshot({
 
   void addTile(Game g, {required bool isJoined}) {
     final initials = playerInitialsByGameId[g.gameId] ?? const <String>[];
-    final openEnvelope =
-        isJoined && _gameHasEnded(g.gameState) && _endedWithinTenMinutes(g, clock);
+    final openEnvelope = isJoined && g.gameState == GameState.tradingEnded;
     out.add(
       MockHomeGame(
         id: g.gameId,
@@ -98,8 +107,8 @@ GameStatusBadge _statusBadge(
     case GameState.created:
       return GameStatusBadge.joined;
     case GameState.tradingStarted:
-      return GameStatusBadge.playing;
     case GameState.tradingEnded:
+      return GameStatusBadge.playing;
     case GameState.gameFinalised:
     case GameState.discarded:
       return GameStatusBadge.ended;

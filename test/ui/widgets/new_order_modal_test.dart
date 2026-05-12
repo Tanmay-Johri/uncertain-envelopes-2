@@ -5,6 +5,7 @@ import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/providers/view_data/trading_view_data_provider.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
+import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/new_order_modal.dart';
 
 void main() {
@@ -638,6 +639,68 @@ void main() {
       expect(popped!.order.id, 'new');
       expect(popped!.order.quantityInitial, 1);
     });
+
+    testWidgets(
+      'showChoosingGame with gameIdForTitle seeds limit from live market price',
+      (tester) async {
+        final d = mockTradingScenarioForGameId('g1').data;
+        final at100 = GameTradingViewData(
+          gameTitle: d.gameTitle,
+          description: d.description,
+          isViewerAdmin: d.isViewerAdmin,
+          currentPlayerId: d.currentPlayerId,
+          isTimed: d.isTimed,
+          deltaCash: d.deltaCash,
+          deltaEnvelopes: d.deltaEnvelopes,
+          orderBookBids: d.orderBookBids,
+          orderBookAsks: d.orderBookAsks,
+          marketPrice: 100,
+          priceHistory: d.priceHistory,
+          chartSessionElapsed: d.chartSessionElapsed,
+          personalOrders: d.personalOrders,
+          tradeLogs: d.tradeLogs,
+          gameStartedAtUtc: d.gameStartedAtUtc,
+          tradingTimeRemaining: d.tradingTimeRemaining,
+          tradingDeadlineUtc: d.tradingDeadlineUtc,
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              tradingViewDataProvider('game-x').overrideWith(
+                (ref) => Future.value(at100),
+              ),
+            ],
+            child: MaterialApp(
+              theme: buildAppTheme(),
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) {
+                    return TextButton(
+                      onPressed: () {
+                        NewOrderModal.showChoosingGame(
+                          context,
+                          gameTitles: const ['Forex Masters'],
+                          gameIdForTitle: (_) => 'game-x',
+                        );
+                      },
+                      child: const Text('open'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        final limitFinder = find.byKey(const ValueKey('new-order-limit'));
+        expect(
+          tester.widget<TextField>(limitFinder).controller!.text,
+          '100.00',
+        );
+      },
+    );
 
     testWidgets(
       'showChoosingGame with gameIdForTitle completes initState without crash',

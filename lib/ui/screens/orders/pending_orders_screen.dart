@@ -176,7 +176,10 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       context,
       gameTitles: titles,
       gameIdForTitle: useLivePrices ? _gameIdForEligibleTitle : null,
-      marketPriceForGameTitle: _referencePriceForGameTitle,
+      // Live games: last traded / limit seed come from tradingViewDataProvider only.
+      // Do not reuse pending rows' limit prices (they are order prices, not market).
+      marketPriceForGameTitle:
+          useLivePrices ? null : _referencePriceForGameTitle,
       bidAskMidpointForGameTitle:
           useLivePrices ? null : mockBidAskMidpointForGameTitle,
     );

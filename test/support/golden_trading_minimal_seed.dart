@@ -153,9 +153,8 @@ final class GoldenTradingMinimalHarness {
 /// Minimal trading snapshot used for **mock-vs-adapter pixel parity** goldens.
 ///
 /// Chosen so [tradingViewDataProvider] can reproduce it from in-memory repos:
-/// - No executions → empty chart + empty trade log (the `g1` mock mixes
-///   hand-authored chart points with fewer executions; that cannot match the
-///   adapter without a separate chart feed).
+/// - No executions and no `last_traded_price` → [marketPrice] is `null`
+///   (hyphen in UI); bid/ask book still populated for the order book widget.
 /// - [EndCondition.endless] → no [CountdownTimer] (avoids periodic timer drift
 ///   in golden captures).
 abstract final class GoldenTradingMinimalSeed {
@@ -174,7 +173,7 @@ abstract final class GoldenTradingMinimalSeed {
         deltaEnvelopes: -1,
         orderBookBids: const [OrderBookLevel(price: 10, quantity: 1)],
         orderBookAsks: const [OrderBookLevel(price: 12, quantity: 2)],
-        marketPrice: 11,
+        marketPrice: null,
         priceHistory: const [],
         chartSessionElapsed: Duration.zero,
         personalOrders: const [],
