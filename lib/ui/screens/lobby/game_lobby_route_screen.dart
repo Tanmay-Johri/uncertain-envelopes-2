@@ -15,6 +15,7 @@ import '../../../providers/view_data/lobby_view_data_provider.dart'
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_lobby_screen.dart';
+import 'lobby_view_data.dart';
 
 /// Friendly copy for lobby load failures (kicked, missing game, etc.).
 String _lobbyLoadErrorMessage(Object error) {
@@ -114,10 +115,17 @@ class _GameLobbyRouteScreenState extends ConsumerState<GameLobbyRouteScreen> {
             );
           }),
           onEndGame: () => _runCommand(() async {
-            await cmds.submitEndTrading(
-              gameId: widget.gameId,
-              adminPlayerId: playerId,
-            );
+            if (scenario.phase == GameLobbyPhase.preStart) {
+              await cmds.submitDiscardGame(
+                gameId: widget.gameId,
+                adminPlayerId: playerId,
+              );
+            } else {
+              await cmds.submitEndTrading(
+                gameId: widget.gameId,
+                adminPlayerId: playerId,
+              );
+            }
           }),
           onEnterGame: () => context.go(AppRoutes.gameTrading(widget.gameId)),
           onJoinGame: () => _runCommand(() async {
