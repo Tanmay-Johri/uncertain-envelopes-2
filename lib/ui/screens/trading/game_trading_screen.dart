@@ -222,7 +222,10 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _TradeLogsSheet(logs: widget.data.tradeLogs),
+      builder: (_) => _TradeLogsSheet(
+        logs: widget.data.tradeLogs,
+        viewerPlayerId: widget.data.currentPlayerId,
+      ),
     );
   }
 
@@ -597,13 +600,32 @@ class _TradingWindowHeader extends StatelessWidget {
 
 /// Bottom sheet listing every executed trade:
 /// `Seller ——(qty @ $price)——→ Buyer`
-class _TradeLogsSheet extends StatelessWidget {
-  const _TradeLogsSheet({required this.logs});
+class _TradeLogsSheet extends StatefulWidget {
+  const _TradeLogsSheet({
+    required this.logs,
+    required this.viewerPlayerId,
+  });
 
   final List<TradeLogEntry> logs;
+  final String viewerPlayerId;
+
+  @override
+  State<_TradeLogsSheet> createState() => _TradeLogsSheetState();
+}
+
+class _TradeLogsSheetState extends State<_TradeLogsSheet> {
+  var _onlyMine = false;
+
+  List<TradeLogEntry> get _displayLogs => _onlyMine
+      ? widget.logs
+          .where((e) => tradeLogEntryInvolvesPlayer(e, widget.viewerPlayerId))
+          .toList()
+      : widget.logs;
 
   @override
   Widget build(BuildContext context) {
+    final logs = widget.logs;
+    final displayLogs = _displayLogs;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
@@ -631,15 +653,37 @@ class _TradeLogsSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  'TRANSACTION LOG',
-                  style: AppTypography.microLabel.copyWith(
-                    color: AppColors.textTertiary,
-                    letterSpacing: 1.4,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    'TRANSACTION LOG',
+                    style: AppTypography.microLabel.copyWith(
+                      color: AppColors.textTertiary,
+                      letterSpacing: 1.4,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
+                if (logs.isNotEmpty) ...[
+                  Text(
+                    'Only my transactions',
+                    style: AppTypography.microLabel.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Switch(
+                    key: const ValueKey('trade-logs-only-mine-toggle'),
+                    value: _onlyMine,
+                    activeThumbColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.35),
+                    inactiveThumbColor: AppColors.textSecondary,
+                    inactiveTrackColor: AppColors.surfaceContainerHigh,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: (v) => setState(() => _onlyMine = v),
+                  ),
+                ],
               ],
             ),
           ),
@@ -704,6 +748,21 @@ class _TradeLogsSheet extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             )
+          else if (displayLogs.isEmpty)
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Center(
+                  child: Text(
+                    'No matching transactions',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            )
           else
             Flexible(
               child: ListView.separated(
@@ -712,11 +771,11 @@ class _TradeLogsSheet extends StatelessWidget {
                   horizontal: AppSpacing.lg,
                   vertical: AppSpacing.md,
                 ),
-                itemCount: logs.length,
+                itemCount: displayLogs.length,
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) =>
-                    _TradeLogRow(entry: logs[index]),
+                    _TradeLogRow(entry: displayLogs[index]),
               ),
             ),
           SizedBox(height: MediaQuery.paddingOf(context).bottom + AppSpacing.md),

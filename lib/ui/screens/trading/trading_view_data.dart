@@ -17,7 +17,9 @@ export '../../../core/trading/personal_order.dart'
 class TradeLogEntry {
   const TradeLogEntry({
     required this.sellerName,
+    required this.sellerPlayerId,
     required this.buyerName,
+    required this.buyerPlayerId,
     required this.quantity,
     required this.price,
     this.tradedAt,
@@ -26,8 +28,14 @@ class TradeLogEntry {
   /// Display name of the player who sold (gave envelopes).
   final String sellerName;
 
+  /// [GamePlayer.mapPlayerId] / auth player id for the sell-side order owner.
+  final String sellerPlayerId;
+
   /// Display name of the player who bought (received envelopes).
   final String buyerName;
+
+  /// Player id for the buy-side order owner.
+  final String buyerPlayerId;
 
   /// Number of envelopes exchanged.
   final int quantity;
@@ -38,6 +46,12 @@ class TradeLogEntry {
   /// Wall-clock UTC when the trade executed (`players` / Supabase). Shown in
   /// local time in the transaction log.
   final DateTime? tradedAt;
+}
+
+/// True when [viewerPlayerId] owns the buy or sell order for this execution.
+bool tradeLogEntryInvolvesPlayer(TradeLogEntry entry, String viewerPlayerId) {
+  return entry.sellerPlayerId == viewerPlayerId ||
+      entry.buyerPlayerId == viewerPlayerId;
 }
 
 @immutable
@@ -125,7 +139,7 @@ class GameTradingViewData {
   /// Player’s own orders for **Active orders** (C6 mock; Phase 2 from providers).
   final List<PersonalOrder> personalOrders;
 
-  /// Executed trades shown in the transaction log. Empty until Phase 2.
+  /// Executed trades for the transaction log, **newest first**. Empty until Phase 2.
   final List<TradeLogEntry> tradeLogs;
 
   /// Game start instant in UTC (Supabase `start_time`); used for touch tooltips only.

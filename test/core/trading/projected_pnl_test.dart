@@ -13,4 +13,14 @@ void main() {
   test('zero assumption leaves only cash (envelope term zero)', () {
     expect(projectedPnlUsd(50, -3, 0), 50);
   });
+
+  test('envelopeValueForZeroProjectedPnl solves deltaCash + v * dE = 0', () {
+    expect(envelopeValueForZeroProjectedPnl(12500, -45), closeTo(277.777777, 1e-6));
+    expect(envelopeValueForZeroProjectedPnl(0, -1), 0.0);
+    expect(envelopeValueForZeroProjectedPnl(100, 2), -50.0);
+  });
+
+  test('envelopeValueForZeroProjectedPnl is null when envelope term absent', () {
+    expect(envelopeValueForZeroProjectedPnl(100, 0), isNull);
+  });
 }

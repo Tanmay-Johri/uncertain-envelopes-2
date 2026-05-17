@@ -131,8 +131,29 @@ class _PnlCalculatorState extends State<PnlCalculator> {
     });
   }
 
+  void _setEnvelopeToBreakEven() {
+    final target = envelopeValueForZeroProjectedPnl(
+      widget.deltaCash,
+      widget.deltaEnvelopes,
+    );
+    if (target == null) return;
+    setState(() {
+      _envelope = target;
+      if (!valueFitsInBounds(_envelope, _minB, _maxB)) {
+        _setBoundsForCenter(_envelope);
+      }
+      _syncEnvelopeFieldDisplay();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final breakEvenEnvelope = envelopeValueForZeroProjectedPnl(
+      widget.deltaCash,
+      widget.deltaEnvelopes,
+    );
+    final canBreakEven = breakEvenEnvelope != null;
+
     final pnl = projectedPnlUsd(
       widget.deltaCash,
       widget.deltaEnvelopes,
@@ -291,6 +312,27 @@ class _PnlCalculatorState extends State<PnlCalculator> {
                                     ),
                                   ),
                                   IconButton(
+                                    key: const ValueKey('trading-pnl-zero-pnl'),
+                                    onPressed:
+                                        canBreakEven ? _setEnvelopeToBreakEven : null,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                    tooltip: canBreakEven
+                                        ? 'Set envelope for \$0 projected PnL'
+                                        : 'Projected PnL does not depend on envelope value',
+                                    icon: Icon(
+                                      Icons.refresh,
+                                      size: 18,
+                                      color: canBreakEven
+                                          ? AppColors.textDisabled
+                                          : AppColors.textDisabled
+                                              .withValues(alpha: 0.35),
+                                    ),
+                                  ),
+                                  IconButton(
                                     key: const ValueKey('trading-pnl-reset'),
                                     onPressed: () {
                                       setState(_recenterToMarket);
@@ -300,9 +342,9 @@ class _PnlCalculatorState extends State<PnlCalculator> {
                                       minWidth: 32,
                                       minHeight: 32,
                                     ),
-                                    tooltip: 'Use market price',
+                                    tooltip: 'Latest market price',
                                     icon: Icon(
-                                      Icons.refresh,
+                                      Icons.show_chart,
                                       size: 18,
                                       color: AppColors.textDisabled,
                                     ),

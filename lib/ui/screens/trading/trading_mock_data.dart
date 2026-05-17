@@ -65,29 +65,74 @@ final _kMockPriceHistory = List<PriceChartPoint>.generate(11, (i) {
   );
 });
 
-/// Mock executed trades for the transaction log.
+/// Mock executed trades for the transaction log (newest first, same as live data).
 final _g1TradeLogs = <TradeLogEntry>[
   TradeLogEntry(
-      sellerName: 'CryptoKing99', buyerName: 'Player1', quantity: 3, price: 149.50,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 5))),
+    sellerName: 'test_2',
+    sellerPlayerId: 'p_test2',
+    buyerName: 'johritanmay',
+    buyerPlayerId: 'p_me',
+    quantity: 1,
+    price: 102,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 50)),
+  ),
   TradeLogEntry(
-      sellerName: 'Player2', buyerName: 'CryptoKing99', quantity: 5, price: 150.00,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 12))),
+    sellerName: 'CryptoKing99',
+    sellerPlayerId: 'p_crypto',
+    buyerName: 'Player1',
+    buyerPlayerId: 'p1',
+    quantity: 7,
+    price: 151.00,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 41)),
+  ),
   TradeLogEntry(
-      sellerName: 'Player1', buyerName: 'Player2', quantity: 2, price: 148.90,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 23))),
+    sellerName: 'Player1',
+    sellerPlayerId: 'p1',
+    buyerName: 'Player2',
+    buyerPlayerId: 'p2',
+    quantity: 2,
+    price: 148.90,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 23)),
+  ),
   TradeLogEntry(
-      sellerName: 'CryptoKing99', buyerName: 'Player1', quantity: 7, price: 151.00,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 41))),
+    sellerName: 'Player2',
+    sellerPlayerId: 'p2',
+    buyerName: 'CryptoKing99',
+    buyerPlayerId: 'p_crypto',
+    quantity: 5,
+    price: 150.00,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 12)),
+  ),
+  TradeLogEntry(
+    sellerName: 'CryptoKing99',
+    sellerPlayerId: 'p_crypto',
+    buyerName: 'Player1',
+    buyerPlayerId: 'p1',
+    quantity: 3,
+    price: 149.50,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 5)),
+  ),
 ];
 
 final _g2TradeLogs = <TradeLogEntry>[
   TradeLogEntry(
-      sellerName: 'TechTrader', buyerName: 'CryptoFan', quantity: 10, price: 150.00,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 8))),
+    sellerName: 'CryptoFan',
+    sellerPlayerId: 'p_cf',
+    buyerName: 'TechTrader',
+    buyerPlayerId: 'p_tt',
+    quantity: 4,
+    price: 150.80,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 31)),
+  ),
   TradeLogEntry(
-      sellerName: 'CryptoFan', buyerName: 'TechTrader', quantity: 4, price: 150.80,
-      tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 31))),
+    sellerName: 'TechTrader',
+    sellerPlayerId: 'p_ad',
+    buyerName: 'CryptoFan',
+    buyerPlayerId: 'p_cf',
+    quantity: 10,
+    price: 150.00,
+    tradedAt: _kMockGameStartedAtUtc.add(const Duration(minutes: 8)),
+  ),
 ];
 
 /// Mix of statuses for **Active orders** (C6). [createdAt] → **Created:** line.

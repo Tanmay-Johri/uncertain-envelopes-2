@@ -23,6 +23,117 @@ void main() {
       expect(find.text('No active orders'), findsOneWidget);
     });
 
+    testWidgets('active only toggle hides closed/cancelled; keeps newest-first',
+        (tester) async {
+      final tNew = DateTime.utc(2026, 5, 17, 22);
+      final tMid = DateTime.utc(2026, 5, 17, 20);
+      final tOld = DateTime.utc(2026, 5, 17, 18);
+      final orders = [
+        PersonalOrder(
+          id: 'closed-new',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 0,
+          limitPrice: 103,
+          status: PersonalOrderStatus.filled,
+          createdAt: tNew,
+        ),
+        PersonalOrder(
+          id: 'rest-mid',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 2,
+          quantityCurrent: 2,
+          limitPrice: 99,
+          status: PersonalOrderStatus.resting,
+          createdAt: tMid,
+        ),
+        PersonalOrder(
+          id: 'q-old',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 1,
+          quantityCurrent: 1,
+          limitPrice: 4.01,
+          status: PersonalOrderStatus.inQueue,
+          createdAt: tOld,
+        ),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: ActiveOrdersWidget(
+              orders: orders,
+              pendingCancellationOrderIds: const {},
+              onCancellationRequested: (_, _) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('order_closed'), findsOneWidget);
+      expect(find.text('order_resting'), findsOneWidget);
+      expect(find.text('in_queue'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('active-orders-active-only-toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('order_closed'), findsNothing);
+      expect(find.text('order_resting'), findsOneWidget);
+      expect(find.text('in_queue'), findsOneWidget);
+      // Newest among pipeline-active is resting (tMid > tOld); first card expanded.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('active-order-rest-mid')),
+          matching: find.byType(AnimatedRotation),
+        ),
+        findsOneWidget,
+      );
+      final rot = tester.widget<AnimatedRotation>(
+        find.descendant(
+          of: find.byKey(const ValueKey('active-order-rest-mid')),
+          matching: find.byType(AnimatedRotation),
+        ),
+      );
+      expect(rot.turns, 0.5);
+    });
+
+    testWidgets('active only with no pipeline orders shows empty state',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: ActiveOrdersWidget(
+              orders: [
+                PersonalOrder(
+                  id: 'x',
+                  side: PersonalOrderSide.buy,
+                  orderType: PersonalOrderType.limit,
+                  quantityInitial: 1,
+                  quantityCurrent: 0,
+                  limitPrice: 1,
+                  status: PersonalOrderStatus.filled,
+                  createdAt: DateTime.utc(2026, 1, 1),
+                ),
+              ],
+              pendingCancellationOrderIds: const {},
+              onCancellationRequested: (_, _) {},
+            ),
+          ),
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('active-orders-active-only-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('active-orders-empty')), findsOneWidget);
+    });
+
     testWidgets(
         'in_queue order uses same cancel flow as resting',
         (tester) async {

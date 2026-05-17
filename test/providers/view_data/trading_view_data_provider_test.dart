@@ -193,6 +193,174 @@ void main() {
       expect(data.tradeLogs.single.buyerName, 'alice');
     });
 
+    test('tradeLogs list newest execution first', () async {
+      final commands = InMemoryCommandRepository();
+      final games = InMemoryGameRepository(commandRepository: commands);
+      final orders = InMemoryOrderRepository();
+      final executions = InMemoryExecutionRepository();
+      final authRepo = InMemoryAuthRepository();
+      authRepo.setSessionPlayerForTest(
+        Player(
+          playerId: 'viewer-1',
+          username: 'viewer',
+          createdAt: DateTime.utc(2026, 1, 1),
+          email: 'v@test.com',
+        ),
+      );
+
+      final start = DateTime.utc(2026, 3, 1, 12);
+      games.seedGame(
+        Game(
+          gameId: 'tg-order',
+          gameName: 'Order Test',
+          gameDescription: 'D',
+          gameCreatedAt: start,
+          gameSecurity: GameSecurity.public,
+          isRanked: IsRanked.casual,
+          gameMaxPlayers: 4,
+          joiningCode: 'ORDR',
+          endCondition: EndCondition.endless,
+          gameState: GameState.tradingStarted,
+          adminPlayerId: 'viewer-1',
+          stateVersion: 1,
+          updatedAt: start,
+          startTime: start,
+        ),
+      );
+      games.seedGamePlayer(
+        GamePlayer(
+          gamesPlayersRowId: 'gp-o',
+          mapGameId: 'tg-order',
+          mapPlayerId: 'viewer-1',
+          lobbyStatus: LobbyStatus.playing,
+          joinedAt: start,
+          isAdmin: true,
+          deltaCash: 0,
+          deltaEnvelopes: 0,
+          pnl: 0,
+        ),
+      );
+
+      orders.seedOrders([
+        Order(
+          orderId: 'sell-a',
+          createdByPlayerId: 'seller-a',
+          gameId: 'tg-order',
+          type: OrderType.limitSell,
+          quantityInitial: 10,
+          quantityCurrent: 8,
+          pricePerStock: 100,
+          status: OrderStatus.orderResting,
+          orderCreatedAt: start,
+          orderUpdatedAt: start,
+        ),
+        Order(
+          orderId: 'buy-a',
+          createdByPlayerId: 'viewer-1',
+          gameId: 'tg-order',
+          type: OrderType.limitBuy,
+          quantityInitial: 2,
+          quantityCurrent: 1,
+          pricePerStock: 100,
+          status: OrderStatus.orderResting,
+          orderCreatedAt: start,
+          orderUpdatedAt: start,
+        ),
+        Order(
+          orderId: 'sell-b',
+          createdByPlayerId: 'seller-b',
+          gameId: 'tg-order',
+          type: OrderType.limitSell,
+          quantityInitial: 10,
+          quantityCurrent: 9,
+          pricePerStock: 110,
+          status: OrderStatus.orderResting,
+          orderCreatedAt: start,
+          orderUpdatedAt: start,
+        ),
+        Order(
+          orderId: 'buy-b',
+          createdByPlayerId: 'viewer-1',
+          gameId: 'tg-order',
+          type: OrderType.limitBuy,
+          quantityInitial: 1,
+          quantityCurrent: 0,
+          pricePerStock: 110,
+          status: OrderStatus.orderClosed,
+          orderCreatedAt: start,
+          orderUpdatedAt: start,
+        ),
+      ]);
+
+      executions.seedExecution(
+        Execution(
+          executionsId: 'e-old',
+          executionsGameId: 'tg-order',
+          buyOrderId: 'buy-a',
+          sellOrderId: 'sell-a',
+          quantity: 1,
+          executionPrice: 100,
+          executedAt: start.add(const Duration(minutes: 1)),
+        ),
+      );
+      executions.seedExecution(
+        Execution(
+          executionsId: 'e-new',
+          executionsGameId: 'tg-order',
+          buyOrderId: 'buy-b',
+          sellOrderId: 'sell-b',
+          quantity: 1,
+          executionPrice: 110,
+          executedAt: start.add(const Duration(minutes: 9)),
+        ),
+      );
+
+      final playerRepo = InMemoryPlayerRepository()
+        ..seedPlayer(
+          Player(
+            playerId: 'viewer-1',
+            username: 'alice',
+            createdAt: DateTime.utc(2026, 1, 1),
+            email: 'alice@test.com',
+          ),
+        )
+        ..seedPlayer(
+          Player(
+            playerId: 'seller-a',
+            username: 'seller_early',
+            createdAt: DateTime.utc(2026, 1, 2),
+            email: 'a@test.com',
+          ),
+        )
+        ..seedPlayer(
+          Player(
+            playerId: 'seller-b',
+            username: 'seller_late',
+            createdAt: DateTime.utc(2026, 1, 3),
+            email: 'b@test.com',
+          ),
+        );
+
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepo),
+          gameRepositoryProvider.overrideWithValue(games),
+          orderRepositoryProvider.overrideWithValue(orders),
+          executionRepositoryProvider.overrideWithValue(executions),
+          commandRepositoryProvider.overrideWithValue(commands),
+          playerRepositoryProvider.overrideWithValue(playerRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.future);
+      final data = await container.read(tradingViewDataProvider('tg-order').future);
+
+      expect(data.tradeLogs.length, 2);
+      expect(data.tradeLogs[0].price, 110);
+      expect(data.tradeLogs[1].price, 100);
+    });
+
     test('marketPrice is null when no trades and incomplete book', () async {
       final commands = InMemoryCommandRepository();
       final games = InMemoryGameRepository(commandRepository: commands);

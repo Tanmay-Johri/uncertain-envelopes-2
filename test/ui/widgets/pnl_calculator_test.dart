@@ -45,7 +45,7 @@ void main() {
       expect(find.text(r'$100.00'), findsOneWidget);
     });
 
-    testWidgets('reset snaps assumption and range to market price', (
+    testWidgets('market-price button snaps assumption and range to market', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -71,6 +71,53 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('trading-pnl-reset')));
       await tester.pump();
       expect(find.text(r'$100.00'), findsOneWidget);
+    });
+
+    testWidgets('break-even button sets envelope so projected PnL is zero', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const Scaffold(
+            body: PnlCalculator(
+              marketPrice: 150,
+              deltaCash: 12500,
+              deltaEnvelopes: -45,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(r'+$5,750'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('trading-pnl-zero-pnl')));
+      await tester.pump();
+      final projected = tester.widget<Text>(
+        find.byKey(const ValueKey('trading-pnl-projected')),
+      );
+      expect(projected.data, r'$0');
+    });
+
+    testWidgets('break-even button is disabled when deltaEnvelopes is zero', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const Scaffold(
+            body: PnlCalculator(
+              marketPrice: 100,
+              deltaCash: 50,
+              deltaEnvelopes: 0,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final zeroBtn = tester.widget<IconButton>(
+        find.byKey(const ValueKey('trading-pnl-zero-pnl')),
+      );
+      expect(zeroBtn.onPressed, isNull);
     });
 
     testWidgets('out-of-range typed value triggers new slider bounds', (

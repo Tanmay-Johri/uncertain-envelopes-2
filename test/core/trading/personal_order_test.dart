@@ -3,6 +3,36 @@ import 'package:uncertain_envelopes_2/core/theme/app_colors.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 
 void main() {
+  group('personalOrderIsPipelineActive', () {
+    test('true for in_queue, being_processed, order_resting', () {
+      expect(personalOrderIsPipelineActive(PersonalOrderStatus.inQueue), isTrue);
+      expect(
+        personalOrderIsPipelineActive(PersonalOrderStatus.beingProcessed),
+        isTrue,
+      );
+      expect(
+        personalOrderIsPipelineActive(PersonalOrderStatus.resting),
+        isTrue,
+      );
+    });
+
+    test('false for terminal / non-pipeline statuses', () {
+      expect(personalOrderIsPipelineActive(PersonalOrderStatus.filled), isFalse);
+      expect(
+        personalOrderIsPipelineActive(PersonalOrderStatus.cancelled),
+        isFalse,
+      );
+      expect(
+        personalOrderIsPipelineActive(PersonalOrderStatus.rejected),
+        isFalse,
+      );
+      expect(
+        personalOrderIsPipelineActive(PersonalOrderStatus.gameEnded),
+        isFalse,
+      );
+    });
+  });
+
   group('personalOrderCanCancel', () {
     test('true for queued, processing, and resting; false when terminal', () {
       expect(personalOrderCanCancel(PersonalOrderStatus.inQueue), isTrue);

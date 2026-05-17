@@ -96,6 +96,23 @@ List<PersonalOrder> personalOrdersSortedNewestFirst(List<PersonalOrder> orders) 
   return copy;
 }
 
+/// PRD pipeline statuses still eligible to match or rest: `in_queue`,
+/// `being_processed`, `order_resting`. Used for the trading screen
+/// “active only” filter (hides `order_closed`, `cancelled`, etc.).
+bool personalOrderIsPipelineActive(PersonalOrderStatus status) {
+  return switch (status) {
+    PersonalOrderStatus.inQueue ||
+    PersonalOrderStatus.beingProcessed ||
+    PersonalOrderStatus.resting =>
+      true,
+    PersonalOrderStatus.filled ||
+    PersonalOrderStatus.cancelled ||
+    PersonalOrderStatus.rejected ||
+    PersonalOrderStatus.gameEnded =>
+      false,
+  };
+}
+
 /// Whether the player may **send a cancellation request** from the UI.
 ///
 /// PRD: the `cancelled` status is defined for explicit player cancel while

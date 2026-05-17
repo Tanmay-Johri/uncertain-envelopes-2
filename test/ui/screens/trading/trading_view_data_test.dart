@@ -35,26 +35,58 @@ void main() {
     test('stores all fields', () {
       const e = TradeLogEntry(
         sellerName: 'Alice',
+        sellerPlayerId: 'p_a',
         buyerName: 'Bob',
+        buyerPlayerId: 'p_b',
         quantity: 5,
         price: 149.50,
       );
       expect(e.sellerName, 'Alice');
+      expect(e.sellerPlayerId, 'p_a');
       expect(e.buyerName, 'Bob');
+      expect(e.buyerPlayerId, 'p_b');
       expect(e.quantity, 5);
       expect(e.price, 149.50);
     });
 
     test('quantity can be 1', () {
       const e = TradeLogEntry(
-          sellerName: 'X', buyerName: 'Y', quantity: 1, price: 100);
+        sellerName: 'X',
+        sellerPlayerId: 'p_x',
+        buyerName: 'Y',
+        buyerPlayerId: 'p_y',
+        quantity: 1,
+        price: 100,
+      );
       expect(e.quantity, 1);
     });
 
     test('price can be a whole number', () {
       const e = TradeLogEntry(
-          sellerName: 'X', buyerName: 'Y', quantity: 2, price: 150);
+        sellerName: 'X',
+        sellerPlayerId: 'p_x',
+        buyerName: 'Y',
+        buyerPlayerId: 'p_y',
+        quantity: 2,
+        price: 150,
+      );
       expect(e.price, 150.0);
+    });
+  });
+
+  group('tradeLogEntryInvolvesPlayer', () {
+    test('true when viewer matches seller or buyer id', () {
+      const e = TradeLogEntry(
+        sellerName: 'S',
+        sellerPlayerId: 'p_s',
+        buyerName: 'B',
+        buyerPlayerId: 'p_b',
+        quantity: 1,
+        price: 1,
+      );
+      expect(tradeLogEntryInvolvesPlayer(e, 'p_s'), isTrue);
+      expect(tradeLogEntryInvolvesPlayer(e, 'p_b'), isTrue);
+      expect(tradeLogEntryInvolvesPlayer(e, 'p_other'), isFalse);
     });
   });
 
@@ -99,7 +131,14 @@ void main() {
 
     test('tradeLogs stores provided entries', () {
       const logs = [
-        TradeLogEntry(sellerName: 'A', buyerName: 'B', quantity: 3, price: 50),
+        TradeLogEntry(
+          sellerName: 'A',
+          sellerPlayerId: 'p_a',
+          buyerName: 'B',
+          buyerPlayerId: 'p_b',
+          quantity: 3,
+          price: 50,
+        ),
       ];
       const d = GameTradingViewData(
         gameTitle: 't',

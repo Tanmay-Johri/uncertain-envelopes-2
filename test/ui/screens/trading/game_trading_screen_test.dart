@@ -532,9 +532,21 @@ void main() {
     testWidgets('non-admin Show Logs opens logs sheet', (tester) async {
       const logs = [
         TradeLogEntry(
-            sellerName: 'Alice', buyerName: 'Bob', quantity: 3, price: 149.50),
+          sellerName: 'Alpha',
+          sellerPlayerId: 'p_alpha',
+          buyerName: 'Beta',
+          buyerPlayerId: 'p_beta',
+          quantity: 3,
+          price: 149.50,
+        ),
         TradeLogEntry(
-            sellerName: 'Bob', buyerName: 'Charlie', quantity: 1, price: 150.00),
+          sellerName: 'MeSeller',
+          sellerPlayerId: 'p1',
+          buyerName: 'Gamma',
+          buyerPlayerId: 'p_gamma',
+          quantity: 1,
+          price: 150.00,
+        ),
       ];
       const data = GameTradingViewData(
         gameTitle: 'T',
@@ -568,10 +580,70 @@ void main() {
       expect(find.text('TRANSACTION LOG'), findsOneWidget);
       expect(find.text('SELLER'), findsOneWidget);
       expect(find.text('BUYER'), findsOneWidget);
-      expect(find.text('Alice'), findsOneWidget);
-      expect(find.text('Bob'), findsWidgets);
-      expect(find.text('Charlie'), findsOneWidget);
+      expect(find.text('Only my transactions'), findsOneWidget);
+      expect(find.text('Alpha'), findsOneWidget);
+      expect(find.text('Beta'), findsOneWidget);
+      expect(find.text('MeSeller'), findsOneWidget);
+      expect(find.text('Gamma'), findsOneWidget);
       expect(find.byKey(const ValueKey('trade-logs-list')), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('trade-logs-only-mine-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Alpha'), findsNothing);
+      expect(find.text('MeSeller'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trade-logs-list')), findsOneWidget);
+    });
+
+    testWidgets(
+        'transaction log only-my toggle shows empty when viewer not in any row',
+        (tester) async {
+      const logs = [
+        TradeLogEntry(
+          sellerName: 'Alpha',
+          sellerPlayerId: 'p_alpha',
+          buyerName: 'Beta',
+          buyerPlayerId: 'p_beta',
+          quantity: 3,
+          price: 149.50,
+        ),
+      ];
+      const data = GameTradingViewData(
+        gameTitle: 'T',
+        description: 'd',
+        isViewerAdmin: false,
+        currentPlayerId: 'p1',
+        isTimed: false,
+        tradingTimeRemaining: null,
+        deltaCash: 0,
+        deltaEnvelopes: 0,
+        orderBookBids: [],
+        orderBookAsks: [],
+        marketPrice: 10,
+        priceHistory: [],
+        chartSessionElapsed: Duration.zero,
+        tradeLogs: logs,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(data: data),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show Logs'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('trade-logs-only-mine-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No matching transactions'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trade-logs-list')), findsNothing);
     });
 
     testWidgets('logs sheet shows empty state when no trades', (tester) async {

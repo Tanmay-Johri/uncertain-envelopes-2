@@ -38,16 +38,22 @@ List<TradeLogEntry> _tradeLogsFromExecutions({
   required Map<String, Order> ordersById,
   required String Function(String playerId) nameForPlayer,
 }) {
-  final sorted = [...executions]..sort((a, b) => a.executedAt.compareTo(b.executedAt));
+  // Transaction log: newest trades at the top (sheet uses list order as-is).
+  final sorted = [...executions]
+    ..sort((a, b) => b.executedAt.compareTo(a.executedAt));
   return [
     for (final e in sorted)
       TradeLogEntry(
         sellerName: nameForPlayer(
           ordersById[e.sellOrderId]?.createdByPlayerId ?? 'unknown',
         ),
+        sellerPlayerId:
+            ordersById[e.sellOrderId]?.createdByPlayerId ?? 'unknown',
         buyerName: nameForPlayer(
           ordersById[e.buyOrderId]?.createdByPlayerId ?? 'unknown',
         ),
+        buyerPlayerId:
+            ordersById[e.buyOrderId]?.createdByPlayerId ?? 'unknown',
         quantity: e.quantity,
         price: e.executionPrice,
         tradedAt: e.executedAt,

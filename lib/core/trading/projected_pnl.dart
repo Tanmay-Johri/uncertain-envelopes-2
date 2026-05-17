@@ -9,3 +9,17 @@ double projectedPnlUsd(
 ) {
   return deltaCash + envelope * deltaEnvelopes;
 }
+
+/// Envelope assumption where [projectedPnlUsd] is exactly zero.
+///
+/// Returns `null` when PnL does not depend on the envelope assumption
+/// ([deltaEnvelopes] is zero) or the result is non-finite.
+double? envelopeValueForZeroProjectedPnl(
+  double deltaCash,
+  double deltaEnvelopes,
+) {
+  if (deltaEnvelopes == 0 || deltaEnvelopes.isNaN) return null;
+  final v = -deltaCash / deltaEnvelopes;
+  if (v.isNaN || v.isInfinite) return null;
+  return v;
+}

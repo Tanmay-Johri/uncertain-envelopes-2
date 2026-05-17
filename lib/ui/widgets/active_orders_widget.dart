@@ -38,7 +38,7 @@ String _statusChipText(PersonalOrderStatus s) {
 
 /// Active orders — layout from `admin_game_trading_dashboard_7/code.html`,
 /// details from PRD `orders` (no **order_id** in UI).
-class ActiveOrdersWidget extends StatelessWidget {
+class ActiveOrdersWidget extends StatefulWidget {
   const ActiveOrdersWidget({
     super.key,
     required this.orders,
@@ -56,27 +56,61 @@ class ActiveOrdersWidget extends StatelessWidget {
       onCancellationRequested;
 
   @override
+  State<ActiveOrdersWidget> createState() => _ActiveOrdersWidgetState();
+}
+
+class _ActiveOrdersWidgetState extends State<ActiveOrdersWidget> {
+  var _activeOnly = false;
+
+  @override
   Widget build(BuildContext context) {
-    final displayOrders = personalOrdersSortedNewestFirst(orders);
+    final sorted = personalOrdersSortedNewestFirst(widget.orders);
+    final displayOrders = _activeOnly
+        ? sorted.where((o) => personalOrderIsPipelineActive(o.status)).toList()
+        : sorted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: Text(
-            'Active Orders',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              shadows: const [
-                Shadow(
-                  color: Color(0x40000000),
-                  offset: Offset(0, 1),
-                  blurRadius: 2,
+          padding: const EdgeInsets.only(left: 4, right: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  'Active Orders',
+                  style: AppTypography.bodySmall.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    shadows: const [
+                      Shadow(
+                        color: Color(0x40000000),
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              Text(
+                'Active only',
+                style: AppTypography.microLabel.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Switch(
+                key: const ValueKey('active-orders-active-only-toggle'),
+                value: _activeOnly,
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.35),
+                inactiveThumbColor: AppColors.textSecondary,
+                inactiveTrackColor: AppColors.surfaceContainerHigh,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) => setState(() => _activeOnly = v),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -104,8 +138,9 @@ class ActiveOrdersWidget extends StatelessWidget {
                   child: _ActiveOrderCard(
                     order: e.value,
                     initiallyExpanded: e.key == 0,
-                    pendingCancellationOrderIds: pendingCancellationOrderIds,
-                    onCancellationRequested: onCancellationRequested,
+                    pendingCancellationOrderIds:
+                        widget.pendingCancellationOrderIds,
+                    onCancellationRequested: widget.onCancellationRequested,
                   ),
                 ),
               ),
