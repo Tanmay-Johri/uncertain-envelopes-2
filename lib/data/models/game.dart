@@ -23,7 +23,9 @@ part 'game.g.dart';
 ///   - [startTime]: null until admin starts the game.
 ///   - [endTimeActual]: null until trading ends.
 ///   - [lastTradedPrice]: null until first execution.
-///   - [envelopePrice]: null until admin sets it in `trading_ended`.
+///   - [envelopePrice]: null until admin sets it in `trading_ended`. If the game
+///     stays `trading_ended` for 24h+ (since [endTimeActual]), the DB sweeper
+///     finalises using the current price or discards when this is still null.
 @freezed
 class Game with _$Game {
   const factory Game({
