@@ -255,20 +255,22 @@ class _PnlCalculatorState extends State<PnlCalculator> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              Text(
+                                'ENVELOPE VALUE',
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                  color: AppColors.textTertiary,
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      'ENVELOPE VALUE',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.2,
-                                        color: AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ),
                                   IntrinsicWidth(
                                     child: ConstrainedBox(
                                       constraints: const BoxConstraints(
