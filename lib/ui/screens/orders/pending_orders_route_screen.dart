@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/trading/order_type_from_personal.dart';
 import '../../../core/trading/personal_order.dart';
@@ -29,6 +31,29 @@ class PendingOrdersRouteScreen extends ConsumerStatefulWidget {
 class _PendingOrdersRouteScreenState
     extends ConsumerState<PendingOrdersRouteScreen> {
   Timer? _poll;
+  bool _ordersShellBranchActive = false;
+
+  void _scheduleOrdersRefreshWhenShellTabBecomesVisible() {
+    final shell = StatefulNavigationShell.maybeOf(context);
+    if (shell == null) return;
+    final active = shell.currentIndex == AppShellTabIndex.orders;
+    if (active) {
+      if (!_ordersShellBranchActive) {
+        _ordersShellBranchActive = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final s2 = StatefulNavigationShell.maybeOf(context);
+          if (s2 != null && s2.currentIndex == AppShellTabIndex.orders) {
+            unawaited(
+              ref.read(pendingOrdersViewDataProvider.notifier).silentRefresh(),
+            );
+          }
+        });
+      }
+    } else {
+      _ordersShellBranchActive = false;
+    }
+  }
 
   @override
   void initState() {
@@ -49,6 +74,7 @@ class _PendingOrdersRouteScreenState
 
   @override
   Widget build(BuildContext context) {
+    _scheduleOrdersRefreshWhenShellTabBecomesVisible();
     final async = ref.watch(pendingOrdersViewDataProvider);
     return async.when(
       loading: () => const Scaffold(

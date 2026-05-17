@@ -45,6 +45,28 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   Timer? _homeListPoll;
+  bool _homeShellBranchActive = false;
+
+  void _scheduleHomeListRefreshWhenShellTabBecomesVisible() {
+    if (widget.games != null) return;
+    final shell = StatefulNavigationShell.maybeOf(context);
+    if (shell == null) return;
+    final active = shell.currentIndex == AppShellTabIndex.home;
+    if (active) {
+      if (!_homeShellBranchActive) {
+        _homeShellBranchActive = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final s2 = StatefulNavigationShell.maybeOf(context);
+          if (s2 != null && s2.currentIndex == AppShellTabIndex.home) {
+            unawaited(ref.read(homeViewDataProvider.notifier).silentRefresh());
+          }
+        });
+      }
+    } else {
+      _homeShellBranchActive = false;
+    }
+  }
 
   @override
   void initState() {
@@ -285,6 +307,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (injected != null) {
       return _buildContent(context: context, games: injected);
     }
+
+    _scheduleHomeListRefreshWhenShellTabBecomesVisible();
 
     final async = ref.watch(homeViewDataProvider);
     return async.when(

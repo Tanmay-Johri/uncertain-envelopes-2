@@ -43,12 +43,15 @@ String homeGameEntryRoute(MockHomeGame game) {
   return AppRoutes.gameLobby(game.id);
 }
 
-/// Index of each bottom-nav destination inside the
-/// [StatefulShellRoute]. Keep this aligned with [AppNavDestination].
-abstract final class _ShellIndex {
-  static const home = 0;
-  static const create = 1;
-  static const orders = 2;
+/// Branch indices for [StatefulShellRoute.indexedStack] in [buildAppRouter].
+///
+/// Order is home → create → orders and must match the `branches` list there.
+abstract final class AppShellTabIndex {
+  AppShellTabIndex._();
+
+  static const int home = 0;
+  static const int create = 1;
+  static const int orders = 2;
 }
 
 /// Builds the top-level GoRouter instance.
@@ -171,11 +174,11 @@ GoRouter buildAppRouter({
 /// Map a shell branch index to its destination enum for logging/tests.
 AppNavDestination shellIndexToDestination(int index) {
   switch (index) {
-    case _ShellIndex.home:
+    case AppShellTabIndex.home:
       return AppNavDestination.home;
-    case _ShellIndex.create:
+    case AppShellTabIndex.create:
       return AppNavDestination.create;
-    case _ShellIndex.orders:
+    case AppShellTabIndex.orders:
       return AppNavDestination.orders;
     default:
       throw ArgumentError('Invalid shell index: $index');

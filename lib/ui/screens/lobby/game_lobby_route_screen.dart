@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/game_flow.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/enums/game_state.dart';
 import '../../../data/models/game_session_state.dart';
+import '../../../data/repositories/command_repository.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
@@ -13,6 +17,7 @@ import '../../../providers/view_data/home_view_data_provider.dart';
 import '../../../providers/view_data/lobby_view_data_provider.dart'
     show LobbyViewDataException, lobbyViewDataProvider;
 import '../../widgets/async_route_loading_body.dart';
+import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/fetched_error_panel.dart';
 import 'game_lobby_screen.dart';
 import 'lobby_view_data.dart';
@@ -45,6 +50,31 @@ class _GameLobbyRouteScreenState extends ConsumerState<GameLobbyRouteScreen> {
     }
   }
 
+  Future<void> _confirmAndDiscardPreStart({
+    required String adminPlayerId,
+    required CommandRepository cmds,
+  }) async {
+    final ok = await ConfirmationDialog.show(
+      context,
+      title: 'Are you sure?',
+      message: 'Are you sure you want to discard this game?',
+      confirmLabel: 'Discard',
+      cancelLabel: 'Back',
+      destructive: true,
+      uppercaseActionLabels: false,
+    );
+    if (ok != true || !mounted) return;
+    await _runCommand(() async {
+      await cmds.submitDiscardGame(
+        gameId: widget.gameId,
+        adminPlayerId: adminPlayerId,
+      );
+      await ref.read(homeViewDataProvider.notifier).silentRefresh();
+      if (!mounted) return;
+      context.go(AppRoutes.home);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(currentGameProvider(widget.gameId));
@@ -56,12 +86,28 @@ class _GameLobbyRouteScreenState extends ConsumerState<GameLobbyRouteScreen> {
       ) {
         final session = next.asData?.value;
         if (session == null) return;
-        if (!gameStateShowsEnvelopeFlowOnly(session.game.gameState)) return;
-        if (!context.mounted) return;
-        Future.microtask(() {
+        final gs = session.game.gameState;
+        final prevGs = previous?.asData?.value?.game.gameState;
+
+        // Pre-start discard: go home (not results / envelope flow).
+        if (gs == GameState.discarded && prevGs == GameState.created) {
           if (!context.mounted) return;
-          context.go(AppRoutes.gameResults(widget.gameId));
-        });
+          Future.microtask(() async {
+            if (!context.mounted) return;
+            await ref.read(homeViewDataProvider.notifier).silentRefresh();
+            if (!context.mounted) return;
+            context.go(AppRoutes.home);
+          });
+          return;
+        }
+
+        if (gs == GameState.tradingEnded || gs == GameState.gameFinalised) {
+          if (!context.mounted) return;
+          Future.microtask(() {
+            if (!context.mounted) return;
+            context.go(AppRoutes.gameResults(widget.gameId));
+          });
+        }
       },
     );
 
@@ -114,19 +160,19 @@ class _GameLobbyRouteScreenState extends ConsumerState<GameLobbyRouteScreen> {
               adminPlayerId: playerId,
             );
           }),
-          onEndGame: () => _runCommand(() async {
-            if (scenario.phase == GameLobbyPhase.preStart) {
-              await cmds.submitDiscardGame(
-                gameId: widget.gameId,
-                adminPlayerId: playerId,
-              );
-            } else {
-              await cmds.submitEndTrading(
-                gameId: widget.gameId,
-                adminPlayerId: playerId,
-              );
-            }
-          }),
+          onEndGame: scenario.phase == GameLobbyPhase.preStart
+              ? () => unawaited(
+                    _confirmAndDiscardPreStart(
+                      adminPlayerId: playerId,
+                      cmds: cmds,
+                    ),
+                  )
+              : () => _runCommand(() async {
+                    await cmds.submitEndTrading(
+                      gameId: widget.gameId,
+                      adminPlayerId: playerId,
+                    );
+                  }),
           onEnterGame: () => context.go(AppRoutes.gameTrading(widget.gameId)),
           onJoinGame: () => _runCommand(() async {
             await cmds.submitJoinGame(gameId: widget.gameId, playerId: playerId);
