@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../ui/widgets/uncertain_envelopes_logo_mark.dart';
 import 'supabase_bootstrap.dart';
 
 /// Paints a minimal shell immediately, then runs [initializer] before showing
@@ -90,15 +91,7 @@ class _BootstrapShell extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24),
-              Text(
-                'UNCERTAIN ENVELOPES',
-                style: TextStyle(
-                  color: Color(0xFF40F320),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
-              ),
+              const UncertainEnvelopesLogoMark(height: 40),
             ],
           ),
         ),

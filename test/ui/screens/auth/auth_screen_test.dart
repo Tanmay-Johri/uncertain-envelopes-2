@@ -6,6 +6,7 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/auth_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 import 'package:uncertain_envelopes_2/ui/screens/auth/sign_up_form.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/auth_tab_switcher.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -31,7 +32,12 @@ void main() {
   group('AuthScreen layout', () {
     testWidgets('renders brand header and the card', (tester) async {
       await _pump(tester);
-      expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AuthTabSwitcher), findsOneWidget);
     });
 
@@ -228,7 +234,11 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         await _pump(tester);
 
-        final titleRect = tester.getRect(find.text('UNCERTAIN ENVELOPES'));
+        final titleRect = tester.getRect(
+          find.bySemanticsLabel(
+            UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
+          ),
+        );
         final cardRect = tester.getRect(
           find.ancestor(
             of: find.byType(AuthTabSwitcher),

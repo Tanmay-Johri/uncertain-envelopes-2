@@ -8,6 +8,7 @@ import 'package:uncertain_envelopes_2/ui/screens/history/game_history_card.dart'
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/history/game_history_view_data.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,9 +122,14 @@ void main() {
       expect(find.byType(GameHistoryCard), findsNWidgets(5));
     });
 
-    testWidgets('header shows UNCERTAIN ENVELOPES title', (tester) async {
+    testWidgets('header shows brand mark', (tester) async {
       await _pump(tester, _twoEntries());
-      expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('positive PnL card shows green text', (tester) async {

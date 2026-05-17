@@ -38,6 +38,9 @@ dependencies:
   collection: ^1.19.1
   http: ^1.2.0
 
+  # Brand assets (SVG mark in headers / bootstrap)
+  flutter_svg: ^2.0.17
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -52,8 +55,14 @@ dev_dependencies:
   # Testing
   mocktail: ^1.0.4
 
+  # Launcher / favicon / PWA icons from raster master
+  flutter_launcher_icons: ^0.14.4
+
 flutter:
   uses-material-design: true
+
+  assets:
+    - logo/
 
   fonts:
     - family: Epilogue
@@ -73,3 +82,15 @@ flutter:
           weight: 500
         - asset: assets/fonts/FiraCode-Bold.ttf
           weight: 700
+
+flutter_launcher_icons:
+  image_path: logo/app_icon_1024.png
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: '#1f1f1f'
+  adaptive_icon_foreground: logo/app_icon_1024.png
+  web:
+    generate: true
+    background_color: '#1f1f1f'
+    theme_color: '#1f1f1f'

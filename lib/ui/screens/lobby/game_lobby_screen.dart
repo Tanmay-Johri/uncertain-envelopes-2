@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../widgets/countdown_timer.dart';
 import '../../widgets/neon_button.dart';
 import '../../widgets/player_list_tile.dart';
+import '../../widgets/uncertain_envelopes_logo_mark.dart';
 import 'lobby_view_data.dart';
 
 /// Game lobby: header, joining code, optional countdown, participants, actions.
@@ -84,13 +85,10 @@ class GameLobbyScreen extends StatelessWidget {
             }
           },
         ),
-        title: Text(
-          'UNCERTAIN ENVELOPES',
-          key: const ValueKey('game-lobby-appbar-title'),
-          style: AppTypography.brandHeader,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
+        title: const UncertainEnvelopesLogoMark(
+          key: ValueKey('game-lobby-appbar-title'),
+          height: 20,
+          alignment: Alignment.center,
         ),
       ),
       body: SafeArea(

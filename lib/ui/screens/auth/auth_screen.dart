@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../widgets/auth_tab_switcher.dart';
+import '../../widgets/uncertain_envelopes_logo_mark.dart';
 import 'login_form.dart';
 import 'sign_up_form.dart';
 
@@ -110,10 +110,9 @@ class _BrandTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'UNCERTAIN ENVELOPES',
-        style: AppTypography.brandHeader,
-        textAlign: TextAlign.center,
+      child: UncertainEnvelopesLogoMark(
+        height: 28,
+        alignment: Alignment.center,
       ),
     );
   }
