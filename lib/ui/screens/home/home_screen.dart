@@ -51,7 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.initState();
     if (widget.games == null) {
       WidgetsBinding.instance.addObserver(this);
-      _homeListPoll = Timer.periodic(const Duration(seconds: 5), (_) {
+      _homeListPoll = Timer.periodic(const Duration(seconds: 3), (_) {
         unawaited(ref.read(homeViewDataProvider.notifier).silentRefresh());
       });
     }

@@ -129,6 +129,17 @@ List<Override> _resultsMockOverridesForRouterTests() {
   ];
 }
 
+class _RouterTestPendingOrdersViewData extends PendingOrdersViewData {
+  @override
+  Future<PendingOrdersScreenData> build() async {
+    final items = kMockPendingOrders();
+    return PendingOrdersScreenData(
+      items: items,
+      tradingGamesForNewOrder: tradingOrderTargetsFromPendingRows(items),
+    );
+  }
+}
+
 Future<GoRouter> _pumpAppWith(
   WidgetTester tester, {
   String initialLocation = AppRoutes.home,
@@ -142,11 +153,7 @@ Future<GoRouter> _pumpAppWith(
           (ref) async => mockProfileViewDataDefault(),
         ),
         pendingOrdersViewDataProvider.overrideWith(
-          (ref) async => PendingOrdersScreenData(
-            items: kMockPendingOrders(),
-            tradingGamesForNewOrder:
-                tradingOrderTargetsFromPendingRows(kMockPendingOrders()),
-          ),
+          _RouterTestPendingOrdersViewData.new,
         ),
         gameHistoryViewDataProvider.overrideWith(
           (ref) async => kMockGameHistory(),

@@ -103,6 +103,7 @@ class PendingOrderListItem {
     required this.gameTitle,
     required this.gameDescription,
     required this.order,
+    this.isRecentlyClosed = false,
   });
 
   final String gameId;
@@ -110,17 +111,22 @@ class PendingOrderListItem {
   final String gameDescription;
   final PersonalOrder order;
 
+  /// Terminal order still shown in the 1-minute grace window after close.
+  final bool isRecentlyClosed;
+
   PendingOrderListItem copyWith({
     String? gameId,
     String? gameTitle,
     String? gameDescription,
     PersonalOrder? order,
+    bool? isRecentlyClosed,
   }) {
     return PendingOrderListItem(
       gameId: gameId ?? this.gameId,
       gameTitle: gameTitle ?? this.gameTitle,
       gameDescription: gameDescription ?? this.gameDescription,
       order: order ?? this.order,
+      isRecentlyClosed: isRecentlyClosed ?? this.isRecentlyClosed,
     );
   }
 }

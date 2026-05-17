@@ -29,4 +29,16 @@ class SupabaseOrderRepository implements OrderRepository {
     final rows = await _gateway.fetchPendingOrderRowsAcrossGames(playerId);
     return rows.map(Order.fromJson).toList();
   }
+
+  @override
+  Future<List<Order>> fetchTerminalOrdersUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  ) async {
+    final rows = await _gateway.fetchTerminalOrderRowsUpdatedSinceAcrossGames(
+      playerId,
+      sinceUtc,
+    );
+    return rows.map(Order.fromJson).toList();
+  }
 }

@@ -20,4 +20,12 @@ abstract class OrderRepository {
   /// Every non-terminal order the player owns, across every game. Used by
   /// the global Pending Orders screen. Sorted by `order_created_at` desc.
   Future<List<Order>> fetchPendingOrdersAcrossGames(String playerId);
+
+  /// Terminal orders for this player with `order_updated_at` at or after
+  /// [sinceUtc] (compared in UTC). Used to show recently closed rows on the
+  /// Pending Orders screen. Sorted by `order_updated_at` desc.
+  Future<List<Order>> fetchTerminalOrdersUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  );
 }

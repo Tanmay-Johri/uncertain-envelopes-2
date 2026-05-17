@@ -54,4 +54,24 @@ class InMemoryOrderRepository implements OrderRepository {
     );
     return filtered;
   }
+
+  @override
+  Future<List<Order>> fetchTerminalOrdersUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  ) async {
+    final since = sinceUtc.toUtc();
+    final filtered = _orders
+        .where(
+          (o) =>
+              o.createdByPlayerId == playerId &&
+              o.status.isTerminal &&
+              !o.orderUpdatedAt.toUtc().isBefore(since),
+        )
+        .toList();
+    filtered.sort(
+      (a, b) => b.orderUpdatedAt.compareTo(a.orderUpdatedAt),
+    );
+    return filtered;
+  }
 }

@@ -681,7 +681,8 @@ void main() {
       expect(last!.toJson()['durationMinutes'], isNull);
     });
 
-    testWidgets('rapid duplicate submits each invoke callback', (tester) async {
+    testWidgets('duplicate taps while submit in flight only invoke callback once',
+        (tester) async {
       _bindTallSurfaceForSubmit(tester);
       var calls = 0;
       await tester.pumpWidget(
@@ -689,6 +690,7 @@ void main() {
           CreateGameScreen(
             onSubmit: (_) async {
               calls++;
+              await Future<void>.delayed(const Duration(milliseconds: 300));
             },
           ),
         ),
@@ -697,9 +699,15 @@ void main() {
         find.byKey(const ValueKey('create-game-name-field')),
         'RapidSubmit',
       );
-      await _tapCreateGameSubmit(tester);
-      await _tapCreateGameSubmit(tester);
-      expect(calls, 2);
+      final submit = find.byKey(const ValueKey('create-game-submit'));
+      await tester.ensureVisible(submit);
+      await tester.pump();
+      await tester.tap(submit);
+      await tester.pump(); // first submit still awaiting delay
+      await tester.tap(submit);
+      await tester.pump();
+      expect(calls, 1);
+      await tester.pump(const Duration(milliseconds: 400));
     });
   });
 

@@ -43,8 +43,15 @@ class CurrentGame extends _$CurrentGame {
 
   /// Re-fetches the whole snapshot from the repository. Used on
   /// realtime version mismatches (the repair path).
+  ///
+  /// Does **not** set [AsyncLoading] first: downstream providers that
+  /// `await ref.watch(currentGameProvider(gameId).future)` (e.g. results /
+  /// trading view data) share Riverpod's internal future-completer machinery
+  /// with this notifier; forcing an extra loading transition after data has
+  /// already loaded can trigger `StateError: Bad state: Future already
+  /// completed` when that transition races with an in-flight await (common
+  /// right after **end game**, when this refresh runs alongside realtime).
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
     final repo = ref.read(gameRepositoryProvider);
     state = await AsyncValue.guard(() => _load(repo, gameId));
   }

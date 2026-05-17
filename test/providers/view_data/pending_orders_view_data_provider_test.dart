@@ -91,4 +91,103 @@ void main() {
     expect(data.tradingGamesForNewOrder.single.gameTitle, 'My Game');
     expect(data.tradingGamesForNewOrder.single.gameDescription, 'Desc');
   });
+
+  test('includes terminal orders updated within the last minute', () async {
+    final auth = InMemoryAuthRepository();
+    final commands = InMemoryCommandRepository();
+    final games = InMemoryGameRepository(commandRepository: commands);
+    final orders = InMemoryOrderRepository();
+    final t = DateTime.utc(2026, 2, 1, 12);
+    final now = DateTime.now().toUtc();
+    auth.setSessionPlayerForTest(
+      Player(
+        playerId: 'p1',
+        username: 'u1',
+        createdAt: t,
+        email: 'e@test.com',
+      ),
+    );
+    games.seedGame(
+      Game(
+        gameId: 'g-x',
+        gameName: 'My Game',
+        gameDescription: 'Desc',
+        gameCreatedAt: t,
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.casual,
+        gameMaxPlayers: 4,
+        joiningCode: 'ABCDE',
+        endCondition: EndCondition.endless,
+        gameState: GameState.tradingStarted,
+        adminPlayerId: 'p1',
+        stateVersion: 1,
+        updatedAt: t,
+        startTime: t,
+      ),
+    );
+    games.seedMembership('g-x', 'p1');
+    orders.seedOrders([
+      Order(
+        orderId: 'o-active',
+        createdByPlayerId: 'p1',
+        gameId: 'g-x',
+        type: OrderType.limitBuy,
+        quantityInitial: 2,
+        quantityCurrent: 2,
+        pricePerStock: 50,
+        status: OrderStatus.orderResting,
+        orderCreatedAt: now,
+        orderUpdatedAt: now,
+      ),
+      Order(
+        orderId: 'o-closed-recent',
+        createdByPlayerId: 'p1',
+        gameId: 'g-x',
+        type: OrderType.limitSell,
+        quantityInitial: 1,
+        quantityCurrent: 0,
+        pricePerStock: 40,
+        status: OrderStatus.orderClosed,
+        orderCreatedAt: t,
+        orderUpdatedAt: now.subtract(const Duration(seconds: 15)),
+      ),
+      Order(
+        orderId: 'o-closed-stale',
+        createdByPlayerId: 'p1',
+        gameId: 'g-x',
+        type: OrderType.limitSell,
+        quantityInitial: 1,
+        quantityCurrent: 0,
+        pricePerStock: 40,
+        status: OrderStatus.orderClosed,
+        orderCreatedAt: t,
+        orderUpdatedAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    ]);
+
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        gameRepositoryProvider.overrideWithValue(games),
+        orderRepositoryProvider.overrideWithValue(orders),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(authControllerProvider.future);
+    final data = await container.read(pendingOrdersViewDataProvider.future);
+
+    final ids = data.items.map((e) => e.order.id).toSet();
+    expect(ids, {'o-active', 'o-closed-recent'});
+    expect(
+      data.items
+          .firstWhere((e) => e.order.id == 'o-closed-recent')
+          .isRecentlyClosed,
+      isTrue,
+    );
+    expect(
+      data.items.firstWhere((e) => e.order.id == 'o-active').isRecentlyClosed,
+      isFalse,
+    );
+  });
 }

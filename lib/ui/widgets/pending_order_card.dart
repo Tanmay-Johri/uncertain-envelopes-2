@@ -45,11 +45,15 @@ class PendingOrderCard extends StatefulWidget {
     required this.gameDescription,
     required this.order,
     this.onCancelRequested,
+    this.useMutedGreyStyle = false,
   });
 
   final String gameTitle;
   final String gameDescription;
   final PersonalOrder order;
+
+  /// When true, buy/sell accents use neutral greys (recently closed orders).
+  final bool useMutedGreyStyle;
 
   /// Stream C stub; only called after confirm dialog when cancel is allowed.
   final void Function(String orderId)? onCancelRequested;
@@ -63,6 +67,9 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
 
   Color _headlinePriceColor() {
     final o = widget.order;
+    if (widget.useMutedGreyStyle) {
+      return AppColors.textSecondary;
+    }
     if (o.orderType == PersonalOrderType.market) {
       return AppColors.textSecondary;
     }
@@ -70,6 +77,38 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
       return AppColors.primary;
     }
     return AppColors.secondary;
+  }
+
+  Color _chipFillColor(bool isBuy) {
+    if (widget.useMutedGreyStyle) {
+      return AppColors.textTertiary.withValues(alpha: 0.12);
+    }
+    return isBuy
+        ? AppColors.primary.withValues(alpha: 0.1)
+        : AppColors.secondary.withValues(alpha: 0.1);
+  }
+
+  Color _chipBorderColor(bool isBuy) {
+    if (widget.useMutedGreyStyle) {
+      return AppColors.outline.withValues(alpha: 0.45);
+    }
+    return isBuy
+        ? AppColors.primary.withValues(alpha: 0.2)
+        : AppColors.secondary.withValues(alpha: 0.2);
+  }
+
+  Color _chipLabelColor(bool isBuy) {
+    if (widget.useMutedGreyStyle) {
+      return AppColors.textSecondary;
+    }
+    return isBuy ? AppColors.primary : AppColors.secondary;
+  }
+
+  Color _expandedFrameAccent() {
+    if (widget.useMutedGreyStyle) {
+      return AppColors.textTertiary.withValues(alpha: 0.35);
+    }
+    return AppColors.primary;
   }
 
   String _headlinePriceText() {
@@ -95,14 +134,14 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(
           color: _expanded
-              ? AppColors.primary.withValues(alpha: 0.22)
+              ? _expandedFrameAccent().withValues(alpha: 0.22)
               : AppColors.outline,
           width: 1,
         ),
         boxShadow: _expanded
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.06),
+                  color: _expandedFrameAccent().withValues(alpha: 0.06),
                   blurRadius: 16,
                   spreadRadius: 0,
                   offset: const Offset(0, 4),
@@ -172,14 +211,10 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: isBuy
-                                    ? AppColors.primary.withValues(alpha: 0.1)
-                                    : AppColors.secondary.withValues(alpha: 0.1),
+                                color: _chipFillColor(isBuy),
                                 borderRadius: BorderRadius.circular(AppRadius.sm),
                                 border: Border.all(
-                                  color: isBuy
-                                      ? AppColors.primary.withValues(alpha: 0.2)
-                                      : AppColors.secondary.withValues(alpha: 0.2),
+                                  color: _chipBorderColor(isBuy),
                                 ),
                               ),
                               child: Text(
@@ -188,9 +223,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.35,
-                                  color: isBuy
-                                      ? AppColors.primary
-                                      : AppColors.secondary,
+                                  color: _chipLabelColor(isBuy),
                                 ),
                               ),
                             ),
@@ -204,7 +237,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                             Icons.expand_more,
                             size: 22,
                             color: _expanded
-                                ? AppColors.primary
+                                ? _expandedFrameAccent()
                                 : AppColors.textTertiary,
                           ),
                         ),

@@ -294,6 +294,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                         gameTitle: e.gameTitle,
                         gameDescription: e.gameDescription,
                         order: e.order,
+                        useMutedGreyStyle: e.isRecentlyClosed,
                         onCancelRequested:
                             widget.onCancelOrder != null
                                 ? (id) => widget.onCancelOrder!(id)

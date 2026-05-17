@@ -32,9 +32,11 @@ class _SystemHash {
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
 /// Does **not** subscribe to the timer tick so the future runs only when
-/// session data changes (auth / realtime / membership). The countdown is
-/// rendered by the `CountdownTimer` widget which ticks locally from a
-/// one-shot seconds-remaining snapshot read here.
+/// session data changes (auth / realtime / membership). During trading for
+/// timed games, [Game.endTimeDecided] is passed through as
+/// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+/// time from that instant on each tick. Pre-start still uses a duration read
+/// once here via [gameSecondsRemainingProvider].
 ///
 /// Copied from [lobbyViewData].
 @ProviderFor(lobbyViewData)
@@ -43,18 +45,22 @@ const lobbyViewDataProvider = LobbyViewDataFamily();
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
 /// Does **not** subscribe to the timer tick so the future runs only when
-/// session data changes (auth / realtime / membership). The countdown is
-/// rendered by the `CountdownTimer` widget which ticks locally from a
-/// one-shot seconds-remaining snapshot read here.
+/// session data changes (auth / realtime / membership). During trading for
+/// timed games, [Game.endTimeDecided] is passed through as
+/// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+/// time from that instant on each tick. Pre-start still uses a duration read
+/// once here via [gameSecondsRemainingProvider].
 ///
 /// Copied from [lobbyViewData].
 class LobbyViewDataFamily extends Family<AsyncValue<GameLobbyScenario>> {
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
   ///
   /// Does **not** subscribe to the timer tick so the future runs only when
-  /// session data changes (auth / realtime / membership). The countdown is
-  /// rendered by the `CountdownTimer` widget which ticks locally from a
-  /// one-shot seconds-remaining snapshot read here.
+  /// session data changes (auth / realtime / membership). During trading for
+  /// timed games, [Game.endTimeDecided] is passed through as
+  /// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+  /// time from that instant on each tick. Pre-start still uses a duration read
+  /// once here via [gameSecondsRemainingProvider].
   ///
   /// Copied from [lobbyViewData].
   const LobbyViewDataFamily();
@@ -62,9 +68,11 @@ class LobbyViewDataFamily extends Family<AsyncValue<GameLobbyScenario>> {
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
   ///
   /// Does **not** subscribe to the timer tick so the future runs only when
-  /// session data changes (auth / realtime / membership). The countdown is
-  /// rendered by the `CountdownTimer` widget which ticks locally from a
-  /// one-shot seconds-remaining snapshot read here.
+  /// session data changes (auth / realtime / membership). During trading for
+  /// timed games, [Game.endTimeDecided] is passed through as
+  /// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+  /// time from that instant on each tick. Pre-start still uses a duration read
+  /// once here via [gameSecondsRemainingProvider].
   ///
   /// Copied from [lobbyViewData].
   LobbyViewDataProvider call(String gameId) {
@@ -96,9 +104,11 @@ class LobbyViewDataFamily extends Family<AsyncValue<GameLobbyScenario>> {
 /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
 ///
 /// Does **not** subscribe to the timer tick so the future runs only when
-/// session data changes (auth / realtime / membership). The countdown is
-/// rendered by the `CountdownTimer` widget which ticks locally from a
-/// one-shot seconds-remaining snapshot read here.
+/// session data changes (auth / realtime / membership). During trading for
+/// timed games, [Game.endTimeDecided] is passed through as
+/// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+/// time from that instant on each tick. Pre-start still uses a duration read
+/// once here via [gameSecondsRemainingProvider].
 ///
 /// Copied from [lobbyViewData].
 class LobbyViewDataProvider
@@ -106,9 +116,11 @@ class LobbyViewDataProvider
   /// Lobby header, roster, and phase for [gameId] (Phase 2B.4).
   ///
   /// Does **not** subscribe to the timer tick so the future runs only when
-  /// session data changes (auth / realtime / membership). The countdown is
-  /// rendered by the `CountdownTimer` widget which ticks locally from a
-  /// one-shot seconds-remaining snapshot read here.
+  /// session data changes (auth / realtime / membership). During trading for
+  /// timed games, [Game.endTimeDecided] is passed through as
+  /// [GameLobbyViewData.tradingDeadlineUtc]; `CountdownTimer` derives remaining
+  /// time from that instant on each tick. Pre-start still uses a duration read
+  /// once here via [gameSecondsRemainingProvider].
   ///
   /// Copied from [lobbyViewData].
   LobbyViewDataProvider(String gameId)

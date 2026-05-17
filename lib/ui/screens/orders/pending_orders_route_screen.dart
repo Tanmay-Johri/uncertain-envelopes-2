@@ -18,11 +18,37 @@ import 'pending_orders_screen.dart';
 import 'pending_orders_view_data.dart';
 
 /// Shell route body: loads [pendingOrdersViewDataProvider] (Phase 2B.8).
-class PendingOrdersRouteScreen extends ConsumerWidget {
+class PendingOrdersRouteScreen extends ConsumerStatefulWidget {
   const PendingOrdersRouteScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PendingOrdersRouteScreen> createState() =>
+      _PendingOrdersRouteScreenState();
+}
+
+class _PendingOrdersRouteScreenState
+    extends ConsumerState<PendingOrdersRouteScreen> {
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _poll = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      unawaited(
+        ref.read(pendingOrdersViewDataProvider.notifier).silentRefresh(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final async = ref.watch(pendingOrdersViewDataProvider);
     return async.when(
       loading: () => const Scaffold(
@@ -68,8 +94,9 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
                           pendingCreateOrderCommandsProvider(gameId).notifier,
                         )
                         .refresh(),
-                    () async =>
-                        ref.invalidate(pendingOrdersViewDataProvider),
+                    () => ref
+                        .read(pendingOrdersViewDataProvider.notifier)
+                        .silentRefresh(),
                   ]);
                 },
           onCancelOrder: viewer == null
@@ -91,7 +118,9 @@ class PendingOrdersRouteScreen extends ConsumerWidget {
                         playerId: viewer.playerId,
                         orderId: orderId,
                       );
-                      ref.invalidate(pendingOrdersViewDataProvider);
+                      await ref
+                          .read(pendingOrdersViewDataProvider.notifier)
+                          .silentRefresh();
                     })(),
                   );
                 },

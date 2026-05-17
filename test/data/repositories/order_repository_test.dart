@@ -14,9 +14,11 @@ Order _order({
   OrderType type = OrderType.limitBuy,
   OrderStatus status = OrderStatus.orderResting,
   DateTime? createdAt,
+  DateTime? updatedAt,
   double? price = 100,
   int qty = 5,
 }) {
+  final c = createdAt ?? DateTime.utc(2026, 1, 1, 10);
   return Order(
     orderId: id,
     createdByPlayerId: playerId,
@@ -26,8 +28,8 @@ Order _order({
     quantityCurrent: qty,
     pricePerStock: type.isMarket ? null : price,
     status: status,
-    orderCreatedAt: createdAt ?? DateTime.utc(2026, 1, 1, 10),
-    orderUpdatedAt: createdAt ?? DateTime.utc(2026, 1, 1, 10),
+    orderCreatedAt: c,
+    orderUpdatedAt: updatedAt ?? c,
   );
 }
 
@@ -196,6 +198,40 @@ void _runContract(_Fixture Function() build) {
     expect(ids, {'o-g1', 'o-g2', 'o-g3'});
   });
 
+  test(
+    'fetchTerminalOrdersUpdatedSinceAcrossGames returns terminal in window',
+    () async {
+    final t0 = DateTime.utc(2026, 6, 1, 12);
+    fix.seed([
+      _order(
+        id: 'o-old',
+        status: OrderStatus.orderClosed,
+        createdAt: DateTime.utc(2026, 1, 1),
+        updatedAt: DateTime.utc(2026, 6, 1, 11, 0),
+      ),
+      _order(
+        id: 'o-recent',
+        status: OrderStatus.cancelled,
+        createdAt: DateTime.utc(2026, 6, 1, 11, 30),
+        updatedAt: DateTime.utc(2026, 6, 1, 11, 45),
+      ),
+      _order(
+        id: 'o-active',
+        status: OrderStatus.orderResting,
+        createdAt: DateTime.utc(2026, 6, 1, 11, 50),
+        updatedAt: DateTime.utc(2026, 6, 1, 11, 50),
+      ),
+    ]);
+    final since = DateTime.utc(2026, 6, 1, 11, 40);
+    final ids = (await fix.repo.fetchTerminalOrdersUpdatedSinceAcrossGames(
+      'p-1',
+      since,
+    ))
+        .map((o) => o.orderId)
+        .toList();
+    expect(ids, ['o-recent']);
+  });
+
   test('empty state returns empty list (never null)', () async {
     expect(await fix.repo.fetchOrdersForGame('anything'), isEmpty);
     expect(
@@ -203,6 +239,13 @@ void _runContract(_Fixture Function() build) {
       isEmpty,
     );
     expect(await fix.repo.fetchPendingOrdersAcrossGames('p'), isEmpty);
+    expect(
+      await fix.repo.fetchTerminalOrdersUpdatedSinceAcrossGames(
+        'p',
+        DateTime.utc(2020),
+      ),
+      isEmpty,
+    );
   });
 }
 
@@ -242,6 +285,24 @@ class _FakeOrderGateway implements SupabaseOrderGateway {
             o.createdByPlayerId == playerId && o.status.isActive)
         .toList()
       ..sort((a, b) => b.orderCreatedAt.compareTo(a.orderCreatedAt));
+    return filtered.map((o) => o.toJson()).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchTerminalOrderRowsUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  ) async {
+    final since = sinceUtc.toUtc();
+    final filtered = _orders
+        .where(
+          (o) =>
+              o.createdByPlayerId == playerId &&
+              o.status.isTerminal &&
+              !o.orderUpdatedAt.toUtc().isBefore(since),
+        )
+        .toList()
+      ..sort((a, b) => b.orderUpdatedAt.compareTo(a.orderUpdatedAt));
     return filtered.map((o) => o.toJson()).toList();
   }
 }

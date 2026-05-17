@@ -10,6 +10,10 @@ abstract class SupabaseOrderGateway {
   Future<List<Map<String, dynamic>>> fetchPendingOrderRowsAcrossGames(
     String playerId,
   );
+  Future<List<Map<String, dynamic>>> fetchTerminalOrderRowsUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  );
 }
 
 class RealSupabaseOrderGateway implements SupabaseOrderGateway {
@@ -23,6 +27,12 @@ class RealSupabaseOrderGateway implements SupabaseOrderGateway {
     'in_queue',
     'being_processed',
     'order_resting',
+  ];
+
+  static const _terminalStatuses = <String>[
+    'order_closed',
+    'cancelled',
+    'game_ended',
   ];
 
   @override
@@ -61,6 +71,21 @@ class RealSupabaseOrderGateway implements SupabaseOrderGateway {
         .eq('created_by_player_id', playerId)
         .inFilter('status', _nonTerminalStatuses)
         .order('order_created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchTerminalOrderRowsUpdatedSinceAcrossGames(
+    String playerId,
+    DateTime sinceUtc,
+  ) async {
+    final rows = await _client
+        .from('orders')
+        .select()
+        .eq('created_by_player_id', playerId)
+        .inFilter('status', _terminalStatuses)
+        .gte('order_updated_at', sinceUtc.toUtc().toIso8601String())
+        .order('order_updated_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }
 }
