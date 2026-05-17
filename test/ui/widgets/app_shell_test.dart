@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
-import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 Future<void> _pumpShell(
   WidgetTester tester, {
@@ -26,14 +25,9 @@ Future<void> _pumpShell(
 
 void main() {
   group('AppShell', () {
-    testWidgets('renders the brand header mark', (tester) async {
+    testWidgets('renders the brand header text', (tester) async {
       await _pumpShell(tester, currentIndex: 0);
-      expect(
-        find.bySemanticsLabel(
-          UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
     });
 
     testWidgets('renders the body child', (tester) async {

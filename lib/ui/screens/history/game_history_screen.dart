@@ -8,7 +8,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../widgets/app_bottom_navigation_bar.dart';
-import '../../widgets/uncertain_envelopes_logo_mark.dart';
 import 'game_history_card.dart';
 import 'game_history_view_data.dart';
 
@@ -140,7 +139,13 @@ class _HistoryHeader extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: _edgeSlot),
-                  child: const UncertainEnvelopesLogoMark(height: 22),
+                  child: Text(
+                    'UNCERTAIN ENVELOPES',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.brandHeader,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Align(
                   alignment: Alignment.centerLeft,

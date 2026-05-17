@@ -15,7 +15,6 @@ import '../../widgets/app_bottom_navigation_bar.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/game_result_player_card.dart';
 import '../../widgets/neon_button.dart';
-import '../../widgets/uncertain_envelopes_logo_mark.dart';
 import 'results_view_data.dart';
 
 const _kEnvelopeReconcileTotal = Duration(milliseconds: 2500);
@@ -426,8 +425,12 @@ class _ResultsStickyHeader extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: Center(
-                  child: const UncertainEnvelopesLogoMark(height: 22),
+                child: Text(
+                  'UNCERTAIN ENVELOPES',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.brandHeader,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: _edgeSlot),

@@ -13,7 +13,6 @@ import '../../../core/theme/app_typography.dart';
 import '../../widgets/app_bottom_navigation_bar.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/neon_button.dart';
-import '../../widgets/uncertain_envelopes_logo_mark.dart';
 import 'profile_view_data.dart';
 
 /// Keeps keystrokes lowercase without fighting IME composes too aggressively.
@@ -585,7 +584,13 @@ class _ProfileStickyHeader extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: _edgeSlot),
-                  child: const UncertainEnvelopesLogoMark(height: 22),
+                  child: Text(
+                    'UNCERTAIN ENVELOPES',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.brandHeader,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Align(
                   alignment: Alignment.centerLeft,

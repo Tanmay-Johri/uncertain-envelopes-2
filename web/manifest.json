@@ -1,11 +1,11 @@
 {
-    "name": "Uncertain Envelopes",
-    "short_name": "UE",
+    "name": "uncertain_envelopes_2",
+    "short_name": "uncertain_envelopes_2",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#1f1f1f",
-    "theme_color": "#1f1f1f",
-    "description": "Real-time envelope trading game.",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

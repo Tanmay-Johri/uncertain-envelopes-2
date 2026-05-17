@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 import 'app_bottom_navigation_bar.dart';
-import 'uncertain_envelopes_logo_mark.dart';
 
 /// One of the three destinations reachable from the bottom nav.
 ///
@@ -13,7 +13,7 @@ enum AppNavDestination { home, create, orders }
 /// The shared shell for all bottom-nav screens.
 ///
 /// Responsibilities:
-/// - Paint the sticky blurred brand mark header with an
+/// - Paint the sticky blurred "UNCERTAIN ENVELOPES" header with an
 ///   account icon on the right.
 /// - Host the child route body.
 /// - Render the three-tab bottom navigation and surface taps.
@@ -87,12 +87,15 @@ class _FrostedHeader extends StatelessWidget {
             height: AppShell.headerHeight,
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: UncertainEnvelopesLogoMark(
-                      height: 22,
-                      alignment: Alignment.centerLeft,
+                    child: Text(
+                      'UNCERTAIN ENVELOPES',
+                      style: AppTypography.brandHeader,
+                      textAlign: TextAlign.left,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),

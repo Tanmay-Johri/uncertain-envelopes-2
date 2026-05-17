@@ -6,7 +6,6 @@ import 'package:uncertain_envelopes_2/bootstrap/supabase_bootstrap_gate.dart';
 import 'package:uncertain_envelopes_2/data/repositories/in_memory_auth_repository.dart';
 import 'package:uncertain_envelopes_2/providers/auth_provider.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
-import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 void main() {
   testWidgets('App renders without crashing and lands on the shell',
@@ -34,12 +33,7 @@ void main() {
 
     expect(find.byType(MaterialApp), findsOneWidget);
     expect(find.byType(AppShell), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(
-        UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
-      ),
-      findsWidgets,
-    );
+    expect(find.text('UNCERTAIN ENVELOPES'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

@@ -34,7 +34,6 @@ import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_mock_data
 import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_view_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/app_shell.dart';
-import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 import '../../support/home_view_data_fakes.dart';
 import '../../support/stub_game.dart';
@@ -279,12 +278,7 @@ void main() {
       await _pumpAppWith(tester);
       await tester.tap(find.text('CREATE'));
       await tester.pumpAndSettle();
-      expect(
-        find.bySemanticsLabel(
-          UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
       expect(find.byType(BottomNavigationBar), findsOneWidget);
     });
   });

@@ -6,7 +6,6 @@ import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/profile/profile_view_data.dart';
-import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 Future<void> _pumpProfile(WidgetTester tester, ProfileScreen screen) async {
   tester.view.physicalSize = const Size(480, 2000);
@@ -244,12 +243,7 @@ void main() {
     );
 
     expect(find.byTooltip('Back'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(
-        UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
     expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
   });
 

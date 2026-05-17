@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/bootstrap/supabase_bootstrap_gate.dart';
-import 'package:uncertain_envelopes_2/ui/widgets/uncertain_envelopes_logo_mark.dart';
 
 void main() {
   testWidgets('shows loading shell until initializer completes', (tester) async {
@@ -18,12 +17,7 @@ void main() {
     );
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(
-        UncertainEnvelopesLogoMark.kUncertainEnvelopesBrandSemanticsLabel,
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('UNCERTAIN ENVELOPES'), findsOneWidget);
     expect(find.text('INNER_APP'), findsNothing);
 
     completer.complete();
