@@ -217,7 +217,7 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
       message: hasCommittedEnvelope
           ? 'Are you sure? You won’t be able to change the envelope price later.'
           : 'Are you sure you want to discard this game without entering the price?',
-      confirmLabel: 'End game',
+      confirmLabel: 'End',
       cancelLabel: 'Back',
       destructive: true,
     );
