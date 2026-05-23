@@ -28,17 +28,19 @@ bool _publicGameJoinable(GameState state) {
   return state == GameState.created || state == GameState.tradingStarted;
 }
 
-DateTime _gameEndReferenceUtc(Game g) =>
-    g.endTimeActual ?? g.updatedAt;
+/// When [GameState] is [GameState.gameFinalised] or [GameState.discarded],
+/// [Game.endTimeActual] is when trading stopped — not when the game concluded.
+/// [Game.updatedAt] is bumped on that transition (DB `games_set_updated_at`).
+DateTime _gameConcludedAtUtc(Game g) => g.updatedAt;
 
-bool _endedWithinTenMinutes(Game g, DateTime nowUtc) {
-  final end = _gameEndReferenceUtc(g);
-  return nowUtc.difference(end) <= const Duration(minutes: 10);
+bool _concludedWithinTenMinutes(Game g, DateTime nowUtc) {
+  final concludedAt = _gameConcludedAtUtc(g);
+  return nowUtc.difference(concludedAt) <= const Duration(minutes: 10);
 }
 
 bool _shouldShowJoinedTile(Game g, DateTime nowUtc) {
   if (!_joinedTileEligibleForRecentEndedWindow(g.gameState)) return true;
-  return _endedWithinTenMinutes(g, nowUtc);
+  return _concludedWithinTenMinutes(g, nowUtc);
 }
 
 bool _shouldShowPublicNotJoinedTile(Game g) {

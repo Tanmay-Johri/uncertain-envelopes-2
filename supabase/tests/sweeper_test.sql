@@ -230,6 +230,9 @@ BEGIN
   ASSERT v_j ? 'rescued_commands', 'sweeper_run: missing rescued_commands';
   ASSERT v_j ? 'auto_end_inserts', 'sweeper_run: missing auto_end_inserts';
   ASSERT v_j ? 'idle_http_kicks', 'sweeper_run: missing idle_http_kicks';
+  ASSERT v_j ? 'stale_trading_ended_finalised', 'sweeper_run: missing stale_trading_ended_finalised';
+  ASSERT v_j ? 'stale_created_discarded', 'sweeper_run: missing stale_created_discarded';
+  ASSERT v_j ? 'stale_trading_started_ended', 'sweeper_run: missing stale_trading_started_ended';
 
 END;
 $sweep_test$;

@@ -113,14 +113,37 @@ void main() {
       expect(tiles.single.openEnvelopeResults, isTrue);
     });
 
-    test('joined game_finalised >10m ago is omitted from tiles', () {
+    test(
+      'joined game_finalised with stale endTimeActual but recent updatedAt still shows',
+      () {
+        final now = DateTime.utc(2026, 6, 1, 12);
+        final tradingEnded = now.subtract(const Duration(days: 2));
+        final finalisedAt = now.subtract(const Duration(minutes: 3));
+        final g = _game(
+          id: 'g1',
+          state: GameState.gameFinalised,
+          endTimeActual: tradingEnded,
+          updatedAt: finalisedAt,
+        );
+        final tiles = mockHomeGamesFromRepositorySnapshot(
+          joinedGames: [g],
+          publicGames: const [],
+          playerInitialsByGameId: const {},
+          viewerPlayerId: 'p-me',
+          nowUtc: now,
+        );
+        expect(tiles.single.status, GameStatusBadge.ended);
+      },
+    );
+
+    test('joined game_finalised >10m since updatedAt is omitted from tiles', () {
       final now = DateTime.utc(2026, 6, 1, 12);
-      final end = now.subtract(const Duration(minutes: 15));
+      final finalisedAt = now.subtract(const Duration(minutes: 15));
       final g = _game(
         id: 'g1',
         state: GameState.gameFinalised,
-        endTimeActual: end,
-        updatedAt: end,
+        endTimeActual: now.subtract(const Duration(days: 2)),
+        updatedAt: finalisedAt,
       );
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
@@ -132,14 +155,14 @@ void main() {
       expect(tiles, isEmpty);
     });
 
-    test('joined game_finalised within 10m still shows as ended', () {
+    test('joined game_finalised within 10m of updatedAt still shows as ended', () {
       final now = DateTime.utc(2026, 6, 1, 12);
-      final end = now.subtract(const Duration(minutes: 3));
+      final finalisedAt = now.subtract(const Duration(minutes: 3));
       final g = _game(
         id: 'g1',
         state: GameState.gameFinalised,
-        endTimeActual: end,
-        updatedAt: end,
+        endTimeActual: now.subtract(const Duration(hours: 1)),
+        updatedAt: finalisedAt,
       );
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
