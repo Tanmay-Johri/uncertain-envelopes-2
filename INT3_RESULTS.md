@@ -19,7 +19,7 @@ Open `**http://127.0.0.1:8765**` (or the URL Flutter prints). Use **three separa
 
 - Three isolated sessions (three browser profiles, three devices, or three tabs with **distinct** storage / incognito per tab is **not** reliable for three persistent logins — prefer profiles).
 - Three **distinct** test accounts (e.g. `you+ue3a@…`, `you+ue3b@…`, `you+ue3c@…`). Confirm email confirmation policy for your Supabase project (disable confirm for dev if needed).
-- Confirm a trivial command reaches `**processed`** within a few seconds (Edge Function + vault healthy). If commands stay `**pending**`, check `**gaps-stream-a.md**` A-GAP-14 (vault secrets) and rely on sweeper latency (~10 s) before declaring failure.
+- Confirm a trivial command reaches `**processed`** within a few seconds (Edge Function + vault healthy). If commands stay `**pending`**, check `**gaps-stream-a.md**` A-GAP-14 (vault secrets) and rely on sweeper latency (~10 s) before declaring failure.
 - Optional: Supabase SQL editor or MCP ready to inspect `commands`, `games`, `games_players`, `executions` while reproducing issues.
 
 ## 1. Three-tab full lifecycle
@@ -69,13 +69,13 @@ Open `**http://127.0.0.1:8765**` (or the URL Flutter prints). Use **three separa
 
 ## 5. A-GAP-14 — sweeper / stuck command
 
-**Goal:** Prove a `**claimed`** command older than the stale window is rescued (or eventually `**rejected**` after max attempts).
+**Goal:** Prove a `**claimed`** command older than the stale window is rescued (or eventually `**rejected`** after max attempts).
 
 **Conceptual steps** (exact SQL depends on your project; use Supabase SQL editor or MCP):
 
-1. Identify a `**commands`** row for a test game in `**claimed**` state (or insert a test command and mark `**claimed**` with `**claimed_at**` well in the past — **only on a non-production project**).
+1. Identify a `**commands`** row for a test game in `**claimed`** state (or insert a test command and mark `**claimed**` with `**claimed_at**` well in the past — **only on a non-production project**).
 2. Wait for **pg_cron** / sweeper cycle (plan: within ~10 s of expectations).
-3. Assert command moves to `**failed`** / `**processed**` / `**rejected**` per product rules and processor logs.
+3. Assert command moves to `**failed`** / `**processed`** / `**rejected**` per product rules and processor logs.
 
 
 | Expected                                                                                     | Result / notes | Date |
