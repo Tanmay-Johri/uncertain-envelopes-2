@@ -76,6 +76,13 @@ abstract class CommandRepository {
     required String orderId,
   });
 
+  Future<String> submitPartialCancelOrder({
+    required String gameId,
+    required String playerId,
+    required String orderId,
+    required int quantityToCancel,
+  });
+
   Future<String> submitEndTrading({
     required String gameId,
     required String adminPlayerId,
@@ -304,6 +311,29 @@ abstract class BaseCommandRepository implements CommandRepository {
       playerId: playerId,
       payload: <String, dynamic>{
         'order_id': orderId,
+      },
+    );
+  }
+
+  @override
+  Future<String> submitPartialCancelOrder({
+    required String gameId,
+    required String playerId,
+    required String orderId,
+    required int quantityToCancel,
+  }) {
+    if (quantityToCancel < 1) {
+      throw const CommandPayloadValidationException(
+        'quantity_to_cancel must be positive',
+      );
+    }
+    return insertCommand(
+      type: CommandType.partialCancelOrder,
+      gameId: gameId,
+      playerId: playerId,
+      payload: <String, dynamic>{
+        'order_id': orderId,
+        'quantity_to_cancel': quantityToCancel,
       },
     );
   }

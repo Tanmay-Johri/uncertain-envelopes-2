@@ -425,7 +425,43 @@ void main() {
     expect(find.text('No pending orders'), findsOneWidget);
   });
 
-  testWidgets('onCancelOrder invoked after nested dialog confirm',
+  testWidgets(
+    'partial-cancel modal pending line updates when items refresh (live qty)',
+    (tester) async {
+    final harnessKey = GlobalKey<PendingOrdersLivePendingHarnessState>();
+    await tester.pumpWidget(
+      PendingOrdersLivePendingHarness(
+        key: harnessKey,
+        eligibleGames: eligibleSingleGTest,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('pending-order-card-live-qty')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('pending-order-cancel-live-qty')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('You have 10 pending units of this order left.'),
+      findsOneWidget,
+    );
+
+    harnessKey.currentState!.setOrderQuantityCurrent(7);
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text('You have 7 pending units of this order left.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('partial-cancel-close')));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('onCancelOrder invoked after partial-cancel modal submit',
       (tester) async {
     final cancelled = <String>[];
     await tester.pumpWidget(
@@ -450,7 +486,9 @@ void main() {
               ),
             ),
           ],
-          onCancelOrder: cancelled.add,
+          onCancelOrder: (row, qty) async {
+            cancelled.add('${row.order.id}:$qty');
+          },
         ),
       ),
     );
@@ -460,15 +498,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('pending-order-cancel-c1')));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.widgetWithText(FilledButton, 'Cancel'),
-      ),
-    );
+    await tester.tap(find.byKey(const ValueKey('partial-cancel-submit')));
     await tester.pumpAndSettle();
 
-    expect(cancelled, ['c1']);
+    expect(cancelled, ['c1:3']);
   });
 
   testWidgets(
@@ -614,4 +647,71 @@ void main() {
 
     expect(find.text('Bid Ask Midpoint \$150.00'), findsOneWidget);
   });
+}
+
+/// Drives [PendingOrdersScreen] with mutable [items] so tests can simulate a
+/// parent refresh (e.g. silent poll) while the partial-cancel modal is open.
+class PendingOrdersLivePendingHarness extends StatefulWidget {
+  const PendingOrdersLivePendingHarness({
+    super.key,
+    required this.eligibleGames,
+  });
+
+  final List<TradingOrderTargetGame> eligibleGames;
+
+  @override
+  PendingOrdersLivePendingHarnessState createState() =>
+      PendingOrdersLivePendingHarnessState();
+}
+
+class PendingOrdersLivePendingHarnessState
+    extends State<PendingOrdersLivePendingHarness> {
+  static final _t0 = DateTime.utc(2018, 7, 10, 12, 0);
+
+  late List<PendingOrderListItem> _items;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = [
+      PendingOrderListItem(
+        gameId: 'g-test',
+        gameTitle: 'G',
+        gameDescription: '',
+        order: PersonalOrder(
+          id: 'live-qty',
+          side: PersonalOrderSide.buy,
+          orderType: PersonalOrderType.limit,
+          quantityInitial: 10,
+          quantityCurrent: 10,
+          limitPrice: 99,
+          status: PersonalOrderStatus.resting,
+          createdAt: _t0,
+        ),
+      ),
+    ];
+  }
+
+  /// Simulates the shell passing a new [PendingOrdersScreen.items] snapshot.
+  void setOrderQuantityCurrent(int quantityCurrent) {
+    setState(() {
+      _items = [
+        _items[0].copyWith(
+          order: _items[0].order.copyWith(quantityCurrent: quantityCurrent),
+        ),
+      ];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: buildAppTheme(),
+      home: PendingOrdersScreen(
+        items: _items,
+        tradingGamesForNewOrder: widget.eligibleGames,
+        onCancelOrder: (_, __) async {},
+      ),
+    );
+  }
 }

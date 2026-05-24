@@ -6,7 +6,6 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/trading/personal_order.dart';
 import '../../core/trading/usd_limit_price_display.dart';
-import 'confirmation_dialog.dart';
 
 /// Side/type pill (`SELL MARKET` is the longest label at this typography).
 const _kSideTypePillWidth = 108.0;
@@ -51,8 +50,9 @@ class ActiveOrdersWidget extends StatefulWidget {
   /// Client-side: cancellation command sent; waiting for `cancelled` from backend.
   final Set<String> pendingCancellationOrderIds;
 
-  /// User confirmed the dialog; parent sends `cancel_order` and owns ack / timeout UX.
-  final void Function(BuildContext context, String orderId)
+  /// User confirmed the modal; parent sends cancel / partial-cancel and owns
+  /// ack / timeout UX.
+  final void Function(BuildContext context, PersonalOrder order)
       onCancellationRequested;
 
   @override
@@ -160,7 +160,7 @@ class _ActiveOrderCard extends StatefulWidget {
   final PersonalOrder order;
   final bool initiallyExpanded;
   final Set<String> pendingCancellationOrderIds;
-  final void Function(BuildContext context, String orderId)
+  final void Function(BuildContext context, PersonalOrder order)
       onCancellationRequested;
 
   @override
@@ -352,21 +352,7 @@ class _ActiveOrderCardState extends State<_ActiveOrderCard> {
                         isPending: isPending,
                         canSendCancel: canSendCancel,
                       )
-                          ? () async {
-                              final ok = await ConfirmationDialog.show(
-                                context,
-                                title: '',
-                                message:
-                                    'Are you sure you want to send a cancellation request?',
-                                confirmLabel: 'Cancel',
-                                cancelLabel: 'Back',
-                                destructive: true,
-                                uppercaseActionLabels: false,
-                              );
-                              if (ok == true && context.mounted) {
-                                widget.onCancellationRequested(context, o.id);
-                              }
-                            }
+                          ? () => widget.onCancellationRequested(context, o)
                           : null,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.secondary,

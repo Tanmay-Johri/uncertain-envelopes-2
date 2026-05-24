@@ -12,7 +12,7 @@ void main() {
   Future<void> pumpCard(
     WidgetTester tester,
     PendingOrderListItem item, {
-    ValueChanged<String>? onCancel,
+    void Function()? onCancel,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -146,27 +146,24 @@ void main() {
     expect(find.textContaining('Limit price: —'), findsOneWidget);
     expect(find.textContaining('Type: buy market'), findsOneWidget);
     expect(find.textContaining('Order status: in_queue'), findsOneWidget);
+    final cancelBtn = tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('pending-order-cancel-mkt1')),
+    );
+    expect(cancelBtn.onPressed, isNull);
   });
 
-  testWidgets('cancel confirm calls callback once', (tester) async {
-    final hits = <String>[];
-    await pumpCard(tester, restingSell(), onCancel: hits.add);
+  testWidgets('cancel tap invokes callback once', (tester) async {
+    var hits = 0;
+    await pumpCard(tester, restingSell(), onCancel: () {
+      hits++;
+    });
 
     await tester.tap(find.byKey(const ValueKey('pending-order-card-88293-A')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('pending-order-cancel-88293-A')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.widgetWithText(FilledButton, 'Cancel'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(hits, ['88293-A']);
+    await tester.pump();
+    expect(hits, 1);
   });
 
   testWidgets('filled order shows disabled cancel button', (tester) async {

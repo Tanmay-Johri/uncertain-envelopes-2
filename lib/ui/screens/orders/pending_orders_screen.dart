@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -6,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/trading/personal_order.dart';
 import '../../widgets/neon_button.dart';
 import '../../widgets/new_order_modal.dart';
+import '../../widgets/partial_cancel_order_modal.dart';
 import '../../widgets/pending_order_card.dart';
 import '../trading/trading_mock_data.dart';
 import 'pending_orders_mock_data.dart';
@@ -18,6 +21,15 @@ typedef PendingOrdersOnSubmitNewOrder = Future<void> Function({
   required String gameId,
   required GameScopedNewOrder created,
 });
+
+/// After the user confirms quantity in [PartialCancelOrderModal]. While the
+/// modal is open, live `quantity_current` is pushed from
+/// [pendingOrdersViewDataProvider] (modal Riverpod listener) and from this
+/// screen when `items` refresh (fallback for contexts without [ProviderScope]).
+typedef PendingOrdersOnCancelOrder = Future<void> Function(
+  PendingOrderListItem row,
+  int quantityToCancel,
+);
 
 /// Global pending orders (**C9**). Shell provides header + bottom nav.
 ///
@@ -34,6 +46,7 @@ class PendingOrdersScreen extends StatefulWidget {
     super.key,
     this.items,
     this.tradingGamesForNewOrder,
+    this.pendingCancellationOrderIds,
     this.onCancelOrder,
     this.onSubmitNewOrder,
   });
@@ -45,8 +58,14 @@ class PendingOrdersScreen extends StatefulWidget {
   /// who may tap **Create new order** (independent of pending rows).
   final List<TradingOrderTargetGame>? tradingGamesForNewOrder;
 
-  /// Stream C stub after user confirms cancellation in [PendingOrderCard].
-  final ValueChanged<String>? onCancelOrder;
+  /// Optimistic **Cancelling** after the cancel command row was ack'd (full
+  /// cancel only — partial clears immediately).
+  final Set<String>? pendingCancellationOrderIds;
+
+  /// Invoked after the user confirms units in [PartialCancelOrderModal].
+  /// Live `quantity_current` while the modal is open comes from
+  /// [pendingOrdersViewDataProvider] inside the modal.
+  final PendingOrdersOnCancelOrder? onCancelOrder;
 
   /// When set (shell route), new orders are sent to the backend; otherwise the
   /// screen inserts a local mock row (tests / standalone widget demos).
@@ -61,12 +80,26 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   PendingOrdersFilterState _filter = PendingOrdersFilterState.initial;
   var _crossGameOrderSeq = 0;
 
+  /// While [PartialCancelOrderModal] is open: live `quantity_current` for that row.
+  /// (Fallback when the dialog cannot attach a Riverpod listener — e.g. some tests.)
+  String? _partialCancelLiveOrderId;
+  ValueNotifier<int?>? _partialCancelLivePendingNotifier;
+
   @override
   void initState() {
     super.initState();
     _source = widget.items != null
         ? List<PendingOrderListItem>.from(widget.items!)
         : kMockPendingOrders();
+  }
+
+  @override
+  void dispose() {
+    final nn = _partialCancelLivePendingNotifier;
+    _partialCancelLivePendingNotifier = null;
+    _partialCancelLiveOrderId = null;
+    nn?.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,6 +110,60 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       _source = widget.items != null
           ? List<PendingOrderListItem>.from(widget.items!)
           : kMockPendingOrders();
+    }
+    _syncPartialCancelLiveNotifier();
+  }
+
+  /// [widget.items] is authoritative when non-null (shell route refresh); else [_source].
+  ///
+  /// Updates are posted to the next frame so we never notify [pendingListenable]
+  /// synchronously from [didUpdateWidget] (that would call into the modal during
+  /// build and trip Flutter's "setState during build" assertion).
+  void _syncPartialCancelLiveNotifier() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final lid = _partialCancelLiveOrderId;
+      final nn = _partialCancelLivePendingNotifier;
+      if (lid == null || nn == null) return;
+      final rows = widget.items ?? _source;
+      for (final e in rows) {
+        if (e.order.id == lid) {
+          final q = e.order.quantityCurrent;
+          if (nn.value != q) {
+            nn.value = q;
+          }
+          return;
+        }
+      }
+      if (nn.value != 0) {
+        nn.value = 0;
+      }
+    });
+  }
+
+  Future<void> _openPartialCancelDialog(PendingOrderListItem row) async {
+    if (widget.onCancelOrder == null) return;
+    final notifier = ValueNotifier<int?>(row.order.quantityCurrent);
+    _partialCancelLiveOrderId = row.order.id;
+    _partialCancelLivePendingNotifier = notifier;
+    _syncPartialCancelLiveNotifier();
+    try {
+      final qty = await PartialCancelOrderModal.show(
+        context,
+        initialPending: row.order.quantityCurrent,
+        pendingListenable: notifier,
+        liveFromPendingView: true,
+        liveOrderId: row.order.id,
+      );
+      if (!mounted || qty == null) return;
+      await widget.onCancelOrder!(row, qty);
+    } finally {
+      _partialCancelLiveOrderId = null;
+      final nn = _partialCancelLivePendingNotifier;
+      if (nn != null) {
+        _partialCancelLivePendingNotifier = null;
+        nn.dispose();
+      }
     }
   }
 
@@ -295,10 +382,16 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                         gameDescription: e.gameDescription,
                         order: e.order,
                         useMutedGreyStyle: e.isRecentlyClosed,
-                        onCancelRequested:
-                            widget.onCancelOrder != null
-                                ? (id) => widget.onCancelOrder!(id)
-                                : null,
+                        pendingCancellation:
+                            widget.pendingCancellationOrderIds?.contains(
+                                  e.order.id,
+                                ) ??
+                                false,
+                        onCancelRequested: widget.onCancelOrder != null
+                            ? () {
+                                unawaited(_openPartialCancelDialog(e));
+                              }
+                            : null,
                       ),
                     ),
                   ),

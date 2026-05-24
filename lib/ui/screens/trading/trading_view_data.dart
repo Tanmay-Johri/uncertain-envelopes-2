@@ -10,6 +10,7 @@ export '../../../core/trading/personal_order.dart'
         PersonalOrderSide,
         PersonalOrderStatus,
         PersonalOrderType,
+        personalOrderCanCancel,
         personalOrderClearsCancellationPending;
 
 /// One executed trade between two players, shown in the transaction log.

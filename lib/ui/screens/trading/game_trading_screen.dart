@@ -16,6 +16,7 @@ import '../../widgets/active_orders_widget.dart';
 import '../../widgets/countdown_timer.dart';
 import '../../widgets/neon_button.dart';
 import '../../widgets/new_order_modal.dart';
+import '../../widgets/partial_cancel_order_modal.dart';
 import '../../widgets/pnl_calculator.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/stat_tile.dart';
@@ -60,9 +61,10 @@ class GameTradingScreen extends StatefulWidget {
   /// the "Add Time" dialog.
   final void Function(int minutes)? onAddTime;
 
-  /// Completes when the backend acks that the `cancel_order` command **row**
-  /// was created. Defaults to [defaultSubmitCancelOrderCommandAck] in state.
-  final Future<void> Function(String orderId)? submitCancelOrderCommand;
+  /// Completes when the backend acks that a cancel / partial-cancel **command
+  /// row** was created. Defaults to [defaultSubmitCancelOrderCommandAck] in
+  /// state.
+  final SubmitCancelOrderCommand? submitCancelOrderCommand;
 
   /// When set, new orders from [NewOrderModal] are submitted through the repo
   /// instead of optimistic local-only rows.
@@ -145,51 +147,107 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
     return 'local_${widget.data.currentPlayerId}_$_localOrderSeq';
   }
 
-  /// Optimistic **Cancelling** → await command-row ack (with timeout) → keep
-  /// **Cancelling** until mock/worker sets order to [PersonalOrderStatus.cancelled].
-  void _onCancellationRequested(BuildContext context, String orderId) {
-    setState(() => _pendingCancellationOrderIds.add(orderId));
-    unawaited(_runCancelOrderCommandFlow(context, orderId));
+  /// Opens [PartialCancelOrderModal], then optimistic **Cancelling** until the
+  /// command row is ack'd (and for full cancel until the order is cancelled).
+  Future<void> _onCancellationRequested(
+    BuildContext context,
+    PersonalOrder order,
+  ) async {
+    if (!personalOrderCanCancel(order.status)) return;
+    if (order.id.startsWith('cmd:')) return;
+    if (order.quantityCurrent < 1) return;
+
+    final notifier = ValueNotifier<int?>(order.quantityCurrent);
+
+    try {
+      final selected = await PartialCancelOrderModal.show(
+        context,
+        initialPending: order.quantityCurrent,
+        pendingListenable: notifier,
+        liveGameId: widget.gameId.isEmpty ? null : widget.gameId,
+        liveOrderId: order.id,
+      );
+
+      if (!mounted || selected == null) return;
+
+      setState(() => _pendingCancellationOrderIds.add(order.id));
+      unawaited(
+        _runCancelOrderCommandFlow(
+          order.id,
+          quantityToCancel: selected,
+        ),
+      );
+    } finally {
+      notifier.dispose();
+    }
   }
 
   Future<void> _runCancelOrderCommandFlow(
-    BuildContext context,
-    String orderId,
-  ) async {
+    String orderId, {
+    required int quantityToCancel,
+  }) async {
     final customSubmit = widget.submitCancelOrderCommand;
-    final submit =
-        customSubmit ?? defaultSubmitCancelOrderCommandAck;
+    final pendingQty = () {
+      for (final e in _personalOrders) {
+        if (e.id == orderId) return e.quantityCurrent;
+      }
+      return quantityToCancel;
+    }();
+
+    Future<CancelOrderSubmitOutcome> submit() {
+      if (customSubmit != null) {
+        return customSubmit(
+          orderId: orderId,
+          quantityToCancel: quantityToCancel,
+        );
+      }
+      return defaultSubmitCancelOrderCommandAck(
+        orderId: orderId,
+        quantityToCancel: quantityToCancel,
+        pendingQuantityCurrent: pendingQty,
+      );
+    }
+
     try {
-      await submit(orderId).timeout(AppConstants.cancelOrderCommandAckTimeout);
+      final outcome = await submit().timeout(
+        AppConstants.cancelOrderCommandAckTimeout,
+      );
+      if (!mounted) return;
+      if (outcome == CancelOrderSubmitOutcome.partialCommandQueued) {
+        setState(() => _pendingCancellationOrderIds.remove(orderId));
+      }
     } on TimeoutException {
       if (!mounted) return;
       setState(() => _pendingCancellationOrderIds.remove(orderId));
-      if (context.mounted) {
-        _showCancelCommandAckFailedBanner(context);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(kCancelOrderCommandAckFailedMessage),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _pendingCancellationOrderIds.remove(orderId));
-      if (context.mounted) {
-        _showCancelCommandAckFailedBanner(context);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(kCancelOrderCommandAckFailedMessage),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
     if (!mounted) return;
     if (customSubmit == null) {
-      _scheduleMockWorkerOrderCancelled(orderId);
+      final usedPartial =
+          quantityToCancel < pendingQty;
+      if (usedPartial) {
+        _scheduleMockWorkerOrderPartiallyCancelled(orderId, quantityToCancel);
+      } else {
+        _scheduleMockWorkerOrderCancelled(orderId);
+      }
     }
-  }
-
-  void _showCancelCommandAckFailedBanner(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(kCancelOrderCommandAckFailedMessage),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   /// After command row exists: mock worker delay, then same local update as a
@@ -203,6 +261,21 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
           for (final o in _personalOrders)
             if (o.id == id)
               o.copyWith(status: PersonalOrderStatus.cancelled)
+            else
+              o,
+        ];
+      });
+    });
+  }
+
+  void _scheduleMockWorkerOrderPartiallyCancelled(String id, int delta) {
+    Future<void>.delayed(const Duration(milliseconds: 1800), () {
+      if (!mounted) return;
+      setState(() {
+        _personalOrders = [
+          for (final o in _personalOrders)
+            if (o.id == id)
+              o.copyWith(quantityCurrent: o.quantityCurrent - delta)
             else
               o,
         ];
@@ -427,7 +500,8 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                       key: const ValueKey('trading-active-orders-section'),
                       orders: _personalOrders,
                       pendingCancellationOrderIds: _pendingCancellationOrderIds,
-                      onCancellationRequested: _onCancellationRequested,
+                      onCancellationRequested: (ctx, o) =>
+                          unawaited(_onCancellationRequested(ctx, o)),
                     ),
                     const SizedBox(height: AppSpacing.xxxxl),
                   ],

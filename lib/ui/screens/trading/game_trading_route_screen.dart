@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/game_flow.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/trading/cancel_order_command.dart';
 import '../../../core/trading/order_type_from_personal.dart';
 import '../../../core/trading/personal_order.dart';
 import '../../../data/models/game_session_state.dart';
+import '../../../data/models/order.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
@@ -131,12 +133,34 @@ class _GameTradingRouteScreenState
               additionalSeconds: minutes * 60,
             );
           }),
-          submitCancelOrderCommand: (orderId) async {
-            await cmds.submitCancelOrder(
+          submitCancelOrderCommand:
+              ({required String orderId, required int quantityToCancel}) async {
+            final list =
+                ref.read(ordersProvider(widget.gameId)).valueOrNull ??
+                    const <Order>[];
+            Order? backend;
+            for (final o in list) {
+              if (o.orderId == orderId) {
+                backend = o;
+                break;
+              }
+            }
+            final pendingQty = backend?.quantityCurrent ?? quantityToCancel;
+            if (quantityToCancel >= pendingQty) {
+              await cmds.submitCancelOrder(
+                gameId: widget.gameId,
+                playerId: playerId,
+                orderId: orderId,
+              );
+              return CancelOrderSubmitOutcome.fullCommandQueued;
+            }
+            await cmds.submitPartialCancelOrder(
               gameId: widget.gameId,
               playerId: playerId,
               orderId: orderId,
+              quantityToCancel: quantityToCancel,
             );
+            return CancelOrderSubmitOutcome.partialCommandQueued;
           },
           onSubmitNewOrder: (draft) async {
             final type = orderTypeFromPersonalDraft(draft);

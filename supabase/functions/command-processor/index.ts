@@ -79,6 +79,7 @@ function rpcNameFor(commandType: string): string {
     start_game: "process_start_game",
     create_order: "process_create_order",
     cancel_order: "process_cancel_order",
+    partial_cancel_order: "process_partial_cancel_order",
     end_trading: "process_end_trading",
     set_envelope_price: "process_set_envelope_price",
     finalise_game: "process_finalise_game",

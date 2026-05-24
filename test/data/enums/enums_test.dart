@@ -124,8 +124,8 @@ void main() {
   });
 
   group('CommandType', () {
-    test('covers all 12 PRD command types', () {
-      expect(CommandType.values.length, 12);
+    test('covers all 13 PRD command types', () {
+      expect(CommandType.values.length, 13);
       const expected = {
         'create_game',
         'join_game',
@@ -134,6 +134,7 @@ void main() {
         'start_game',
         'create_order',
         'cancel_order',
+        'partial_cancel_order',
         'end_trading',
         'set_envelope_price',
         'finalise_game',

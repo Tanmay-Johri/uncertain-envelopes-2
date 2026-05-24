@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
+import 'package:uncertain_envelopes_2/core/trading/cancel_order_command.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';
@@ -390,7 +391,9 @@ void main() {
             enabled: false,
             child: GameTradingScreen(
               data: s.data,
-              submitCancelOrderCommand: (_) => Completer<void>().future,
+              submitCancelOrderCommand:
+                  ({required String orderId, required int quantityToCancel}) =>
+                      Completer<CancelOrderSubmitOutcome>().future,
             ),
           ),
         ),
@@ -405,7 +408,7 @@ void main() {
         find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Cancel'));
+      await tester.tap(find.byKey(const ValueKey('partial-cancel-submit')));
       await tester.pump();
       expect(find.text('Cancelling'), findsOneWidget);
 
@@ -444,7 +447,7 @@ void main() {
           find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Cancel'));
+        await tester.tap(find.byKey(const ValueKey('partial-cancel-submit')));
         await tester.pump();
         expect(find.text('Cancelling'), findsOneWidget);
 
@@ -469,7 +472,9 @@ void main() {
               enabled: false,
               child: GameTradingScreen(
                 data: s.data,
-                submitCancelOrderCommand: (_) async {},
+                submitCancelOrderCommand:
+                    ({required String orderId, required int quantityToCancel}) async =>
+                        CancelOrderSubmitOutcome.fullCommandQueued,
               ),
             ),
           ),
@@ -484,7 +489,7 @@ void main() {
           find.byKey(const ValueKey('active-order-cancel-po_g1_rest')),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Cancel'));
+        await tester.tap(find.byKey(const ValueKey('partial-cancel-submit')));
         await tester.pump();
         expect(find.text('Cancelling'), findsOneWidget);
 

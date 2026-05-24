@@ -6,7 +6,6 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/trading/personal_order.dart';
 import '../../core/trading/usd_limit_price_display.dart';
-import 'confirmation_dialog.dart';
 
 /// PRD `orders.status` snake_case (matches active-order chip vocabulary).
 String _pendingOrderStatusLine(PersonalOrderStatus s) {
@@ -44,6 +43,7 @@ class PendingOrderCard extends StatefulWidget {
     required this.gameTitle,
     required this.gameDescription,
     required this.order,
+    this.pendingCancellation = false,
     this.onCancelRequested,
     this.useMutedGreyStyle = false,
   });
@@ -52,11 +52,15 @@ class PendingOrderCard extends StatefulWidget {
   final String gameDescription;
   final PersonalOrder order;
 
+  /// After a full cancel command was ack'd; waiting for backend `cancelled`.
+  final bool pendingCancellation;
+
   /// When true, buy/sell accents use neutral greys (recently closed orders).
   final bool useMutedGreyStyle;
 
-  /// Stream C stub; only called after confirm dialog when cancel is allowed.
-  final void Function(String orderId)? onCancelRequested;
+  /// Parent opens [PartialCancelOrderModal] (e.g. [PendingOrdersScreen]) then
+  /// performs cancel / partial-cancel.
+  final void Function()? onCancelRequested;
 
   @override
   State<PendingOrderCard> createState() => _PendingOrderCardState();
@@ -124,6 +128,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
     final o = widget.order;
     final isBuy = o.side == PersonalOrderSide.buy;
     final canCancel = personalOrderCanCancel(o.status);
+    final isPending = widget.pendingCancellation;
 
     return AnimatedContainer(
       key: ValueKey('pending-order-card-${o.id}'),
@@ -292,22 +297,10 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                     height: 48,
                     child: OutlinedButton.icon(
                       key: ValueKey('pending-order-cancel-${o.id}'),
-                      onPressed: canCancel
-                          ? () async {
-                              final ok = await ConfirmationDialog.show(
-                                context,
-                                title: '',
-                                message:
-                                    'Cancel this order for ${widget.gameTitle}?',
-                                confirmLabel: 'Cancel',
-                                cancelLabel: 'Back',
-                                destructive: true,
-                                uppercaseActionLabels: false,
-                              );
-                              if (ok == true && context.mounted) {
-                                widget.onCancelRequested?.call(o.id);
-                              }
-                            }
+                      onPressed: (canCancel &&
+                              !isPending &&
+                              widget.onCancelRequested != null)
+                          ? widget.onCancelRequested
                           : null,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.secondary,
@@ -322,7 +315,7 @@ class _PendingOrderCardState extends State<PendingOrderCard> {
                       ),
                       icon: const Icon(Icons.cancel_outlined, size: 18),
                       label: Text(
-                        'Cancel Order',
+                        isPending ? 'Cancelling' : 'Cancel Order',
                         style: AppTypography.bodySmall.copyWith(
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.4,

@@ -1,8 +1,12 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/personal_order.dart';
 import 'package:uncertain_envelopes_2/ui/widgets/active_orders_widget.dart';
+import 'package:uncertain_envelopes_2/ui/widgets/partial_cancel_order_modal.dart';
 
 void main() {
   group('ActiveOrdersWidget', () {
@@ -135,7 +139,7 @@ void main() {
     });
 
     testWidgets(
-        'in_queue order uses same cancel flow as resting',
+        'in_queue order has cancel button disabled (backend resting-only)',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -145,20 +149,19 @@ void main() {
       );
 
       await tester.ensureVisible(
+        find.byKey(const ValueKey('active-order-q')),
+      );
+      await tester.tap(find.byKey(const ValueKey('active-order-q')));
+      await tester.pumpAndSettle();
+
+      final btn = tester.widget<OutlinedButton>(
         find.byKey(const ValueKey('active-order-cancel-q')),
       );
-      await tester.tap(find.byKey(const ValueKey('active-order-cancel-q')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Cancel'));
-      await tester.pump();
-      expect(find.text('Cancelling'), findsOneWidget);
-
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+      expect(btn.onPressed, isNull);
     });
 
     testWidgets(
-        'Back dismisses dialog; resting confirm starts cancel then row becomes cancelled',
+        'Close dismisses partial-cancel modal; submit starts cancel then row becomes cancelled',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -172,24 +175,15 @@ void main() {
       await tester.ensureVisible(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
-      expect(
-        find.text(
-          'Are you sure you want to send a cancellation request?',
-        ),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Back'));
+      expect(find.byKey(const ValueKey('partial-cancel-order-dialog')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('partial-cancel-close')));
       await tester.pumpAndSettle();
-      expect(
-        find.text(
-          'Are you sure you want to send a cancellation request?',
-        ),
-        findsNothing,
-      );
+      expect(find.byKey(const ValueKey('partial-cancel-order-dialog')), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('active-order-cancel-r')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Cancel'));
+      await tester.tap(find.byKey(const ValueKey('partial-cancel-submit')));
       await tester.pump();
       expect(find.text('Cancelling'), findsOneWidget);
 
@@ -259,21 +253,34 @@ class _OrdersHarnessState extends State<_OrdersHarness> {
 
   final Set<String> _pending = {};
 
-  void _onCancellationRequested(BuildContext context, String id) {
-    setState(() => _pending.add(id));
-    Future<void>.delayed(const Duration(milliseconds: 50), () {
+  Future<void> _onCancellationRequested(
+    BuildContext context,
+    PersonalOrder o,
+  ) async {
+    final notifier = ValueNotifier<int?>(o.quantityCurrent);
+    try {
+      final qty = await PartialCancelOrderModal.show(
+        context,
+        initialPending: o.quantityCurrent,
+        pendingListenable: notifier,
+      );
+      if (!mounted || qty == null) return;
+      setState(() => _pending.add(o.id));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       if (!mounted) return;
       setState(() {
-        _pending.remove(id);
+        _pending.remove(o.id);
         _orders = [
-          for (final o in _orders)
-            if (o.id == id)
-              o.copyWith(status: PersonalOrderStatus.cancelled)
+          for (final x in _orders)
+            if (x.id == o.id)
+              x.copyWith(status: PersonalOrderStatus.cancelled)
             else
-              o,
+              x,
         ];
       });
-    });
+    } finally {
+      notifier.dispose();
+    }
   }
 
   @override
@@ -285,7 +292,9 @@ class _OrdersHarnessState extends State<_OrdersHarness> {
           child: ActiveOrdersWidget(
             orders: _orders,
             pendingCancellationOrderIds: _pending,
-            onCancellationRequested: _onCancellationRequested,
+            onCancellationRequested: (ctx, o) {
+              unawaited(_onCancellationRequested(ctx, o));
+            },
           ),
         ),
       ),

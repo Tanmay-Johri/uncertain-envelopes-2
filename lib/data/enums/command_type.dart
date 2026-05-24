@@ -8,6 +8,7 @@ enum CommandType {
   startGame('start_game'),
   createOrder('create_order'),
   cancelOrder('cancel_order'),
+  partialCancelOrder('partial_cancel_order'),
   endTrading('end_trading'),
   setEnvelopePrice('set_envelope_price'),
   finaliseGame('finalise_game'),

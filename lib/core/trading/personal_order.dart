@@ -115,17 +115,14 @@ bool personalOrderIsPipelineActive(PersonalOrderStatus status) {
 
 /// Whether the player may **send a cancellation request** from the UI.
 ///
-/// PRD: the `cancelled` status is defined for explicit player cancel while
-/// `order_resting`. We still expose the same cancel control for
-/// `in_queue` / `being_processed` so every non-terminal card behaves alike;
-/// Phase 2 workers may reject [cancel_order] if the order is no longer
-/// cancellable.
+/// Backend only accepts cancel / partial-cancel while `order_resting`; the UI
+/// matches that so we never show a working cancel button for pipeline rows
+/// that the processor would reject (UE002).
 bool personalOrderCanCancel(PersonalOrderStatus status) {
   return switch (status) {
+    PersonalOrderStatus.resting => true,
     PersonalOrderStatus.inQueue ||
     PersonalOrderStatus.beingProcessed ||
-    PersonalOrderStatus.resting =>
-      true,
     PersonalOrderStatus.filled ||
     PersonalOrderStatus.cancelled ||
     PersonalOrderStatus.rejected ||

@@ -34,11 +34,11 @@ void main() {
   });
 
   group('personalOrderCanCancel', () {
-    test('true for queued, processing, and resting; false when terminal', () {
-      expect(personalOrderCanCancel(PersonalOrderStatus.inQueue), isTrue);
+    test('true only for order_resting; false for pipeline and terminal', () {
+      expect(personalOrderCanCancel(PersonalOrderStatus.inQueue), isFalse);
       expect(
         personalOrderCanCancel(PersonalOrderStatus.beingProcessed),
-        isTrue,
+        isFalse,
       );
       expect(personalOrderCanCancel(PersonalOrderStatus.resting), isTrue);
       expect(personalOrderCanCancel(PersonalOrderStatus.filled), isFalse);

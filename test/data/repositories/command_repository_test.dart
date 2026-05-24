@@ -314,6 +314,30 @@ void _runContract(_Fixture Function() build) {
     expect(rec.payload, {'order_id': 'o-42'});
   });
 
+  test('partial_cancel_order payload carries order_id and quantity', () async {
+    await fix.repo.submitPartialCancelOrder(
+      gameId: 'g-1',
+      playerId: 'p-1',
+      orderId: 'o-99',
+      quantityToCancel: 4,
+    );
+    final rec = fix.records().single;
+    expect(rec.type, CommandType.partialCancelOrder);
+    expect(rec.payload, {'order_id': 'o-99', 'quantity_to_cancel': 4});
+  });
+
+  test('partial_cancel_order rejects non-positive quantity', () {
+    expect(
+      () => fix.repo.submitPartialCancelOrder(
+        gameId: 'g-1',
+        playerId: 'p-1',
+        orderId: 'o-1',
+        quantityToCancel: 0,
+      ),
+      throwsA(isA<CommandPayloadValidationException>()),
+    );
+  });
+
   test('set_envelope_price payload carries envelope_price', () async {
     await fix.repo.submitSetEnvelopePrice(
       gameId: 'g-1',
