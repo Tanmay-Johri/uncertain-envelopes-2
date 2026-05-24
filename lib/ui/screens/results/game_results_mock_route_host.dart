@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../trading/trading_mock_data.dart';
+import '../../widgets/open_trade_logs_for_game.dart';
 import 'game_results_screen.dart';
 import 'results_mock_data.dart';
 import 'results_view_data.dart';
@@ -60,6 +62,11 @@ class _GameResultsMockRouteHostState extends State<GameResultsMockRouteHost> {
     return GameResultsScreen(
       gameId: widget.gameId,
       data: _data,
+      onShowLogs: () => openTradeLogsWithEntries(
+        context,
+        logs: mockTradeLogsForGameId(widget.gameId),
+        viewerPlayerId: _data.highlightPlayerId ?? 'p_me',
+      ),
       onUpdateEnvelopePrice:
           _data.isViewerAdmin ? _onUpdateEnvelopePrice : null,
       pollCommittedEnvelopePrice:

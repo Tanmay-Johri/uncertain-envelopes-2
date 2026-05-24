@@ -29,6 +29,7 @@ class GameResultsScreen extends StatefulWidget {
     this.onUpdateEnvelopePrice,
     this.pollCommittedEnvelopePrice,
     this.onEndGame,
+    this.onShowLogs,
   });
 
   final String gameId;
@@ -40,6 +41,8 @@ class GameResultsScreen extends StatefulWidget {
   final Future<double?> Function()? pollCommittedEnvelopePrice;
 
   final void Function({required bool discardBecauseNoPrice})? onEndGame;
+
+  final VoidCallback? onShowLogs;
 
   @override
   State<GameResultsScreen> createState() => _GameResultsScreenState();
@@ -261,6 +264,7 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
         children: [
           _ResultsStickyHeader(
             gameId: widget.gameId,
+            onShowLogs: widget.onShowLogs,
           ),
           Expanded(
             child: SafeArea(
@@ -381,11 +385,16 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
 }
 
 class _ResultsStickyHeader extends StatelessWidget {
-  const _ResultsStickyHeader({required this.gameId});
+  const _ResultsStickyHeader({
+    required this.gameId,
+    this.onShowLogs,
+  });
 
   final String gameId;
+  final VoidCallback? onShowLogs;
 
   static const double _edgeSlot = 48;
+  static const double _toolbarHeight = 36;
 
   @override
   Widget build(BuildContext context) {
@@ -433,7 +442,51 @@ class _ResultsStickyHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: _edgeSlot),
+              SizedBox(
+                width: _edgeSlot,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: onShowLogs == null
+                      ? const SizedBox.shrink()
+                      : PopupMenuButton<String>(
+                          key: const ValueKey('game-results-menu'),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: _toolbarHeight,
+                          ),
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: AppColors.textSecondary,
+                            size: 22,
+                          ),
+                          onSelected: (value) {
+                            if (value == 'logs') onShowLogs!();
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'logs',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.receipt_long_outlined,
+                                    size: 18,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Show Logs',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
             ],
           ),
         ),

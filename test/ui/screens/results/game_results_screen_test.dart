@@ -352,6 +352,23 @@ void main() {
       expect(find.textContaining('AdminUser'), findsWidgets);
     });
 
+    testWidgets('three-dots menu Show Logs invokes onShowLogs', (tester) async {
+      var opened = false;
+      await _pump(
+        tester,
+        GameResultsScreen(
+          gameId: 'gResults',
+          data: mockGameResultsViewDataForAdmin(),
+          onShowLogs: () => opened = true,
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-results-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show Logs'));
+      await tester.pump();
+      expect(opened, isTrue);
+    });
+
     testWidgets('back navigates to home shell', (tester) async {
       await _pump(
         tester,

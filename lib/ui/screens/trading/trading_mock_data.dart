@@ -194,6 +194,11 @@ final _g2PersonalOrders = <PersonalOrder>[
 
 /// Mock trading scenarios keyed by game id; aligns with [mockLobbyScenarioForGameId]
 /// titles where possible.
+/// Mock transaction log rows for a game id (results / history mocks).
+List<TradeLogEntry> mockTradeLogsForGameId(String gameId) {
+  return mockTradingScenarioForGameId(gameId).data.tradeLogs;
+}
+
 GameTradingScenario mockTradingScenarioForGameId(String gameId) {
   switch (gameId) {
     case 'g1':

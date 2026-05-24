@@ -15,11 +15,13 @@ class GameHistoryCard extends StatelessWidget {
     required this.entry,
     required this.isExpanded,
     required this.onTap,
+    this.onShowLogs,
   });
 
   final GameHistoryEntry entry;
   final bool isExpanded;
   final VoidCallback onTap;
+  final VoidCallback? onShowLogs;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,7 @@ class GameHistoryCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _Header(entry: entry, isExpanded: isExpanded, onTap: onTap),
-          if (isExpanded) _ExpandedBody(entry: entry),
+          if (isExpanded) _ExpandedBody(entry: entry, onShowLogs: onShowLogs),
         ],
       ),
     );
@@ -132,9 +134,13 @@ class _Header extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ExpandedBody extends StatelessWidget {
-  const _ExpandedBody({required this.entry});
+  const _ExpandedBody({
+    required this.entry,
+    this.onShowLogs,
+  });
 
   final GameHistoryEntry entry;
+  final VoidCallback? onShowLogs;
 
   @override
   Widget build(BuildContext context) {
@@ -213,13 +219,33 @@ class _ExpandedBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             const Divider(color: AppColors.outline, height: 1),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              'PLAYERS PNL',
-              style: AppTypography.microLabel.copyWith(
-                color: AppColors.textTertiary,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    'PLAYERS PNL',
+                    style: AppTypography.microLabel.copyWith(
+                      color: AppColors.textTertiary,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (onShowLogs != null)
+                  GestureDetector(
+                    key: ValueKey('history-show-logs-${entry.id}'),
+                    onTap: onShowLogs,
+                    child: Text(
+                      'Show Logs',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             ...entry.playerResults.map(

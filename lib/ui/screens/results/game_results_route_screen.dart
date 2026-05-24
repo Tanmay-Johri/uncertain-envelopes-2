@@ -12,6 +12,7 @@ import '../../../providers/game_provider.dart';
 import '../../../providers/view_data/results_view_data_provider.dart';
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
+import '../../widgets/open_trade_logs_for_game.dart';
 import 'game_results_screen.dart';
 
 /// Shell route body: loads [resultsViewDataProvider] and wires results actions
@@ -88,6 +89,7 @@ class GameResultsRouteScreen extends ConsumerWidget {
         return GameResultsScreen(
           gameId: gameId,
           data: data,
+          onShowLogs: () => openTradeLogsForGame(context, ref, gameId),
           onUpdateEnvelopePrice: data.isViewerAdmin && !data.gameEnded
               ? (usd) async {
                   if (usd == null) {

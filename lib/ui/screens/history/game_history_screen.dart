@@ -22,9 +22,13 @@ class GameHistoryScreen extends StatefulWidget {
   const GameHistoryScreen({
     super.key,
     required this.entries,
+    this.onShowLogsForGame,
   });
 
   final List<GameHistoryEntry> entries;
+
+  /// Opens the transaction log for [gameId] (wired by route / mocks).
+  final void Function(String gameId)? onShowLogsForGame;
 
   @override
   State<GameHistoryScreen> createState() => _GameHistoryScreenState();
@@ -94,6 +98,9 @@ class _GameHistoryScreenState extends State<GameHistoryScreen> {
                           entry: entry,
                           isExpanded: _expandedIds.contains(entry.id),
                           onTap: () => _toggle(entry.id),
+                          onShowLogs: widget.onShowLogsForGame == null
+                              ? null
+                              : () => widget.onShowLogsForGame!(entry.id),
                         );
                       },
                     ),

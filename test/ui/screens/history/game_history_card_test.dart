@@ -290,6 +290,33 @@ void main() {
       expect(find.text('—'), findsWidgets);
     });
 
+    testWidgets('Show Logs link invokes callback without collapsing card',
+        (tester) async {
+      var tapped = false;
+      await _pump(
+        tester,
+        GameHistoryCard(
+          entry: _entry(id: 'gh-logs'),
+          isExpanded: true,
+          onTap: () {},
+          onShowLogs: () => tapped = true,
+        ),
+      );
+      expect(find.text('Show Logs'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('history-show-logs-gh-logs')));
+      await tester.pump();
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('expanded body hides Show Logs when callback omitted',
+        (tester) async {
+      await _pump(
+        tester,
+        GameHistoryCard(entry: _entry(), isExpanded: true, onTap: () {}),
+      );
+      expect(find.text('Show Logs'), findsNothing);
+    });
+
     testWidgets('shows all player names in PLAYERS PNL section', (tester) async {
       await _pump(
         tester,

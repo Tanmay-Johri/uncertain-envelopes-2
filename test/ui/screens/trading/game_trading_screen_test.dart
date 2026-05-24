@@ -580,7 +580,7 @@ void main() {
       expect(find.text('TRANSACTION LOG'), findsOneWidget);
       expect(find.text('SELLER'), findsOneWidget);
       expect(find.text('BUYER'), findsOneWidget);
-      expect(find.text('Only my transactions'), findsOneWidget);
+      expect(find.text('My transactions'), findsOneWidget);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
       expect(find.text('MeSeller'), findsOneWidget);

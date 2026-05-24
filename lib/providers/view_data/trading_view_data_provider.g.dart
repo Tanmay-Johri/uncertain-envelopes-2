@@ -6,7 +6,7 @@ part of 'trading_view_data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$tradingViewDataHash() => r'dc8733f682b01d2678743e91e87892921c8ad9b8';
+String _$tradingViewDataHash() => r'9f4161e08bd323c8b908eaa966b1b7d4c11c1ad4';
 
 /// Copied from Dart SDK
 class _SystemHash {

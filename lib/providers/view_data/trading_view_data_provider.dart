@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../core/trading/personal_order.dart';
 import '../../core/trading/personal_order_from_order.dart';
 import '../../data/enums/end_condition.dart';
+import '../../core/trading/trade_logs_from_executions.dart';
 import '../../data/models/execution.dart';
 import '../../data/models/game_player.dart';
 import '../../data/models/order.dart';
@@ -30,34 +31,6 @@ List<OrderBookLevel> _uiLevelsFromDataBook(List<book_model.OrderBookLevel> level
   return [
     for (final l in levels)
       OrderBookLevel(price: l.price, quantity: l.totalQuantity),
-  ];
-}
-
-List<TradeLogEntry> _tradeLogsFromExecutions({
-  required List<Execution> executions,
-  required Map<String, Order> ordersById,
-  required String Function(String playerId) nameForPlayer,
-}) {
-  // Transaction log: newest trades at the top (sheet uses list order as-is).
-  final sorted = [...executions]
-    ..sort((a, b) => b.executedAt.compareTo(a.executedAt));
-  return [
-    for (final e in sorted)
-      TradeLogEntry(
-        sellerName: nameForPlayer(
-          ordersById[e.sellOrderId]?.createdByPlayerId ?? 'unknown',
-        ),
-        sellerPlayerId:
-            ordersById[e.sellOrderId]?.createdByPlayerId ?? 'unknown',
-        buyerName: nameForPlayer(
-          ordersById[e.buyOrderId]?.createdByPlayerId ?? 'unknown',
-        ),
-        buyerPlayerId:
-            ordersById[e.buyOrderId]?.createdByPlayerId ?? 'unknown',
-        quantity: e.quantity,
-        price: e.executionPrice,
-        tradedAt: e.executedAt,
-      ),
   ];
 }
 
@@ -149,7 +122,7 @@ Future<GameTradingViewData> tradingViewData(Ref ref, String gameId) async {
             tradeParticipantIds.toList(),
           );
 
-  final tradeLogs = _tradeLogsFromExecutions(
+  final tradeLogs = tradeLogsFromExecutions(
     executions: executionsAsc,
     ordersById: ordersById,
     nameForPlayer: (id) => displayUsernameForPlayer(id, profilesById),

@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../providers/view_data/game_history_view_data_provider.dart';
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
+import '../../widgets/open_trade_logs_for_game.dart';
 import 'game_history_screen.dart';
 
 /// Route body: loads [gameHistoryViewDataProvider] (Phase 2B.9).
@@ -43,7 +44,10 @@ class GameHistoryRouteScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(gameHistoryViewDataProvider),
         ),
       ),
-      data: (entries) => GameHistoryScreen(entries: entries),
+      data: (entries) => GameHistoryScreen(
+        entries: entries,
+        onShowLogsForGame: (gameId) => openTradeLogsForGame(context, ref, gameId),
+      ),
     );
   }
 }
