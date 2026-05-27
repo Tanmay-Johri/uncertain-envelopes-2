@@ -22,7 +22,7 @@ abstract class SupabasePlayerGateway {
   /// win calculation. Each row must carry:
   ///   - `pnl` (double)
   ///   - `map_game_id` (string)
-  ///   - `top_pnl_in_game` (double) — the max pnl in that game
+  ///   - `top_pnl_in_game` (double) — present on RPC rows; wins use `pnl > 0`
   Future<List<Map<String, dynamic>>> fetchRankedFinalisedGameParticipations(
     String playerId,
   );

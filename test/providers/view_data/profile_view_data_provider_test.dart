@@ -44,7 +44,7 @@ void main() {
     expect(data.username, 'alice');
     expect(data.email, 'a@b.com');
     expect(data.gamesPlayed, 2);
-    expect(data.winRatePct, 50);
+    expect(data.winRatePct, 100);
   });
 
   test('profileViewData throws when not signed in', () async {

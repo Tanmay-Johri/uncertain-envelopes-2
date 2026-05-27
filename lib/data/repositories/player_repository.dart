@@ -14,7 +14,7 @@ class PlayerStats {
   /// Total finalised ranked games the player was in.
   final int gamesPlayed;
 
-  /// Finalised ranked games where the player had the highest PnL.
+  /// Finalised ranked games where the player's PnL is strictly positive.
   final int wins;
 
   /// 0.0 when `gamesPlayed == 0` (no divide-by-zero).

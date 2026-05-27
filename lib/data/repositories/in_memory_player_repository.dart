@@ -63,7 +63,7 @@ class InMemoryPlayerRepository implements PlayerRepository {
     final rows = _rankedParticipations[playerId] ?? const <_Participation>[];
     var wins = 0;
     for (final r in rows) {
-      if (r.playerPnl >= r.topPnl) wins++;
+      if (r.playerPnl > 0) wins++;
     }
     return PlayerStats(gamesPlayed: rows.length, wins: wins);
   }

@@ -52,8 +52,7 @@ class SupabasePlayerRepository implements PlayerRepository {
     for (final row in rows) {
       gamesPlayed++;
       final pnl = (row['pnl'] as num?)?.toDouble() ?? 0.0;
-      final topPnl = (row['top_pnl_in_game'] as num?)?.toDouble() ?? 0.0;
-      if (pnl >= topPnl) wins++;
+      if (pnl > 0) wins++;
     }
     return PlayerStats(gamesPlayed: gamesPlayed, wins: wins);
   }

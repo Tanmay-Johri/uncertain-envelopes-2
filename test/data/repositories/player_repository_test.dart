@@ -95,29 +95,40 @@ void main() {
       expect(stats.winRate, 0);
     });
 
-    test(
-        'fetchPerformanceStats counts games and wins (ties count as wins)',
+    test('fetchPerformanceStats counts games and wins (positive PnL only)',
         () async {
       repo.seedPlayer(_player());
       repo.seedRankedFinalisedGame(
         playerId: 'p-1',
         playerPnl: 100,
         topPnlInGame: 100,
-      ); // win (tie)
+      ); // win
       repo.seedRankedFinalisedGame(
         playerId: 'p-1',
         playerPnl: 50,
         topPnlInGame: 120,
-      ); // loss
+      ); // win (positive, not top)
       repo.seedRankedFinalisedGame(
         playerId: 'p-1',
-        playerPnl: 200,
+        playerPnl: -20,
         topPnlInGame: 200,
-      ); // win
+      ); // loss
       final stats = await repo.fetchPerformanceStats('p-1');
       expect(stats.gamesPlayed, 3);
       expect(stats.wins, 2);
       expect(stats.winRate, closeTo(2 / 3, 1e-9));
+    });
+
+    test('fetchPerformanceStats does not count zero PnL as a win', () async {
+      repo.seedPlayer(_player());
+      repo.seedRankedFinalisedGame(
+        playerId: 'p-1',
+        playerPnl: 0,
+        topPnlInGame: 0,
+      );
+      final stats = await repo.fetchPerformanceStats('p-1');
+      expect(stats.gamesPlayed, 1);
+      expect(stats.wins, 0);
     });
   });
 
@@ -158,7 +169,7 @@ void main() {
     test('fetchPerformanceStats aggregates from gateway rows', () async {
       gateway.rankedRows = [
         {'pnl': 100.0, 'top_pnl_in_game': 100.0, 'map_game_id': 'g1'},
-        {'pnl': 40.0, 'top_pnl_in_game': 90.0, 'map_game_id': 'g2'},
+        {'pnl': -10.0, 'top_pnl_in_game': 90.0, 'map_game_id': 'g2'},
         {'pnl': 150.0, 'top_pnl_in_game': 150.0, 'map_game_id': 'g3'},
       ];
       final stats = await repo.fetchPerformanceStats('p-1');
