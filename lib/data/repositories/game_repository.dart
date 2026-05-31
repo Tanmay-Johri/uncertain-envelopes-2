@@ -47,6 +47,10 @@ abstract class GameRepository {
   /// is inserted).
   Future<List<GamePlayer>> fetchGamePlayers(String gameId);
 
+  /// Member counts for each id in [gameIds]. Missing ids map to `0`.
+  /// Empty [gameIds] returns an empty map.
+  Future<Map<String, int>> fetchPlayerCountsByGameIds(List<String> gameIds);
+
   /// Public-and-joinable games. Excludes discarded / finalised / ended
   /// games because the home screen only surfaces ones a player can enter.
   Future<List<Game>> fetchPublicGames();

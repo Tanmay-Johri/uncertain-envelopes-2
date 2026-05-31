@@ -51,3 +51,17 @@ class HomeViewDataRetryOnce extends HomeViewData {
     }
   }
 }
+
+/// Counts [silentRefresh] invocations for route-refresh tests.
+class HomeViewDataSilentRefreshSpy extends HomeViewData {
+  var refreshCount = 0;
+
+  @override
+  Future<List<MockHomeGame>> build() async => const [];
+
+  @override
+  Future<void> silentRefresh() async {
+    refreshCount++;
+    state = const AsyncValue.data([]);
+  }
+}

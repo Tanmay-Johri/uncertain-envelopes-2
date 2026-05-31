@@ -10,7 +10,7 @@ class MockHomeGame {
     required this.isPublic,
     required this.isJoined,
     required this.isAdmin,
-    required this.playerInitials,
+    required this.playerCount,
     required this.maxPlayers,
     this.openEnvelopeResults = false,
   });
@@ -26,9 +26,8 @@ class MockHomeGame {
   /// When true, home opens results/envelope route instead of lobby.
   final bool openEnvelopeResults;
 
-  /// Single-letter initials (used by lobby mock fallbacks; length may exceed
-  /// displayed avatars when wiring real data).
-  final List<String> playerInitials;
+  /// Current number of players in the room.
+  final int playerCount;
 
   /// Maximum players allowed in the room (capacity).
   final int maxPlayers;
@@ -45,7 +44,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isPublic: true,
     isJoined: true,
     isAdmin: false,
-    playerInitials: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+    playerCount: 7,
     maxPlayers: 12,
   ),
   MockHomeGame(
@@ -57,7 +56,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isPublic: true,
     isJoined: true,
     isAdmin: true,
-    playerInitials: ['J', 'K'],
+    playerCount: 2,
     maxPlayers: 8,
   ),
   MockHomeGame(
@@ -68,7 +67,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isPublic: true,
     isJoined: true,
     isAdmin: false,
-    playerInitials: [],
+    playerCount: 0,
     maxPlayers: 12,
   ),
   MockHomeGame(
@@ -79,7 +78,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isPublic: true,
     isJoined: false,
     isAdmin: false,
-    playerInitials: [],
+    playerCount: 0,
     maxPlayers: 20,
   ),
   MockHomeGame(
@@ -90,7 +89,7 @@ const List<MockHomeGame> kMockHomeGames = [
     isPublic: false,
     isJoined: true,
     isAdmin: true,
-    playerInitials: ['X'],
+    playerCount: 1,
     maxPlayers: 8,
   ),
 ];

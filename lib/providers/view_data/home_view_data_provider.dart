@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/enums/game_security.dart';
 import '../../data/enums/game_state.dart';
 import '../../data/models/game.dart';
-import '../../data/repositories/game_repository.dart';
 import '../../ui/screens/home/home_mock_data.dart';
 import '../../ui/widgets/status_badge.dart';
 import '../auth_provider.dart';
@@ -55,7 +54,7 @@ bool _shouldShowPublicNotJoinedTile(Game g) {
 List<MockHomeGame> mockHomeGamesFromRepositorySnapshot({
   required List<Game> joinedGames,
   required List<Game> publicGames,
-  required Map<String, List<String>> playerInitialsByGameId,
+  required Map<String, int> playerCountByGameId,
   required String viewerPlayerId,
   DateTime? nowUtc,
 }) {
@@ -64,7 +63,6 @@ List<MockHomeGame> mockHomeGamesFromRepositorySnapshot({
   final out = <MockHomeGame>[];
 
   void addTile(Game g, {required bool isJoined}) {
-    final initials = playerInitialsByGameId[g.gameId] ?? const <String>[];
     final openEnvelope = isJoined && g.gameState == GameState.tradingEnded;
     out.add(
       MockHomeGame(
@@ -78,7 +76,7 @@ List<MockHomeGame> mockHomeGamesFromRepositorySnapshot({
         isPublic: g.gameSecurity == GameSecurity.public,
         isJoined: isJoined,
         isAdmin: g.adminPlayerId == viewerPlayerId,
-        playerInitials: initials,
+        playerCount: playerCountByGameId[g.gameId] ?? 0,
         maxPlayers: g.gameMaxPlayers,
         openEnvelopeResults: openEnvelope,
       ),
@@ -117,21 +115,6 @@ GameStatusBadge _statusBadge(
   }
 }
 
-Future<Map<String, List<String>>> _initialsByGame(
-  GameRepository repo,
-  Iterable<Game> games,
-) async {
-  final map = <String, List<String>>{};
-  for (final g in games) {
-    final players = await repo.fetchGamePlayers(g.gameId);
-    map[g.gameId] = [
-      for (var i = 0; i < players.length; i++)
-        String.fromCharCode(65 + (i % 26)),
-    ];
-  }
-  return map;
-}
-
 /// Joined + public discovery rows for the signed-in player (Phase 2B.2).
 ///
 /// [silentRefresh] updates the list **without** going through [AsyncLoading],
@@ -157,19 +140,26 @@ class HomeViewData extends _$HomeViewData {
     if (player == null) return const [];
 
     final repo = ref.watch(gameRepositoryProvider);
-    final joined = await repo.fetchJoinedGames(player.playerId);
-    final public = await repo.fetchPublicGames();
+    final listResults = await Future.wait([
+      repo.fetchJoinedGames(player.playerId),
+      repo.fetchPublicGames(),
+    ]);
+    final joined = listResults[0];
+    final public = listResults[1];
 
     final joinedIds = joined.map((g) => g.gameId).toSet();
     final publicOnly =
         public.where((g) => !joinedIds.contains(g.gameId)).toList();
-    final forInitials = [...joined, ...publicOnly];
-    final initialsMap = await _initialsByGame(repo, forInitials);
+    final gameIds = [
+      for (final g in joined) g.gameId,
+      for (final g in publicOnly) g.gameId,
+    ];
+    final playerCountByGameId = await repo.fetchPlayerCountsByGameIds(gameIds);
 
     return mockHomeGamesFromRepositorySnapshot(
       joinedGames: joined,
       publicGames: publicOnly,
-      playerInitialsByGameId: initialsMap,
+      playerCountByGameId: playerCountByGameId,
       viewerPlayerId: player.playerId,
     );
   }

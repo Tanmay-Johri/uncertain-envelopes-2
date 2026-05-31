@@ -110,6 +110,21 @@ class SupabaseGameRepository implements GameRepository {
   }
 
   @override
+  Future<Map<String, int>> fetchPlayerCountsByGameIds(
+    List<String> gameIds,
+  ) async {
+    if (gameIds.isEmpty) return const {};
+    final rows = await _gateway.fetchPlayerCountRowsByGameIds(gameIds);
+    final counts = <String, int>{for (final id in gameIds) id: 0};
+    for (final row in rows) {
+      final gameId = row['map_game_id'] as String?;
+      if (gameId == null) continue;
+      counts[gameId] = (counts[gameId] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  @override
   Future<List<Game>> fetchPublicGames() async {
     final rows = await _gateway.fetchPublicGameRows();
     return rows.map(Game.fromJson).toList();

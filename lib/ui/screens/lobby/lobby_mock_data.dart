@@ -28,15 +28,13 @@ GameLobbyScenario mockLobbyScenarioForGameId(String gameId) {
 }
 
 GameLobbyViewData _dataFromHomeGame(MockHomeGame g) {
-  final initialsList =
-      g.playerInitials.isEmpty ? <String>['?'] : g.playerInitials;
-  final n = initialsList.length.clamp(1, 8);
+  final n = g.playerCount == 0 ? 1 : g.playerCount.clamp(1, 8);
   final players = List<LobbyPlayerView>.generate(n, (i) {
     final isAdmin = g.isAdmin && i == 0;
     return LobbyPlayerView(
       id: 'p$i',
       username: isAdmin ? 'HostUser' : 'Player ${i + 1}',
-      initials: initialsList[i],
+      initials: String.fromCharCode(65 + (i % 26)),
       isGameAdmin: isAdmin,
     );
   });

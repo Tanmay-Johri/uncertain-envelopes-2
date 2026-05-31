@@ -6,6 +6,12 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 abstract class SupabaseGameGateway {
   Future<Map<String, dynamic>?> fetchGameRow(String gameId);
   Future<List<Map<String, dynamic>>> fetchGamePlayerRows(String gameId);
+
+  /// Rows with at least `map_game_id` for every membership in [gameIds].
+  Future<List<Map<String, dynamic>>> fetchPlayerCountRowsByGameIds(
+    List<String> gameIds,
+  );
+
   Future<List<Map<String, dynamic>>> fetchPublicGameRows();
   Future<List<Map<String, dynamic>>> fetchJoinedGameRows(String playerId);
   Future<Map<String, dynamic>?> lookupGameRowByCode(String code);
@@ -42,6 +48,18 @@ class RealSupabaseGameGateway implements SupabaseGameGateway {
         .select()
         .eq('map_game_id', gameId)
         .order('joined_at', ascending: true);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchPlayerCountRowsByGameIds(
+    List<String> gameIds,
+  ) async {
+    if (gameIds.isEmpty) return const [];
+    final rows = await _client
+        .from('games_players')
+        .select('map_game_id')
+        .inFilter('map_game_id', gameIds);
     return List<Map<String, dynamic>>.from(rows);
   }
 

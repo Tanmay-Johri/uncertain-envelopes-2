@@ -196,6 +196,23 @@ class InMemoryGameRepository implements GameRepository {
   }
 
   @override
+  Future<Map<String, int>> fetchPlayerCountsByGameIds(
+    List<String> gameIds,
+  ) async {
+    if (gameIds.isEmpty) return const {};
+    final counts = <String, int>{for (final id in gameIds) id: 0};
+    for (final key in _memberships) {
+      final parts = key.split('::');
+      if (parts.length != 2) continue;
+      final gameId = parts[0];
+      if (counts.containsKey(gameId)) {
+        counts[gameId] = counts[gameId]! + 1;
+      }
+    }
+    return counts;
+  }
+
+  @override
   Future<List<Game>> fetchPublicGames() async {
     return _games.values
         .where(

@@ -158,6 +158,21 @@ void main() {
       expect((await repo.fetchGame('g-1'))?.gameId, 'g-1');
     });
 
+    test('fetchPlayerCountsByGameIds returns empty map for empty ids', () async {
+      expect(await repo.fetchPlayerCountsByGameIds(const []), isEmpty);
+    });
+
+    test('fetchPlayerCountsByGameIds counts memberships per game', () async {
+      repo.seedGame(_game(id: 'g-1'));
+      repo.seedGame(_game(id: 'g-2', code: 'CODE2'));
+      repo.seedMembership('g-1', 'p-1');
+      repo.seedMembership('g-1', 'p-2');
+      repo.seedMembership('g-2', 'p-3');
+
+      final counts = await repo.fetchPlayerCountsByGameIds(['g-1', 'g-2', 'g-missing']);
+      expect(counts, {'g-1': 2, 'g-2': 1, 'g-missing': 0});
+    });
+
     test('fetchPublicGames filters by security and state', () async {
       repo.seedGame(_game(id: 'g-public-created', state: GameState.created));
       repo.seedGame(_game(
@@ -351,6 +366,23 @@ void main() {
       expect(games.single.gameId, 'g-9');
     });
 
+    test('fetchPlayerCountsByGameIds batches via gateway', () async {
+      gateway.playerCountRowsByGameIds['g-1'] = [
+        {'map_game_id': 'g-1'},
+        {'map_game_id': 'g-1'},
+      ];
+      gateway.playerCountRowsByGameIds['g-2'] = [
+        {'map_game_id': 'g-2'},
+      ];
+      final counts =
+          await repo.fetchPlayerCountsByGameIds(['g-1', 'g-2', 'g-3']);
+      expect(counts, {'g-1': 2, 'g-2': 1, 'g-3': 0});
+      expect(
+        gateway.calls.single,
+        'fetchPlayerCountRowsByGameIds([g-1, g-2, g-3])',
+      );
+    });
+
     test('lookupGameByCode uppercases before calling gateway', () async {
       gateway.codeRows['XY99Z'] = _gameRow('g-1', code: 'XY99Z');
       final g = await repo.lookupGameByCode('xy99z');
@@ -449,11 +481,25 @@ class _FakeGameGateway implements SupabaseGameGateway {
   }
 
   final Map<String, List<Map<String, dynamic>>> playersByGame = {};
+  final Map<String, List<Map<String, dynamic>>> playerCountRowsByGameIds = {};
 
   @override
   Future<List<Map<String, dynamic>>> fetchGamePlayerRows(String gameId) async {
     calls.add('fetchGamePlayerRows($gameId)');
     return playersByGame[gameId] ?? const [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchPlayerCountRowsByGameIds(
+    List<String> gameIds,
+  ) async {
+    calls.add('fetchPlayerCountRowsByGameIds([${gameIds.join(', ')}])');
+    if (gameIds.isEmpty) return const [];
+    final out = <Map<String, dynamic>>[];
+    for (final id in gameIds) {
+      out.addAll(playerCountRowsByGameIds[id] ?? const []);
+    }
+    return out;
   }
 
   @override

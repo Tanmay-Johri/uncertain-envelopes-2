@@ -48,12 +48,12 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: {'g1': ['A', 'B']},
+        playerCountByGameId: {'g1': 2},
         viewerPlayerId: 'p-view',
       );
       expect(tiles.single.status, GameStatusBadge.playing);
       expect(tiles.single.isJoined, isTrue);
-      expect(tiles.single.playerInitials.length, 2);
+      expect(tiles.single.playerCount, 2);
     });
 
     test('created + joined + viewer is admin maps to joined', () {
@@ -61,7 +61,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
       );
       expect(tiles.single.status, GameStatusBadge.joined);
@@ -72,7 +72,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
       );
       expect(tiles.single.status, GameStatusBadge.joined);
@@ -83,7 +83,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: const [],
         publicGames: [g],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
       );
       expect(tiles.single.status, GameStatusBadge.notJoined);
@@ -105,7 +105,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
         nowUtc: now,
       );
@@ -128,7 +128,7 @@ void main() {
         final tiles = mockHomeGamesFromRepositorySnapshot(
           joinedGames: [g],
           publicGames: const [],
-          playerInitialsByGameId: const {},
+          playerCountByGameId: const {},
           viewerPlayerId: 'p-me',
           nowUtc: now,
         );
@@ -148,7 +148,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
         nowUtc: now,
       );
@@ -167,7 +167,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: [g],
         publicGames: const [],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
         nowUtc: now,
       );
@@ -186,7 +186,7 @@ void main() {
       final tiles = mockHomeGamesFromRepositorySnapshot(
         joinedGames: const [],
         publicGames: [g],
-        playerInitialsByGameId: const {},
+        playerCountByGameId: const {},
         viewerPlayerId: 'p-me',
         nowUtc: now,
       );

@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/models/player.dart';
 import '../../providers/auth_provider.dart';
 import 'app_router.dart';
+import 'shell_route_refresh.dart';
 
 part 'app_router_provider.g.dart';
 
@@ -41,9 +42,25 @@ GoRouter appRouter(Ref ref) {
     return null;
   }
 
-  return buildAppRouter(
+  final router = buildAppRouter(
     initialLocation: ref.read(appRouterInitialLocationProvider),
     refreshListenable: refresh,
     redirect: redirect,
   );
+
+  void onRouteChanged() {
+    final config = router.routerDelegate.currentConfiguration;
+    if (config.isEmpty) return;
+    final location = config.last.matchedLocation;
+    // Defer: router delegate notifies during widget tree build; modifying
+    // providers synchronously here triggers Riverpod's build-phase guard.
+    Future.microtask(() {
+      refreshShellTabDataForRoute(location, read: ref.read);
+    });
+  }
+
+  router.routerDelegate.addListener(onRouteChanged);
+  ref.onDispose(() => router.routerDelegate.removeListener(onRouteChanged));
+
+  return router;
 }

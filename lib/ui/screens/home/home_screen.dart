@@ -288,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       title: g.title,
                       description: g.description,
                       status: g.status,
-                      playerCount: g.playerInitials.length,
+                      playerCount: g.playerCount,
                       maxPlayers: g.maxPlayers,
                       onOpen: () => widget.onOpenGame?.call(g),
                     );
