@@ -27,8 +27,8 @@ class AuthScreen extends StatefulWidget {
   });
 
   final AuthTab initialTab;
-  final ValueChanged<LoginSubmission>? onLogIn;
-  final ValueChanged<SignUpSubmission>? onSignUp;
+  final Future<bool> Function(LoginSubmission)? onLogIn;
+  final Future<bool> Function(SignUpSubmission)? onSignUp;
   final VoidCallback? onForgotPassword;
 
   @override
@@ -130,8 +130,8 @@ class _AuthCard extends StatelessWidget {
 
   final AuthTab tab;
   final ValueChanged<AuthTab> onTabChanged;
-  final ValueChanged<LoginSubmission>? onLogIn;
-  final ValueChanged<SignUpSubmission>? onSignUp;
+  final Future<bool> Function(LoginSubmission)? onLogIn;
+  final Future<bool> Function(SignUpSubmission)? onSignUp;
   final VoidCallback? onForgotPassword;
 
   @override
@@ -166,7 +166,7 @@ class _AuthCard extends StatelessWidget {
                     maintainState: true,
                     maintainAnimation: true,
                     child: LoginForm(
-                      onSubmit: (s) => onLogIn?.call(s),
+                      onSubmit: (s) async => (await onLogIn?.call(s)) ?? false,
                       onForgotTap: onForgotPassword,
                     ),
                   ),
@@ -175,7 +175,7 @@ class _AuthCard extends StatelessWidget {
                     maintainState: true,
                     maintainAnimation: true,
                     child: SignUpForm(
-                      onSubmit: (s) => onSignUp?.call(s),
+                      onSubmit: (s) async => (await onSignUp?.call(s)) ?? false,
                     ),
                   ),
                 ],

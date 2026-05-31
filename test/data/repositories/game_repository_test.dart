@@ -60,6 +60,73 @@ void main() {
       expect(commands.inserts.single.playerId, 'p-1');
     });
 
+    test('createGameAndReturnGameId rejects duplicate active game_name', () async {
+      await repo.createGameAndReturnGameId(
+        adminPlayerId: 'p-admin',
+        gameName: 'Taken',
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.casual,
+        gameMaxPlayers: 4,
+        endCondition: EndCondition.endless,
+      );
+      expect(
+        () => repo.createGameAndReturnGameId(
+          adminPlayerId: 'p-admin',
+          gameName: 'Taken',
+          gameSecurity: GameSecurity.public,
+          isRanked: IsRanked.casual,
+          gameMaxPlayers: 4,
+          endCondition: EndCondition.endless,
+        ),
+        throwsA(isA<ActiveGameNameInUseException>()),
+      );
+    });
+
+    test('createGameAndReturnGameId allows name reuse after game_finalised',
+        () async {
+      final firstId = await repo.createGameAndReturnGameId(
+        adminPlayerId: 'p-admin',
+        gameName: 'Reuse Me',
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.casual,
+        gameMaxPlayers: 4,
+        endCondition: EndCondition.endless,
+      );
+      final ended = (await repo.fetchGame(firstId))!;
+      repo.seedGame(
+        Game(
+          gameId: ended.gameId,
+          gameName: ended.gameName,
+          gameDescription: ended.gameDescription,
+          gameCreatedAt: ended.gameCreatedAt,
+          gameSecurity: ended.gameSecurity,
+          isRanked: ended.isRanked,
+          gameMaxPlayers: ended.gameMaxPlayers,
+          joiningCode: ended.joiningCode,
+          endCondition: ended.endCondition,
+          totalDecidedDurationSeconds: ended.totalDecidedDurationSeconds,
+          endTimeDecided: ended.endTimeDecided,
+          startTime: ended.startTime,
+          endTimeActual: ended.endTimeActual,
+          gameState: GameState.gameFinalised,
+          adminPlayerId: ended.adminPlayerId,
+          lastTradedPrice: ended.lastTradedPrice,
+          envelopePrice: ended.envelopePrice,
+          stateVersion: ended.stateVersion,
+          updatedAt: ended.updatedAt,
+        ),
+      );
+      final secondId = await repo.createGameAndReturnGameId(
+        adminPlayerId: 'p-admin',
+        gameName: 'Reuse Me',
+        gameSecurity: GameSecurity.public,
+        isRanked: IsRanked.casual,
+        gameMaxPlayers: 4,
+        endCondition: EndCondition.endless,
+      );
+      expect(secondId, isNot(firstId));
+    });
+
     test('createGameAndReturnGameId inserts game and admin membership', () async {
       final gameId = await repo.createGameAndReturnGameId(
         adminPlayerId: 'p-admin',

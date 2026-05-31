@@ -97,4 +97,56 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'GameTradingRouteScreen redirects away when opened on trading_ended game',
+    (tester) async {
+      const tid = 'ended-game';
+      final auth = InMemoryAuthRepository();
+      await auth.signUp(
+        email: 'route-ended@test.co',
+        password: 'password12',
+        username: 'route_ended',
+      );
+
+      final ended = GameSessionState(
+        game: stubGameForRouterTests(
+          gameId: tid,
+          gameState: GameState.tradingEnded,
+        ),
+        players: const [],
+      );
+      final harness = _HarnessCurrentGame(ended);
+
+      final router = buildAppRouter(initialLocation: '/game/$tid/trading');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(auth),
+            homeViewDataProvider.overrideWith(HomeViewDataKMockGames.new),
+            currentGameProvider(tid).overrideWith(() => harness),
+            tradingViewDataProvider(tid).overrideWith(
+              (ref) => Future.value(mockTradingScenarioForGameId('g1').data),
+            ),
+            resultsViewDataProvider(tid).overrideWith(
+              (ref) => Future.value(mockGameResultsViewDataForGameId('GAME1')),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: buildAppTheme(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(GameResultsScreen), findsOneWidget);
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/game/$tid/results',
+      );
+    },
+  );
 }

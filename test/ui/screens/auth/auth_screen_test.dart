@@ -10,8 +10,8 @@ import 'package:uncertain_envelopes_2/ui/widgets/auth_tab_switcher.dart';
 Future<void> _pump(
   WidgetTester tester, {
   AuthTab initial = AuthTab.logIn,
-  ValueChanged<LoginSubmission>? onLogIn,
-  ValueChanged<SignUpSubmission>? onSignUp,
+  Future<bool> Function(LoginSubmission)? onLogIn,
+  Future<bool> Function(SignUpSubmission)? onSignUp,
   VoidCallback? onForgot,
 }) {
   return tester.pumpWidget(
@@ -119,7 +119,10 @@ void main() {
     testWidgets('valid login bubbles up to onLogIn with trimmed identifier',
         (tester) async {
       LoginSubmission? captured;
-      await _pump(tester, onLogIn: (s) => captured = s);
+      await _pump(tester, onLogIn: (s) async {
+        captured = s;
+        return false;
+      });
       await tester.enterText(
         find.byKey(const Key('login_identifier_field')),
         '  tanmay  ',
@@ -140,7 +143,10 @@ void main() {
       await _pump(
         tester,
         initial: AuthTab.signUp,
-        onSignUp: (s) => captured = s,
+        onSignUp: (s) async {
+          captured = s;
+          return false;
+        },
       );
       await tester.enterText(
         find.byKey(const Key('signup_username_field')),

@@ -74,6 +74,18 @@ class InMemoryGameRepository implements GameRepository {
     );
   }
 
+  static bool _isActiveForNameUniqueness(GameState state) {
+    return state == GameState.created ||
+        state == GameState.tradingStarted ||
+        state == GameState.tradingEnded;
+  }
+
+  bool _activeGameNameTaken(String gameName) {
+    return _games.values.any(
+      (g) => g.gameName == gameName && _isActiveForNameUniqueness(g.gameState),
+    );
+  }
+
   @override
   Future<String> createGameAndReturnGameId({
     required String adminPlayerId,
@@ -85,6 +97,9 @@ class InMemoryGameRepository implements GameRepository {
     required EndCondition endCondition,
     int? totalDecidedDurationSeconds,
   }) async {
+    if (_activeGameNameTaken(gameName)) {
+      throw const ActiveGameNameInUseException();
+    }
     final commandId = await submitCreateGame(
       adminPlayerId: adminPlayerId,
       gameName: gameName,

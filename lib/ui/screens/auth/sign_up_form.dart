@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -32,19 +34,24 @@ class SignUpSubmission {
 class SignUpForm extends StatefulWidget {
   const SignUpForm({super.key, required this.onSubmit});
 
-  final ValueChanged<SignUpSubmission> onSubmit;
+  /// `true` when auth succeeded (caller navigates away); `false` on failure.
+  final Future<bool> Function(SignUpSubmission) onSubmit;
 
   @override
   State<SignUpForm> createState() => _SignUpFormState();
 }
 
 class _SignUpFormState extends State<SignUpForm> {
+  static const _busyCooldown = Duration(seconds: 8);
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
   bool _obscurePassword = true;
+  bool _buttonBusy = false;
+  Timer? _busyTimer;
 
   // Kept intentionally simple: exactly one `@` with something on each
   // side and a `.` in the domain. Full RFC-compliant validation lives
@@ -54,22 +61,40 @@ class _SignUpFormState extends State<SignUpForm> {
 
   @override
   void dispose() {
+    _busyTimer?.cancel();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     setState(() => _autovalidate = AutovalidateMode.onUserInteraction);
     if (_formKey.currentState?.validate() != true) return;
-    widget.onSubmit(
+    if (_buttonBusy) return;
+
+    setState(() => _buttonBusy = true);
+    _busyTimer?.cancel();
+    _busyTimer = Timer(_busyCooldown, () {
+      if (mounted && _buttonBusy) {
+        setState(() => _buttonBusy = false);
+      }
+    });
+
+    final ok = await widget.onSubmit(
       SignUpSubmission(
         username: _usernameController.text.trim().toLowerCase(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       ),
     );
+    if (!ok) _clearButtonBusy();
+  }
+
+  void _clearButtonBusy() {
+    _busyTimer?.cancel();
+    _busyTimer = null;
+    if (_buttonBusy && mounted) setState(() => _buttonBusy = false);
   }
 
   String? _validateUsername(String? value) {
@@ -147,7 +172,7 @@ class _SignUpFormState extends State<SignUpForm> {
             obscureText: _obscurePassword,
             autofillHints: const [AutofillHints.newPassword],
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _submit(),
+            onFieldSubmitted: (_) => unawaited(_submit()),
             decoration: InputDecoration(
               hintText: 'Create a strong password',
               suffixIcon: AuthPasswordFieldSuffix(
@@ -163,9 +188,9 @@ class _SignUpFormState extends State<SignUpForm> {
           const SizedBox(height: AppSpacing.xl),
           NeonButton(
             key: const Key('signup_submit_button'),
-            label: 'Sign Up',
+            label: _buttonBusy ? 'Signing up' : 'Sign Up',
             trailingIcon: Icons.arrow_forward,
-            onPressed: _submit,
+            onPressed: _buttonBusy ? null : () => unawaited(_submit()),
           ),
         ],
       ),

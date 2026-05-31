@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -28,7 +30,8 @@ class LoginForm extends StatefulWidget {
     this.onForgotTap,
   });
 
-  final ValueChanged<LoginSubmission> onSubmit;
+  /// `true` when auth succeeded (caller navigates away); `false` on failure.
+  final Future<bool> Function(LoginSubmission) onSubmit;
   final VoidCallback? onForgotTap;
 
   @override
@@ -36,28 +39,50 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
+  static const _busyCooldown = Duration(seconds: 8);
+
   final _formKey = GlobalKey<FormState>();
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
   bool _obscurePassword = true;
+  bool _buttonBusy = false;
+  Timer? _busyTimer;
 
   @override
   void dispose() {
+    _busyTimer?.cancel();
     _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     setState(() => _autovalidate = AutovalidateMode.onUserInteraction);
     if (_formKey.currentState?.validate() != true) return;
-    widget.onSubmit(
+    if (_buttonBusy) return;
+
+    setState(() => _buttonBusy = true);
+    _busyTimer?.cancel();
+    _busyTimer = Timer(_busyCooldown, () {
+      if (mounted && _buttonBusy) {
+        setState(() => _buttonBusy = false);
+      }
+    });
+
+    final ok = await widget.onSubmit(
       LoginSubmission(
         identifier: _identifierController.text.trim(),
         password: _passwordController.text,
       ),
     );
+    if (!ok) _clearButtonBusy();
+  }
+
+  void _clearButtonBusy() {
+    _busyTimer?.cancel();
+    _busyTimer = null;
+    if (_buttonBusy && mounted) setState(() => _buttonBusy = false);
   }
 
   String? _validateIdentifier(String? value) {
@@ -121,7 +146,7 @@ class _LoginFormState extends State<LoginForm> {
             obscureText: _obscurePassword,
             autofillHints: const [AutofillHints.password],
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _submit(),
+            onFieldSubmitted: (_) => unawaited(_submit()),
             decoration: InputDecoration(
               hintText: '••••••••',
               suffixIcon: AuthPasswordFieldSuffix(
@@ -137,9 +162,9 @@ class _LoginFormState extends State<LoginForm> {
           const SizedBox(height: AppSpacing.xl),
           NeonButton(
             key: const Key('login_submit_button'),
-            label: 'Log In',
+            label: _buttonBusy ? 'Logging in' : 'Log In',
             trailingIcon: Icons.login,
-            onPressed: _submit,
+            onPressed: _buttonBusy ? null : () => unawaited(_submit()),
           ),
         ],
       ),

@@ -300,6 +300,57 @@ BEGIN
   PERFORM 1;  -- no-op
 
   -- -------------------------------------------------------------------------
+  -- Case 25: duplicate game_name while another game is active (created)
+  -- -------------------------------------------------------------------------
+  INSERT INTO commands (command_type, player_id, payload) VALUES (
+    'create_game', v_admin,
+    jsonb_build_object(
+      'game_name', 'Name Collide Test',
+      'game_security', 'public',
+      'is_ranked', 'casual',
+      'game_max_players', 4,
+      'end_condition', 'endless'
+    )
+  ) RETURNING command_id INTO v_cmd_id;
+  v_game_id := process_create_game(v_cmd_id);
+
+  INSERT INTO commands (command_type, player_id, payload) VALUES (
+    'create_game', v_admin,
+    jsonb_build_object(
+      'game_name', 'Name Collide Test',
+      'game_security', 'public',
+      'is_ranked', 'casual',
+      'game_max_players', 4,
+      'end_condition', 'endless'
+    )
+  ) RETURNING command_id INTO v_cmd_id;
+  BEGIN
+    PERFORM process_create_game(v_cmd_id);
+    RAISE EXCEPTION 'FAIL: duplicate active game_name accepted';
+  EXCEPTION WHEN SQLSTATE 'UE001' THEN NULL;
+  END;
+
+  -- -------------------------------------------------------------------------
+  -- Case 26: reuse game_name after prior game is terminal (game_finalised)
+  -- -------------------------------------------------------------------------
+  UPDATE games
+    SET game_state = 'game_finalised'
+    WHERE game_id = v_game_id;
+
+  INSERT INTO commands (command_type, player_id, payload) VALUES (
+    'create_game', v_admin,
+    jsonb_build_object(
+      'game_name', 'Name Collide Test',
+      'game_security', 'public',
+      'is_ranked', 'casual',
+      'game_max_players', 4,
+      'end_condition', 'endless'
+    )
+  ) RETURNING command_id INTO v_cmd_id;
+  v_game_id := process_create_game(v_cmd_id);
+  ASSERT v_game_id IS NOT NULL, 'reuse game_name after terminal must succeed';
+
+  -- -------------------------------------------------------------------------
   -- Bulk: create 20 games, assert distinct joining_codes
   -- -------------------------------------------------------------------------
   v_codes := ARRAY[]::text[];

@@ -21,6 +21,7 @@ import '../../widgets/pnl_calculator.dart';
 import '../../widgets/price_chart.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/trade_logs_sheet.dart';
+import '../orders/pending_orders_view_data.dart';
 import 'order_book_widget.dart';
 import 'trading_stat_format.dart';
 import 'trading_view_data.dart';
@@ -42,6 +43,9 @@ class GameTradingScreen extends StatefulWidget {
     this.onAddTime,
     this.submitCancelOrderCommand,
     this.onSubmitNewOrder,
+    this.switchableTradingGames,
+    this.onRefreshSwitchableGames,
+    this.onRequestSwitchGame,
   });
 
   final GameTradingViewData data;
@@ -69,6 +73,16 @@ class GameTradingScreen extends StatefulWidget {
   /// When set, new orders from [NewOrderModal] are submitted through the repo
   /// instead of optimistic local-only rows.
   final Future<void> Function(PersonalOrder draft)? onSubmitNewOrder;
+
+  /// Joined games in `trading_started` (same list as Orders create-order picker).
+  final List<TradingOrderTargetGame>? switchableTradingGames;
+
+  /// Called when the title switcher opens — must refresh and return latest games.
+  final Future<List<TradingOrderTargetGame>> Function()?
+      onRefreshSwitchableGames;
+
+  /// Refreshes eligibility then navigates when [gameId] is still live trading.
+  final Future<void> Function(String gameId)? onRequestSwitchGame;
 
   @override
   State<GameTradingScreen> createState() => _GameTradingScreenState();
@@ -381,28 +395,16 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      data.gameTitle,
-                      key: const ValueKey('game-trading-title'),
-                      textAlign: TextAlign.center,
-                      style: AppTypography.sectionHeader.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    _TradingGameTitleSwitcher(
+                      currentGameId: widget.gameId,
+                      gameTitle: data.gameTitle,
+                      switchableTradingGames:
+                          widget.switchableTradingGames ?? const [],
+                      onRefreshSwitchableGames: widget.onRefreshSwitchableGames,
+                      onRequestSwitchGame: widget.onRequestSwitchGame,
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      data.description,
-                      key: const ValueKey('game-trading-description'),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.monoSmall.copyWith(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                        height: 1.4,
-                      ),
-                    ),
+                    _ExpandableGameDescription(description: data.description),
                     const SizedBox(height: AppSpacing.lg),
                     if (data.isTimed &&
                         (data.tradingDeadlineUtc != null ||
@@ -511,6 +513,229 @@ class _GameTradingScreenState extends State<GameTradingScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Tap to expand/collapse long game descriptions (default: 2 lines + ellipsis).
+class _ExpandableGameDescription extends StatefulWidget {
+  const _ExpandableGameDescription({required this.description});
+
+  final String description;
+
+  @override
+  State<_ExpandableGameDescription> createState() =>
+      _ExpandableGameDescriptionState();
+}
+
+class _ExpandableGameDescriptionState extends State<_ExpandableGameDescription> {
+  var _expanded = false;
+
+  static final _style = AppTypography.monoSmall.copyWith(
+    fontSize: 12,
+    color: AppColors.textTertiary,
+    height: 1.4,
+  );
+
+  @override
+  void didUpdateWidget(covariant _ExpandableGameDescription oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.description != widget.description) {
+      _expanded = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      key: const ValueKey('game-trading-description'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: Text(
+        widget.description,
+        textAlign: TextAlign.center,
+        maxLines: _expanded ? null : 2,
+        overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        style: _style,
+      ),
+    );
+  }
+}
+
+/// Centered game title with optional switcher to other live trading games.
+class _TradingGameTitleSwitcher extends StatelessWidget {
+  const _TradingGameTitleSwitcher({
+    required this.currentGameId,
+    required this.gameTitle,
+    required this.switchableTradingGames,
+    this.onRefreshSwitchableGames,
+    this.onRequestSwitchGame,
+  });
+
+  final String currentGameId;
+  final String gameTitle;
+  final List<TradingOrderTargetGame> switchableTradingGames;
+  final Future<List<TradingOrderTargetGame>> Function()? onRefreshSwitchableGames;
+  final Future<void> Function(String gameId)? onRequestSwitchGame;
+
+  static const double _switcherIconSize = 20;
+  static const double _switcherTapTarget = 28;
+  static const double _titleArrowGap = AppSpacing.xs;
+
+  Future<void> _openSwitcherMenu(
+    BuildContext context,
+    RenderBox anchor,
+  ) async {
+    final fresh = onRefreshSwitchableGames != null
+        ? await onRefreshSwitchableGames!()
+        : switchableTradingGames;
+    if (!context.mounted) return;
+
+    final sorted = List<TradingOrderTargetGame>.of(fresh)
+      ..sort((a, b) => a.gameTitle.compareTo(b.gameTitle));
+    if (sorted.length <= 1 || onRequestSwitchGame == null) return;
+
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final anchorOrigin = anchor.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final position = RelativeRect.fromRect(
+      Rect.fromLTWH(
+        anchorOrigin.dx,
+        anchorOrigin.dy + anchor.size.height,
+        anchor.size.width,
+        0,
+      ),
+      Offset.zero & overlayBox.size,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        for (final g in sorted)
+          PopupMenuItem<String>(
+            value: g.gameId,
+            child: Text(
+              g.gameTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodyMedium,
+            ),
+          ),
+      ],
+    );
+    if (selected == null || selected == currentGameId) return;
+    await onRequestSwitchGame!(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = List<TradingOrderTargetGame>.of(switchableTradingGames)
+      ..sort((a, b) => a.gameTitle.compareTo(b.gameTitle));
+    final showSwitcher =
+        sorted.length > 1 &&
+        onRequestSwitchGame != null &&
+        onRefreshSwitchableGames != null;
+
+    final titleStyle = AppTypography.sectionHeader.copyWith(
+      fontSize: 20,
+      fontWeight: FontWeight.w700,
+    );
+
+    // Title block is at true screen centre (any length / line count). Chevron
+    // sits just to the right; max width leaves room on both sides so the title
+    // stays centred and the arrow never overlaps the right edge.
+    //
+    // We measure the title with the same effective style + textScaler as the
+    // rendered Text so the Positioned width matches actual layout (otherwise
+    // the Text wraps inside an undersized box even with horizontal slack).
+    final effectiveStyle =
+        DefaultTextStyle.of(context).style.merge(titleStyle);
+    final textScaler = MediaQuery.textScalerOf(context);
+
+    return LayoutBuilder(
+      key: const ValueKey('game-trading-title-row'),
+      builder: (context, constraints) {
+        final trailingSlot = showSwitcher
+            ? _titleArrowGap + _switcherTapTarget
+            : 0.0;
+        final maxTitleWidth = (constraints.maxWidth - 2 * trailingSlot)
+            .clamp(0.0, constraints.maxWidth);
+
+        final painter = TextPainter(
+          text: TextSpan(text: gameTitle, style: effectiveStyle),
+          textDirection: Directionality.of(context),
+          textAlign: TextAlign.center,
+          textScaler: textScaler,
+        )..layout(maxWidth: maxTitleWidth);
+
+        // +1px guards against sub-pixel rounding causing an unwanted wrap.
+        final titleWidth = (painter.width + 1).clamp(0.0, maxTitleWidth);
+        final titleHeight = painter.height;
+        final titleLeft = (constraints.maxWidth - titleWidth) / 2;
+
+        final lineMetrics = painter.computeLineMetrics();
+        final firstLineCenterY = lineMetrics.isEmpty
+            ? titleHeight / 2
+            : lineMetrics.first.baseline -
+                lineMetrics.first.ascent +
+                lineMetrics.first.height / 2;
+        final arrowTop = firstLineCenterY - _switcherTapTarget / 2;
+
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: titleHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: titleLeft,
+                width: titleWidth,
+                child: Text(
+                  gameTitle,
+                  key: const ValueKey('game-trading-title'),
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                  style: titleStyle,
+                ),
+              ),
+              if (showSwitcher)
+                Positioned(
+                  left: titleLeft + titleWidth + _titleArrowGap,
+                  top: arrowTop,
+                  width: _switcherTapTarget,
+                  height: _switcherTapTarget,
+                  child: Builder(
+                    builder: (buttonContext) {
+                      return IconButton(
+                        key: const ValueKey('game-trading-title-switcher'),
+                        tooltip: 'Switch trading game',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: _switcherTapTarget,
+                          minHeight: _switcherTapTarget,
+                        ),
+                        splashRadius: 18,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: _switcherIconSize,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () {
+                          final anchor =
+                              buttonContext.findRenderObject() as RenderBox?;
+                          if (anchor == null) return;
+                          unawaited(_openSwitcherMenu(buttonContext, anchor));
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

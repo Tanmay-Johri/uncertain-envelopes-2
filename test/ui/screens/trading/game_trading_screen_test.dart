@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uncertain_envelopes_2/core/theme/app_theme.dart';
 import 'package:uncertain_envelopes_2/core/trading/cancel_order_command.dart';
+import 'package:uncertain_envelopes_2/ui/screens/orders/pending_orders_view_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/game_trading_screen.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_mock_data.dart';
 import 'package:uncertain_envelopes_2/ui/screens/trading/trading_view_data.dart';
@@ -720,6 +721,270 @@ void main() {
       expect(find.text('End Game'), findsOneWidget);
     });
   });
+
+  group('GameTradingScreen (title switcher)', () {
+    const eligible = [
+      TradingOrderTargetGame(
+        gameId: 'g-a',
+        gameTitle: 'Alpha',
+        gameDescription: 'a',
+      ),
+      TradingOrderTargetGame(
+        gameId: 'g-b',
+        gameTitle: 'Beta',
+        gameDescription: 'b',
+      ),
+    ];
+
+    Future<List<TradingOrderTargetGame>> refreshEligible() async => eligible;
+
+    testWidgets('hides switcher when at most one eligible game', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(
+            gameId: 'g1',
+            data: s.data,
+            switchableTradingGames: eligible.sublist(0, 1),
+            onRequestSwitchGame: (_) async {},
+          ),
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey('game-trading-title-switcher')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('switcher invokes onRequestSwitchGame for another game',
+        (tester) async {
+      final s = mockTradingScenarioForGameId('g-a');
+      String? requested;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(
+              gameId: 'g-a',
+              data: s.data,
+              switchableTradingGames: eligible,
+              onRefreshSwitchableGames: refreshEligible,
+              onRequestSwitchGame: (id) async => requested = id,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-title-switcher')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Beta'));
+      await tester.pump();
+      expect(requested, 'g-b');
+    });
+
+    testWidgets('shows full multi-line title without ellipsis', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      const longTitle =
+          'Very Long Game Name That Should Wrap And Stay Fully Visible';
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(
+              gameId: 'g1',
+              data: GameTradingViewData(
+                gameTitle: longTitle,
+                description: s.data.description,
+                isViewerAdmin: s.data.isViewerAdmin,
+                currentPlayerId: s.data.currentPlayerId,
+                isTimed: false,
+                deltaCash: s.data.deltaCash,
+                deltaEnvelopes: s.data.deltaEnvelopes,
+                orderBookBids: s.data.orderBookBids,
+                orderBookAsks: s.data.orderBookAsks,
+                marketPrice: s.data.marketPrice,
+                priceHistory: s.data.priceHistory,
+                chartSessionElapsed: s.data.chartSessionElapsed,
+              ),
+              switchableTradingGames: eligible,
+              onRefreshSwitchableGames: refreshEligible,
+              onRequestSwitchGame: (_) async {},
+            ),
+          ),
+        ),
+      );
+      expect(find.textContaining('Very Long Game Name'), findsOneWidget);
+      expect(find.textContaining('…'), findsNothing);
+    });
+
+    testWidgets('description expands and collapses on tap', (tester) async {
+      final s = mockTradingScenarioForGameId('g1');
+      const longDesc =
+          'Line one of a very long description. Line two still going. '
+          'Line three should only show when expanded.';
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: GameTradingScreen(
+            data: GameTradingViewData(
+              gameTitle: s.data.gameTitle,
+              description: longDesc,
+              isViewerAdmin: s.data.isViewerAdmin,
+              currentPlayerId: s.data.currentPlayerId,
+              isTimed: false,
+              deltaCash: s.data.deltaCash,
+              deltaEnvelopes: s.data.deltaEnvelopes,
+              orderBookBids: s.data.orderBookBids,
+              orderBookAsks: s.data.orderBookAsks,
+              marketPrice: s.data.marketPrice,
+              priceHistory: s.data.priceHistory,
+              chartSessionElapsed: s.data.chartSessionElapsed,
+            ),
+          ),
+        ),
+      );
+
+      var text = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const ValueKey('game-trading-description')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(text.maxLines, 2);
+
+      await tester.tap(find.byKey(const ValueKey('game-trading-description')));
+      await tester.pump();
+      text = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const ValueKey('game-trading-description')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(text.maxLines, isNull);
+
+      await tester.tap(find.byKey(const ValueKey('game-trading-description')));
+      await tester.pump();
+      text = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const ValueKey('game-trading-description')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(text.maxLines, 2);
+    });
+
+    testWidgets('switcher refreshes list every time menu opens', (tester) async {
+      var refreshCount = 0;
+      Future<List<TradingOrderTargetGame>> refresh() async {
+        refreshCount++;
+        return eligible;
+      }
+
+      final s = mockTradingScenarioForGameId('g-a');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: TickerMode(
+            enabled: false,
+            child: GameTradingScreen(
+              gameId: 'g-a',
+              data: s.data,
+              switchableTradingGames: eligible,
+              onRefreshSwitchableGames: refresh,
+              onRequestSwitchGame: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('game-trading-title-switcher')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(refreshCount, 1);
+
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('game-trading-title-switcher')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(refreshCount, 2);
+    });
+
+    testWidgets('stale pick refreshes list without calling switch', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: const TickerMode(
+            enabled: false,
+            child: _StaleSwitcherHarness(),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('game-trading-title-switcher')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Beta').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        find.byKey(const ValueKey('game-trading-title-switcher')),
+        findsNothing,
+      );
+    });
+  });
+}
+
+class _StaleSwitcherHarness extends StatefulWidget {
+  const _StaleSwitcherHarness();
+
+  @override
+  State<_StaleSwitcherHarness> createState() => _StaleSwitcherHarnessState();
+}
+
+class _StaleSwitcherHarnessState extends State<_StaleSwitcherHarness> {
+  var _games = const [
+    TradingOrderTargetGame(
+      gameId: 'g-a',
+      gameTitle: 'Alpha',
+      gameDescription: 'a',
+    ),
+    TradingOrderTargetGame(
+      gameId: 'g-b',
+      gameTitle: 'Beta',
+      gameDescription: 'b',
+    ),
+  ];
+
+  Future<void> _onRequestSwitchGame(String gameId) async {
+    if (gameId == 'g-b') {
+      setState(() {
+        _games = const [
+          TradingOrderTargetGame(
+            gameId: 'g-a',
+            gameTitle: 'Alpha',
+            gameDescription: 'a',
+          ),
+        ];
+      });
+      return;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = mockTradingScenarioForGameId('g-a');
+    return GameTradingScreen(
+      gameId: 'g-a',
+      data: s.data,
+      switchableTradingGames: _games,
+      onRefreshSwitchableGames: () async => _games,
+      onRequestSwitchGame: _onRequestSwitchGame,
+    );
+  }
 }
 
 GameTradingViewData _cloneTradingData(GameTradingViewData d) {

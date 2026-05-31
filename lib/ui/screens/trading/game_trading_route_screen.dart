@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,13 +10,16 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/trading/cancel_order_command.dart';
 import '../../../core/trading/order_type_from_personal.dart';
 import '../../../core/trading/personal_order.dart';
+import '../../../data/enums/game_state.dart';
 import '../../../data/models/game_session_state.dart';
 import '../../../data/models/order.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/command_repository_provider.dart';
 import '../../../providers/game_provider.dart';
+import '../../../providers/game_repository_provider.dart';
 import '../../../providers/trading_provider.dart';
 import '../../../providers/best_effort_post_submit_refresh.dart';
+import '../../../providers/view_data/pending_orders_view_data_provider.dart';
 import '../../../providers/view_data/trading_view_data_provider.dart';
 import '../../widgets/async_route_loading_body.dart';
 import '../../widgets/fetched_error_panel.dart';
@@ -54,22 +59,87 @@ class GameTradingRouteScreen extends ConsumerStatefulWidget {
 
 class _GameTradingRouteScreenState
     extends ConsumerState<GameTradingRouteScreen> {
+  var _scheduledNonLiveRedirect = false;
+  Timer? _eligibleGamesPoll;
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep switchable-game list live (same interval as Pending Orders tab).
+    _eligibleGamesPoll = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      unawaited(
+        ref.read(pendingOrdersViewDataProvider.notifier).silentRefresh(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _eligibleGamesPoll?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant GameTradingRouteScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gameId != widget.gameId) {
+      _scheduledNonLiveRedirect = false;
+    }
+  }
+
+  void _redirectIfGameNotLiveForTrading(GameSessionState session) {
+    if (isGameLiveForTrading(session.game)) return;
+    if (!context.mounted) return;
+    final gs = session.game.gameState;
+    if (gameStateShowsEnvelopeFlowOnly(gs)) {
+      context.go(AppRoutes.gameResults(widget.gameId));
+    } else if (gs == GameState.created) {
+      context.go(AppRoutes.gameLobby(widget.gameId));
+    } else {
+      context.go(AppRoutes.home);
+    }
+  }
+
+  void _scheduleRedirectIfGameNotLiveForTrading(GameSessionState session) {
+    if (_scheduledNonLiveRedirect) return;
+    if (isGameLiveForTrading(session.game)) return;
+    _scheduledNonLiveRedirect = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final latest = ref.read(currentGameProvider(widget.gameId)).valueOrNull;
+      if (latest == null) return;
+      _redirectIfGameNotLiveForTrading(latest);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.watch(currentGameProvider(widget.gameId));
+    final sessionAsync = ref.watch(currentGameProvider(widget.gameId));
+    // Must watch here (not only inside tradingViewData.when) so chevron
+    // reappears when eligible games go 1 → 2+ without opening the menu.
+    final switchableTradingGames = ref
+            .watch(pendingOrdersViewDataProvider)
+            .valueOrNull
+            ?.tradingGamesForNewOrder ??
+        const [];
+    final session = sessionAsync.valueOrNull;
+    if (session != null) {
+      _scheduleRedirectIfGameNotLiveForTrading(session);
+    }
     ref.listen<AsyncValue<GameSessionState>>(
       currentGameProvider(widget.gameId),
       (
         AsyncValue<GameSessionState>? previous,
         AsyncValue<GameSessionState> next,
       ) {
-        final session = next.asData?.value;
-        if (session == null) return;
-        if (!gameStateShowsEnvelopeFlowOnly(session.game.gameState)) return;
+        final nextSession = next.asData?.value;
+        if (nextSession == null) return;
+        if (isGameLiveForTrading(nextSession.game)) return;
         if (!context.mounted) return;
         Future.microtask(() {
           if (!context.mounted) return;
-          context.go(AppRoutes.gameResults(widget.gameId));
+          _redirectIfGameNotLiveForTrading(nextSession);
         });
       },
     );
@@ -117,6 +187,31 @@ class _GameTradingRouteScreenState
         return GameTradingScreen(
           gameId: widget.gameId,
           data: data,
+          switchableTradingGames: switchableTradingGames,
+          onRefreshSwitchableGames: () async {
+            await ref
+                .read(pendingOrdersViewDataProvider.notifier)
+                .silentRefresh();
+            return ref
+                    .read(pendingOrdersViewDataProvider)
+                    .valueOrNull
+                    ?.tradingGamesForNewOrder ??
+                const [];
+          },
+          onRequestSwitchGame: (targetGameId) async {
+            await ref
+                .read(pendingOrdersViewDataProvider.notifier)
+                .silentRefresh();
+            final gameRepo = ref.read(gameRepositoryProvider);
+            final ok = await validateTradingGameSwitchTarget(
+              gameRepo: gameRepo,
+              targetGameId: targetGameId,
+              currentGameId: widget.gameId,
+            );
+            if (!ok) return;
+            if (!context.mounted) return;
+            context.go(AppRoutes.gameTrading(targetGameId));
+          },
           liveChartSessionElapsed:
               ref.watch(chartSessionElapsedProvider(widget.gameId)),
           backNavigatesToHome: backNavigatesToHome,

@@ -95,6 +95,12 @@ class GameNotFoundException extends GameRepositoryException {
         );
 }
 
+/// Another non-terminal game already uses this [game_name].
+class ActiveGameNameInUseException extends GameRepositoryException {
+  const ActiveGameNameInUseException()
+      : super('A game with this name is already active.');
+}
+
 class CreateGameCommandFailedException extends GameRepositoryException {
   const CreateGameCommandFailedException(super.message);
 }

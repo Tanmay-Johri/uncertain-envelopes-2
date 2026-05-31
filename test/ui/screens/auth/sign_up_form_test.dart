@@ -11,7 +11,7 @@ const _submitKey = Key('signup_submit_button');
 
 Future<void> _pump(
   WidgetTester tester, {
-  required ValueChanged<SignUpSubmission> onSubmit,
+  required Future<bool> Function(SignUpSubmission) onSubmit,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -52,7 +52,7 @@ void main() {
   group('SignUpForm rendering', () {
     testWidgets('renders all three fields and the submit button',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       expect(find.text('USERNAME'), findsOneWidget);
       expect(find.text('EMAIL'), findsOneWidget);
       expect(find.text('PASSWORD'), findsOneWidget);
@@ -63,7 +63,7 @@ void main() {
     });
 
     testWidgets('password field is obscured', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       final finder = find.descendant(
         of: find.byKey(_passwordKey),
         matching: find.byType(TextField),
@@ -73,7 +73,7 @@ void main() {
 
     testWidgets('password visibility toggle obscures and reveals text',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _enter(tester, _passwordKey, 'hunter2x');
       final field = find.descendant(
         of: find.byKey(_passwordKey),
@@ -95,7 +95,7 @@ void main() {
     });
 
     testWidgets('no validation errors on first render', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       expect(find.text('Required'), findsNothing);
     });
   });
@@ -104,7 +104,10 @@ void main() {
     testWidgets('empty submit → all three fields show Required',
         (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _tapSubmit(tester);
       expect(find.text('Required'), findsNWidgets(3));
       expect(called, 0);
@@ -112,7 +115,10 @@ void main() {
 
     testWidgets('whitespace-only username is Required', (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _fillValid(tester, username: '   ');
       await _tapSubmit(tester);
       expect(find.text('Required'), findsOneWidget);
@@ -122,7 +128,7 @@ void main() {
 
   group('SignUpForm username validation', () {
     testWidgets('<3 chars shows length error', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, username: 'ab');
       await _tapSubmit(tester);
       expect(
@@ -132,7 +138,7 @@ void main() {
     });
 
     testWidgets('>32 chars shows length error', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, username: 'a' * 33);
       await _tapSubmit(tester);
       expect(
@@ -143,7 +149,7 @@ void main() {
 
     testWidgets('invalid characters (spaces, @, !) show charset error',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, username: 'bad name!');
       await _tapSubmit(tester);
       expect(find.text('Letters, numbers, _ or - only'), findsOneWidget);
@@ -151,7 +157,10 @@ void main() {
 
     testWidgets('boundary: exactly 3 chars is valid', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, username: 'abc');
       await _tapSubmit(tester);
       expect(captured, isNotNull);
@@ -160,7 +169,10 @@ void main() {
 
     testWidgets('boundary: exactly 32 chars is valid', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       final u = 'a' * 32;
       await _fillValid(tester, username: u);
       await _tapSubmit(tester);
@@ -170,7 +182,10 @@ void main() {
 
     testWidgets('underscore, hyphen, digits all allowed', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, username: 'tan_may-42');
       await _tapSubmit(tester);
       expect(captured, isNotNull);
@@ -180,7 +195,10 @@ void main() {
     testWidgets('username is normalized to lowercase on submit',
         (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, username: 'TanMay');
       await _tapSubmit(tester);
       expect(captured, isNotNull);
@@ -190,28 +208,28 @@ void main() {
 
   group('SignUpForm email validation', () {
     testWidgets('missing @ shows Invalid email', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, email: 'bademail');
       await _tapSubmit(tester);
       expect(find.text('Invalid email'), findsOneWidget);
     });
 
     testWidgets('multiple @ shows Invalid email', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, email: 'a@b@c.com');
       await _tapSubmit(tester);
       expect(find.text('Invalid email'), findsOneWidget);
     });
 
     testWidgets('missing domain TLD shows Invalid email', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, email: 'a@b');
       await _tapSubmit(tester);
       expect(find.text('Invalid email'), findsOneWidget);
     });
 
     testWidgets('whitespace-containing email is invalid', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, email: 'a @b.com');
       await _tapSubmit(tester);
       expect(find.text('Invalid email'), findsOneWidget);
@@ -219,7 +237,10 @@ void main() {
 
     testWidgets('email is trimmed on submit', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, email: '  trader@example.com  ');
       await _tapSubmit(tester);
       expect(captured!.email, 'trader@example.com');
@@ -228,7 +249,7 @@ void main() {
 
   group('SignUpForm password validation', () {
     testWidgets('<8 chars shows length error', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _fillValid(tester, password: 'short');
       await _tapSubmit(tester);
       expect(
@@ -239,7 +260,10 @@ void main() {
 
     testWidgets('boundary: exactly 8 chars is valid', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, password: '12345678');
       await _tapSubmit(tester);
       expect(captured, isNotNull);
@@ -249,7 +273,10 @@ void main() {
     testWidgets('password is NOT trimmed (spaces are legitimate chars)',
         (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester, password: 'password ');
       await _tapSubmit(tester);
       expect(captured!.password, 'password ');
@@ -260,7 +287,10 @@ void main() {
     testWidgets('valid data → onSubmit called once with all fields',
         (tester) async {
       final submissions = <SignUpSubmission>[];
-      await _pump(tester, onSubmit: submissions.add);
+      await _pump(tester, onSubmit: (s) async {
+        submissions.add(s);
+        return false;
+      });
       await _fillValid(tester);
       await _tapSubmit(tester);
       expect(submissions.length, 1);
@@ -271,7 +301,7 @@ void main() {
 
     testWidgets('errors clear in real time as fields become valid',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _tapSubmit(tester);
       expect(find.text('Required'), findsNWidgets(3));
 
@@ -290,22 +320,36 @@ void main() {
 
     testWidgets('pressing Enter in password submits', (tester) async {
       SignUpSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _fillValid(tester);
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
       expect(captured, isNotNull);
     });
 
-    testWidgets('three rapid submit taps fire exactly three callbacks',
+    testWidgets('rapid submit taps while busy only invoke callback once',
         (tester) async {
       var calls = 0;
-      await _pump(tester, onSubmit: (_) => calls++);
+      await _pump(
+        tester,
+        onSubmit: (_) async {
+          calls++;
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return true;
+        },
+      );
       await _fillValid(tester);
-      await _tapSubmit(tester);
-      await _tapSubmit(tester);
-      await _tapSubmit(tester);
-      expect(calls, 3);
+      await tester.tap(find.byKey(_submitKey));
+      await tester.pump();
+      expect(find.text('SIGNING UP'), findsOneWidget);
+      await tester.tap(find.byKey(_submitKey));
+      await tester.tap(find.byKey(_submitKey));
+      await tester.pump();
+      expect(calls, 1);
+      await tester.pump(const Duration(milliseconds: 400));
     });
   });
 }

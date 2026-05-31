@@ -19,9 +19,11 @@ class GameLobbyScreen extends StatelessWidget {
     required this.currentPlayerId,
     required this.isViewerAdmin,
     this.backNavigatesToHome = false,
+    this.startGameLabel = 'Start Game',
     this.onStartGame,
     this.onEndGame,
     this.onEnterGame,
+    this.joinGameLabel = 'Join Game',
     this.onJoinGame,
     this.onLeaveGame,
     this.onKickPlayer,
@@ -35,9 +37,11 @@ class GameLobbyScreen extends StatelessWidget {
   /// Post-trading games: back leads home instead of popping stack (lobby is invalid).
   final bool backNavigatesToHome;
 
+  final String startGameLabel;
   final VoidCallback? onStartGame;
   final VoidCallback? onEndGame;
   final VoidCallback? onEnterGame;
+  final String joinGameLabel;
   final VoidCallback? onJoinGame;
   final VoidCallback? onLeaveGame;
   final ValueChanged<String>? onKickPlayer;
@@ -247,7 +251,7 @@ class GameLobbyScreen extends StatelessWidget {
                 if (phase == GameLobbyPhase.preStart)
                   NeonButton(
                     key: const ValueKey('game-lobby-start'),
-                    label: 'Start Game',
+                    label: startGameLabel,
                     onPressed: onStartGame,
                   )
                 else
@@ -266,7 +270,7 @@ class GameLobbyScreen extends StatelessWidget {
               ] else if (!_viewerJoined) ...[
                 NeonButton(
                   key: const ValueKey('game-lobby-join'),
-                  label: 'Join Game',
+                  label: joinGameLabel,
                   onPressed: onJoinGame,
                 ),
               ] else if (phase == GameLobbyPhase.preStart) ...[

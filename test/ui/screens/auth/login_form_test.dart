@@ -5,7 +5,7 @@ import 'package:uncertain_envelopes_2/ui/screens/auth/login_form.dart';
 
 Future<void> _pump(
   WidgetTester tester, {
-  required ValueChanged<LoginSubmission> onSubmit,
+  required Future<bool> Function(LoginSubmission) onSubmit,
   VoidCallback? onForgot,
 }) {
   return tester.pumpWidget(
@@ -38,7 +38,7 @@ void main() {
   group('LoginForm rendering', () {
     testWidgets('renders identifier + password fields and submit button',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       expect(find.text('USERNAME OR EMAIL'), findsOneWidget);
       expect(find.text('PASSWORD'), findsOneWidget);
       expect(find.byKey(const Key('login_identifier_field')), findsOneWidget);
@@ -47,7 +47,7 @@ void main() {
     });
 
     testWidgets('password field is obscured by default', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       final finder = find.descendant(
         of: find.byKey(const Key('login_password_field')),
         matching: find.byType(TextField),
@@ -57,7 +57,7 @@ void main() {
 
     testWidgets('password visibility toggle obscures and reveals text',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _enter(tester, const Key('login_password_field'), 'secret');
       final field = find.descendant(
         of: find.byKey(const Key('login_password_field')),
@@ -79,7 +79,7 @@ void main() {
     });
 
     testWidgets('renders the Forgot? link', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       expect(find.text('FORGOT?'), findsOneWidget);
     });
   });
@@ -88,7 +88,10 @@ void main() {
     testWidgets('empty fields → both show Required, onSubmit not called',
         (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _tapSubmit(tester);
       expect(find.text('Required'), findsNWidgets(2));
       expect(called, 0);
@@ -97,7 +100,10 @@ void main() {
     testWidgets('only identifier filled → password shows Required',
         (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _enter(tester, const Key('login_identifier_field'), 'tanmay');
       await _tapSubmit(tester);
       expect(find.text('Required'), findsOneWidget);
@@ -107,7 +113,10 @@ void main() {
     testWidgets('only password filled → identifier shows Required',
         (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _enter(tester, const Key('login_password_field'), 'hunter2');
       await _tapSubmit(tester);
       expect(find.text('Required'), findsOneWidget);
@@ -117,7 +126,10 @@ void main() {
     testWidgets('whitespace-only identifier is treated as empty',
         (tester) async {
       var called = 0;
-      await _pump(tester, onSubmit: (_) => called++);
+      await _pump(tester, onSubmit: (_) async {
+        called++;
+        return false;
+      });
       await _enter(tester, const Key('login_identifier_field'), '   ');
       await _enter(tester, const Key('login_password_field'), 'hunter2');
       await _tapSubmit(tester);
@@ -127,13 +139,13 @@ void main() {
 
     testWidgets('errors appear only after first submit, not on first render',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       expect(find.text('Required'), findsNothing);
     });
 
     testWidgets('errors clear in real time once fields become valid',
         (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await _tapSubmit(tester);
       expect(find.text('Required'), findsNWidgets(2));
 
@@ -151,7 +163,10 @@ void main() {
     testWidgets('valid data trims identifier and passes both values',
         (tester) async {
       LoginSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _enter(tester, const Key('login_identifier_field'), '  tanmay  ');
       await _enter(tester, const Key('login_password_field'), ' hunter2 ');
       await _tapSubmit(tester);
@@ -165,7 +180,10 @@ void main() {
     testWidgets('pressing Enter in the password field submits',
         (tester) async {
       LoginSubmission? captured;
-      await _pump(tester, onSubmit: (s) => captured = s);
+      await _pump(tester, onSubmit: (s) async {
+        captured = s;
+        return false;
+      });
       await _enter(tester, const Key('login_identifier_field'), 'tanmay');
       await _enter(tester, const Key('login_password_field'), 'hunter2');
       await tester.testTextInput.receiveAction(TextInputAction.done);
@@ -174,30 +192,41 @@ void main() {
       expect(captured!.identifier, 'tanmay');
     });
 
-    testWidgets('three rapid submit taps fire exactly three callbacks',
+    testWidgets('rapid submit taps while busy only invoke callback once',
         (tester) async {
       var calls = 0;
-      await _pump(tester, onSubmit: (_) => calls++);
+      await _pump(
+        tester,
+        onSubmit: (_) async {
+          calls++;
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return true;
+        },
+      );
       await _enter(tester, const Key('login_identifier_field'), 'tanmay');
       await _enter(tester, const Key('login_password_field'), 'hunter2');
-      await _tapSubmit(tester);
-      await _tapSubmit(tester);
-      await _tapSubmit(tester);
-      expect(calls, 3);
+      await tester.tap(find.byKey(const Key('login_submit_button')));
+      await tester.pump();
+      expect(find.text('LOGGING IN'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('login_submit_button')));
+      await tester.tap(find.byKey(const Key('login_submit_button')));
+      await tester.pump();
+      expect(calls, 1);
+      await tester.pump(const Duration(milliseconds: 400));
     });
   });
 
   group('LoginForm Forgot?', () {
     testWidgets('tapping FORGOT? fires onForgotTap', (tester) async {
       var tapped = 0;
-      await _pump(tester, onSubmit: (_) {}, onForgot: () => tapped++);
+      await _pump(tester, onSubmit: (_) async => false, onForgot: () => tapped++);
       await tester.tap(find.text('FORGOT?'));
       await tester.pumpAndSettle();
       expect(tapped, 1);
     });
 
     testWidgets('missing onForgotTap does not crash on tap', (tester) async {
-      await _pump(tester, onSubmit: (_) {});
+      await _pump(tester, onSubmit: (_) async => false);
       await tester.tap(find.text('FORGOT?'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
